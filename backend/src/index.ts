@@ -24,6 +24,10 @@ app.use(morgan('dev'))
 app.use(express.json())
 app.use(limiter)
 
+// Routes
+import authRoutes from './routes/auth.routes.js'
+app.use('/auth', authRoutes)
+
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() })
 })
