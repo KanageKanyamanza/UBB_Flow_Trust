@@ -92,4 +92,79 @@ export class AuthService {
       }
     })
   }
+
+  static async login(email: string, password: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { organization: true },
+    })
+
+    if (!user) {
+      throw new Error('Invalid credentials')
+    }
+
+    const isPasswordValid = await this.verifyPassword(password, user.password)
+
+    if (!isPasswordValid) {
+      throw new Error('Invalid credentials')
+    }
+
+    const { accessToken, refreshToken } = this.generateTokens(user.id, user.email)
+
+    // Update refresh token in database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    })
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+      organization: user.organization,
+      accessToken,
+      refreshToken,
+    }
+  }
+
+  static async refresh(token: string) {
+    try {
+      const payload = jwt.verify(token, JWT_REFRESH_SECRET) as unknown as { userId: string; email: string }
+      
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        include: { organization: true },
+      })
+
+      if (!user || user.refreshToken !== token) {
+        throw new Error('Invalid refresh token')
+      }
+
+      const tokens = this.generateTokens(user.id, user.email)
+
+      // Update refresh token in database
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { refreshToken: tokens.refreshToken },
+      })
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+        organization: user.organization,
+        ...tokens,
+      }
+    } catch (error) {
+      throw new Error('Invalid refresh token')
+    }
+  }
 }
