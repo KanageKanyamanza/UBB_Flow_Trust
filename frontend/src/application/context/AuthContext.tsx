@@ -4,8 +4,10 @@ import { useGetMeQuery, useLoginMutation } from '../../infrastructure/api/authAp
 interface User {
   id: string
   email: string
-  orgId: string
+  orgId?: string
   role: string
+  firstName?: string | null
+  lastName?: string | null
 }
 
 interface AuthContextType {
