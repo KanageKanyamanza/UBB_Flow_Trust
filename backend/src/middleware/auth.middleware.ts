@@ -42,3 +42,35 @@ export const isAuthenticated = async (req: AuthRequest, res: Response, next: Nex
     return res.status(401).json({ error: 'Unauthorized: Invalid token' })
   }
 }
+
+export const authorizeRole = (allowedRoles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized: User not authenticated' })
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' })
+    }
+
+    next()
+  }
+}
+
+/**
+ * Ensures the authenticated user belongs to the organization specified in the request
+ * Usually used for routes like /orgs/:orgId/...
+ */
+export const restrictToOrg = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized: User not authenticated' })
+  }
+
+  const { orgId } = req.params
+  // If orgId is in params and it doesn't match the user's orgId, forbidden
+  if (orgId && orgId !== req.user.orgId) {
+    return res.status(403).json({ error: 'Forbidden: You do not belong to this organization' })
+  }
+
+  next()
+}

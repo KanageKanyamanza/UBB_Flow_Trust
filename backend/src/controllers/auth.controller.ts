@@ -64,4 +64,13 @@ export class AuthController {
       res.status(401).json({ error: message })
     }
   }
+
+  static async getMe(req: any, res: Response) {
+    try {
+      res.status(200).json(req.user)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      res.status(401).json({ error: message })
+    }
+  }
 }
