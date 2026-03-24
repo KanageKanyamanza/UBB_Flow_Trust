@@ -1,51 +1,99 @@
-import { TrendingUp, ShieldCheck, Zap } from "lucide-react";
-import React from "react";
+import React from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { TrendingUp, ShieldCheck, Zap } from 'lucide-react'
+import { Button } from '@/presentation/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
+import { Input } from '@/presentation/components/ui/input'
 
-function App() {
-	return (
-		<div className="flex flex-col items-center justify-center min-h-[90vh] p-4 text-center">
-			<div className="animate-fade-in">
-				<h1 className="text-5xl font-bold tracking-tight mb-4">
-					UBB <span className="text-trust">Platform</span>
-				</h1>
-				<p className="text-muted-foreground text-xl max-w-2xl mb-12">
-					Transformez votre PME informelle en une entité crédible et finançable
-					grâce à nos modules de gestion de flux et de confiance.
-				</p>
+// Lazy load pages for better performance
+import LoginPage from './presentation/pages/LoginPage'
+import RegisterPage from './presentation/pages/RegisterPage'
+import DashboardPage from './presentation/pages/DashboardPage'
+import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-					{/* UBB Flow Card */}
-					<div className="glass p-8 rounded-2xl glow-flow text-left hover:scale-[1.02] transition-transform">
-						<div className="bg-flow/20 p-3 rounded-lg w-fit mb-4">
-							<TrendingUp className="text-flow w-8 h-8" />
-						</div>
-						<h2 className="text-2xl font-semibold mb-2">UBB Flow</h2>
-						<p className="text-muted-foreground">
-							Intelligence de trésorerie, prévisions à 90 jours et score de
-							préparation financière.
-						</p>
-					</div>
+function LandingPage() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[90vh] p-4 text-center">
+      <div className="animate-fade-in w-full max-w-4xl">
+        <h1 className="text-5xl font-bold tracking-tight mb-4">
+          UBB <span className="text-trust">Flow & Trust</span>
+        </h1>
+        <p className="text-muted-foreground text-xl max-w-2xl mb-12 mx-auto">
+          Transformez votre PME informelle en une entité crédible et finançable grâce à nos modules
+          de gestion de flux et de confiance.
+        </p>
 
-					{/* UBB Trust Card */}
-					<div className="glass p-8 rounded-2xl glow-trust text-left hover:scale-[1.02] transition-transform">
-						<div className="bg-trust/20 p-3 rounded-lg w-fit mb-4">
-							<ShieldCheck className="text-trust w-8 h-8" />
-						</div>
-						<h2 className="text-2xl font-semibold mb-2">UBB Trust</h2>
-						<p className="text-muted-foreground">
-							Coffre-fort documentaire, checklists de conformité et score de
-							crédibilité.
-						</p>
-					</div>
-				</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          {/* UBB Flow Card */}
+          <Card className="glass text-left hover:scale-[1.02] glow-flow transition-all duration-300">
+            <CardHeader>
+              <div className="bg-flow/20 p-3 rounded-lg w-fit mb-2">
+                <TrendingUp className="text-flow w-8 h-8" />
+              </div>
+              <CardTitle className="text-2xl">UBB Flow</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Intelligence de trésorerie, prévisions à 90 jours et score de préparation
+                financière.
+              </p>
+            </CardContent>
+          </Card>
 
-				<button className="mt-12 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full font-medium flex items-center gap-2 group mx-auto">
-					Démarrer le diagnostic
-					<Zap className="w-4 h-4 group-hover:fill-current" />
-				</button>
-			</div>
-		</div>
-	);
+          {/* UBB Trust Card */}
+          <Card className="glass text-left hover:scale-[1.02] glow-trust transition-all duration-300">
+            <CardHeader>
+              <div className="bg-trust/20 p-3 rounded-lg w-fit mb-2">
+                <ShieldCheck className="text-trust w-8 h-8" />
+              </div>
+              <CardTitle className="text-2xl">UBB Trust</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Coffre-fort documentaire, checklists de conformité et score de crédibilité.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="max-w-md mx-auto space-y-4">
+          <Input placeholder="Votre email professionnel" type="email" />
+          <div className="grid grid-cols-2 gap-4">
+            <Button variant="trust" className="w-full gap-2" asChild>
+              <a href="/login">Connexion</a>
+            </Button>
+            <Button variant="flow" className="w-full gap-2" asChild>
+              <a href="/register">Essai gratuit</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-export default App;
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public Routes */}
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* Add more protected routes here */}
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+export default App

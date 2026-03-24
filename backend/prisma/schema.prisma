@@ -4,10 +4,235 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// --- Enumérations ---
+model Organization {
+  id                String               @id @default(uuid())
+  name              String
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  accounts          Account[]
+  alerts            Alert[]
+  auditLogs         AuditLog[]
+  checklists        Checklist[]
+  consentGrants     ConsentGrant[]
+  documents         Document[]
+  forecastSnapshots ForecastSnapshot[]
+  publicProfile     PublicProfile?
+  flowScores        ReadinessScoreFlow[]
+  recurringRules    RecurringRule[]
+  smeProfile        SmeProfile?
+  transactions      Transaction[]
+  trustScores       TrustScore[]
+  users             User[]
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  password     String
+  firstName    String?
+  lastName     String?
+  role         Role         @default(OWNER)
+  orgId        String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  auditLogs    AuditLog[]
+  organization Organization @relation(fields: [orgId], references: [id])
+  refreshToken String?
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  name         String
+  type         String
+  currency     String        @default("XAF")
+  balance      Decimal       @default(0)
+  orgId        String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  organization Organization  @relation(fields: [orgId], references: [id])
+  transactions Transaction[]
+}
+
+model Transaction {
+  id            String         @id @default(uuid())
+  occurredAt    DateTime
+  direction     TxnDirection
+  amount        Decimal
+  currency      String         @default("XAF")
+  method        TxnMethod
+  category      TxnCategory
+  counterparty  String?
+  notes         String?
+  orgId         String
+  accountId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  evidenceFiles EvidenceFile[]
+  account       Account        @relation(fields: [accountId], references: [id])
+  organization  Organization   @relation(fields: [orgId], references: [id])
+}
+
+model RecurringRule {
+  id           String       @id @default(uuid())
+  name         String
+  amount       Decimal
+  direction    TxnDirection
+  frequency    String
+  startDate    DateTime
+  endDate      DateTime?
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model ForecastSnapshot {
+  id           String       @id @default(uuid())
+  horizonDays  Int
+  data         Json
+  confidence   Float
+  orgId        String
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model ReadinessScoreFlow {
+  id           String       @id @default(uuid())
+  score        Int
+  reasonCodes  String[]
+  orgId        String
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model SmeProfile {
+  id               String            @id @default(uuid())
+  legalName        String
+  registrationNo   String?
+  taxId            String?
+  country          String?
+  address          String?
+  governanceType   String?
+  orgId            String            @unique
+  updatedAt        DateTime          @updatedAt
+  beneficialOwners BeneficialOwner[]
+  organization     Organization      @relation(fields: [orgId], references: [id])
+}
+
+model BeneficialOwner {
+  id           String     @id @default(uuid())
+  name         String
+  role         String?
+  ownershipPct Float?
+  profileId    String
+  smeProfile   SmeProfile @relation(fields: [profileId], references: [id])
+}
+
+model Document {
+  id             String            @id @default(uuid())
+  type           String
+  name           String
+  status         DocStatus         @default(DRAFT)
+  orgId          String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  checklistItems ChecklistItem[]
+  organization   Organization      @relation(fields: [orgId], references: [id])
+  versions       DocumentVersion[]
+}
+
+model DocumentVersion {
+  id         String    @id @default(uuid())
+  docId      String
+  fileUrl    String
+  fileName   String
+  fileSize   Int
+  validUntil DateTime?
+  createdAt  DateTime  @default(now())
+  document   Document  @relation(fields: [docId], references: [id])
+}
+
+model Checklist {
+  id           String          @id @default(uuid())
+  market       String
+  orgId        String
+  createdAt    DateTime        @default(now())
+  organization Organization    @relation(fields: [orgId], references: [id])
+  items        ChecklistItem[]
+}
+
+model ChecklistItem {
+  id          String              @id @default(uuid())
+  requirement String
+  status      ChecklistItemStatus @default(MISSING)
+  checklistId String
+  docId       String?
+  checklist   Checklist           @relation(fields: [checklistId], references: [id])
+  document    Document?           @relation(fields: [docId], references: [id])
+}
+
+model TrustScore {
+  id           String       @id @default(uuid())
+  score        Int
+  reasonCodes  String[]
+  orgId        String
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model PublicProfile {
+  id           String       @id @default(uuid())
+  slug         String       @unique
+  isActive     Boolean      @default(false)
+  orgId        String       @unique
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model ConsentGrant {
+  id           String       @id @default(uuid())
+  partnerName  String
+  purpose      String
+  scope        String
+  expiresAt    DateTime
+  orgId        String
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model Alert {
+  id           String        @id @default(uuid())
+  type         String
+  severity     AlertSeverity
+  message      String
+  isAck        Boolean       @default(false)
+  orgId        String
+  createdAt    DateTime      @default(now())
+  organization Organization  @relation(fields: [orgId], references: [id])
+}
+
+model AuditLog {
+  id           String       @id @default(uuid())
+  action       String
+  entityType   String
+  entityId     String
+  oldData      Json?
+  newData      Json?
+  userId       String?
+  orgId        String
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+}
+
+model EvidenceFile {
+  id          String      @id @default(uuid())
+  txnId       String
+  fileUrl     String
+  fileName    String
+  createdAt   DateTime    @default(now())
+  transaction Transaction @relation(fields: [txnId], references: [id])
+}
 
 enum Role {
   OWNER
@@ -68,240 +293,4 @@ enum AlertSeverity {
   INFO
   WARN
   CRITICAL
-}
-
-// --- Modèles Core & Multi-tenancy ---
-
-model Organization {
-  id                String             @id @default(uuid())
-  name              String
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  
-  users             User[]
-  accounts          Account[]
-  transactions      Transaction[]
-  smeProfile        SmeProfile?
-  documents         Document[]
-  checklists        Checklist[]
-  consentGrants     ConsentGrant[]
-  auditLogs         AuditLog[]
-  flowScores        ReadinessScoreFlow[]
-  trustScores       TrustScore[]
-  alerts            Alert[]
-  recurringRules    RecurringRule[]
-  forecastSnapshots ForecastSnapshot[]
-  publicProfile     PublicProfile?
-}
-
-model User {
-  id             String        @id @default(uuid())
-  email          String        @unique
-  password       String
-  firstName      String?
-  lastName       String?
-  role           Role          @default(OWNER)
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  auditLogs      AuditLog[]
-}
-
-// --- UBB Flow : Finance & Trésorerie ---
-
-model Account {
-  id             String        @id @default(uuid())
-  name           String
-  type           String        // Ex: "CASH_BOX", "BANK_ACCOUNT", "MOBILE_WALLET"
-  currency       String        @default("XAF") // ISO 4217
-  balance        Decimal       @default(0)
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  transactions   Transaction[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-}
-
-model Transaction {
-  id             String        @id @default(uuid())
-  occurredAt     DateTime
-  direction      TxnDirection
-  amount         Decimal
-  currency       String        @default("XAF")
-  method         TxnMethod
-  category       TxnCategory
-  counterparty   String?
-  notes          String?
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  account        Account       @relation(fields: [accountId], references: [id])
-  accountId      String
-  evidenceFiles  EvidenceFile[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-}
-
-model RecurringRule {
-  id             String        @id @default(uuid())
-  name           String
-  amount         Decimal
-  direction      TxnDirection
-  frequency      String        // "WEEKLY", "MONTHLY", "QUARTERLY"
-  startDate      DateTime
-  endDate        DateTime?
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-}
-
-model ForecastSnapshot {
-  id             String        @id @default(uuid())
-  horizonDays    Int           // 30, 60, 90
-  data           Json          // Projection des soldes quotidiens
-  confidence     Float
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime      @default(now())
-}
-
-model ReadinessScoreFlow {
-  id             String        @id @default(uuid())
-  score          Int           // 0-100
-  reasonCodes    String[]      // RSN.FLOW.*
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime      @default(now())
-}
-
-// --- UBB Trust : Crédibilité & Conformité ---
-
-model SmeProfile {
-  id               String           @id @default(uuid())
-  legalName        String
-  registrationNo   String?
-  taxId            String?
-  country          String?          // ISO 3166
-  address          String?
-  governanceType   String?
-  organization     Organization     @relation(fields: [orgId], references: [id])
-  orgId            String           @unique
-  beneficialOwners BeneficialOwner[]
-  updatedAt        DateTime         @updatedAt
-}
-
-model BeneficialOwner {
-  id           String     @id @default(uuid())
-  name         String
-  role         String?
-  ownershipPct Float?
-  smeProfile   SmeProfile @relation(fields: [profileId], references: [id])
-  profileId    String
-}
-
-model Document {
-  id             String           @id @default(uuid())
-  type           String           // Ex: CERT_INCORPORATION, TAX_ID
-  name           String
-  status         DocStatus        @default(DRAFT)
-  organization   Organization     @relation(fields: [orgId], references: [id])
-  orgId          String
-  versions       DocumentVersion[]
-  checklistItems ChecklistItem[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-}
-
-model DocumentVersion {
-  id          String   @id @default(uuid())
-  document    Document @relation(fields: [docId], references: [id])
-  docId       String
-  fileUrl     String
-  fileName    String
-  fileSize    Int
-  validUntil  DateTime?
-  createdAt   DateTime @default(now())
-}
-
-model Checklist {
-  id             String           @id @default(uuid())
-  market         String           // LOCAL_BASIC, EU_BASELINE
-  organization   Organization     @relation(fields: [orgId], references: [id])
-  orgId          String
-  items          ChecklistItem[]
-  createdAt      DateTime         @default(now())
-}
-
-model ChecklistItem {
-  id             String              @id @default(uuid())
-  requirement    String
-  status         ChecklistItemStatus @default(MISSING)
-  checklist      Checklist           @relation(fields: [checklistId], references: [id])
-  checklistId    String
-  document       Document?           @relation(fields: [docId], references: [id])
-  docId          String?
-}
-
-model TrustScore {
-  id             String        @id @default(uuid())
-  score          Int           // 0-100
-  reasonCodes    String[]      // RSN.TRUST.*
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime      @default(now())
-}
-
-model PublicProfile {
-  id             String       @id @default(uuid())
-  slug           String       @unique
-  isActive       Boolean      @default(false)
-  organization   Organization @relation(fields: [orgId], references: [id])
-  orgId          String       @unique
-  createdAt      DateTime     @default(now())
-}
-
-// --- Système de Consentement & Audit ---
-
-model ConsentGrant {
-  id             String       @id @default(uuid())
-  partnerName    String
-  purpose        String
-  scope          String       // FULL, FLOW_ONLY, TRUST_ONLY
-  expiresAt      DateTime
-  organization   Organization @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime     @default(now())
-}
-
-model Alert {
-  id             String        @id @default(uuid())
-  type           String        // "LIQUIDITY", "EXPIRY"
-  severity       AlertSeverity
-  message        String
-  isAck          Boolean       @default(false)
-  organization   Organization  @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime      @default(now())
-}
-
-model AuditLog {
-  id             String       @id @default(uuid())
-  action         String       // CREATE, UPDATE, DELETE
-  entityType     String
-  entityId       String
-  oldData        Json?
-  newData        Json?
-  user           User?        @relation(fields: [userId], references: [id])
-  userId         String?
-  organization   Organization @relation(fields: [orgId], references: [id])
-  orgId          String
-  createdAt      DateTime     @default(now())
-}
-
-model EvidenceFile {
-  id            String      @id @default(uuid())
-  transaction   Transaction @relation(fields: [txnId], references: [id])
-  txnId         String
-  fileUrl       String
-  fileName      String
-  createdAt     DateTime    @default(now())
 }
