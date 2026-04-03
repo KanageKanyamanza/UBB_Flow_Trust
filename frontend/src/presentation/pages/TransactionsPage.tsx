@@ -1,0 +1,80 @@
+import React, { useState } from 'react'
+import { TransactionList } from '../components/transactions/TransactionList'
+import { TransactionForm } from '../components/transactions/TransactionForm'
+import { Modal } from '../components/ui/modal'
+import { Plus, Download } from 'lucide-react'
+import { Button } from '../components/ui/button'
+
+const TransactionsPage: React.FC = () => {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+
+  const handleAddSuccess = () => {
+    setIsAddModalOpen(false)
+  }
+
+  return (
+    <div className="container max-w-4xl mx-auto px-6 py-10 pb-24 animate-fade-in relative">
+      <div className="flex flex-col gap-4 mb-10">
+        <header className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+              Flux de <span className="text-flow">Trésorerie</span>
+              <div className="h-2 w-2 rounded-full bg-flow animate-pulse" />
+            </h1>
+            <p className="text-muted-foreground text-base max-w-lg leading-relaxed">
+              Gérez vos rentrées et sorties d'argent en temps réel pour accroître votre score de préparation et de crédibilité.
+            </p>
+          </div>
+          
+          <div className="hidden md:flex gap-3">
+             <Button variant="outline" size="sm" className="gap-2 border-white/5 bg-white/5 hover:bg-white/10 uppercase font-black text-[10px] tracking-widest">
+                <Download size={14} />
+                Exporter CSV
+             </Button>
+             <Button
+                variant="flow"
+                onClick={() => setIsAddModalOpen(true)}
+                className="gap-2 font-black uppercase text-[10px] tracking-widest shadow-xl shadow-flow/20 glow-flow px-6"
+              >
+                <Plus size={16} />
+                Nouvelle Transaction
+              </Button>
+          </div>
+        </header>
+      </div>
+
+      {/* Decorative Gradients */}
+      <div className="fixed top-20 right-0 w-[30%] h-[30%] bg-flow/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+      <div className="fixed bottom-20 left-0 w-[30%] h-[30%] bg-trust/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+
+      <div className="space-y-6">
+        <TransactionList onAddClick={() => setIsAddModalOpen(true)} />
+      </div>
+
+      {/* Action Floating button for Mobile */}
+      <div className="fixed bottom-6 right-6 z-20 md:hidden">
+        <Button
+          variant="flow"
+          className="h-14 w-14 rounded-full shadow-2xl shadow-flow/50 glow-flow flex items-center justify-center p-0"
+          onClick={() => setIsAddModalOpen(true)}
+        >
+          <Plus className="w-8 h-8" />
+        </Button>
+      </div>
+
+      {/* Add Transaction Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Nouvelle Transaction"
+      >
+        <TransactionForm
+          onSuccess={handleAddSuccess}
+          onCancel={() => setIsAddModalOpen(false)}
+        />
+      </Modal>
+    </div>
+  )
+}
+
+export default TransactionsPage

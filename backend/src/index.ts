@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
+import path from 'path'
 
 dotenv.config()
 
@@ -26,7 +27,21 @@ app.use(limiter)
 
 // Routes
 import authRoutes from './routes/auth.routes.js'
+import accountRoutes from './routes/account.routes.js'
+import transactionRoutes from './routes/transaction.routes.js'
+import uploadRoutes from './routes/upload.routes.js'
+
 app.use('/auth', authRoutes)
+app.use('/accounts', accountRoutes)
+app.use('/transactions', transactionRoutes)
+app.use('/upload', uploadRoutes)
+
+// Serve local static uploads if STORAGE_TYPE=local
+if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
+  const uploadPath = path.join(process.cwd(), 'uploads')
+  app.use('/uploads', express.static(uploadPath))
+  console.log(`[storage]: Serving local files from ${uploadPath}`)
+}
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() })

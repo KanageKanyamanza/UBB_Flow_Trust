@@ -9,6 +9,9 @@ import { Input } from '@/presentation/components/ui/input'
 import LoginPage from './presentation/pages/LoginPage'
 import RegisterPage from './presentation/pages/RegisterPage'
 import DashboardPage from './presentation/pages/DashboardPage'
+import AccountsPage from './presentation/pages/AccountsPage'
+import TransactionsPage from './presentation/pages/TransactionsPage'
+import UploadDemoPage from './presentation/pages/UploadDemoPage'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 
 function LandingPage() {
@@ -86,6 +89,9 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/upload-demo" element={<UploadDemoPage />} />
           {/* Add more protected routes here */}
         </Route>
 
