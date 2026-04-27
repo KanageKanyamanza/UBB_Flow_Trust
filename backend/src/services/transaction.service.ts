@@ -133,6 +133,71 @@ export class TransactionService {
   }
 
   /**
+   * Update a transaction and adjust the account balance accordingly
+   */
+  static async update(id: string, orgId: string, data: UpdateTransactionInput, userId?: string) {
+    // 1. Get original transaction to calculate balance delta
+    const transaction = await this.getById(id, orgId)
+
+    return await prisma.$transaction(async (tx) => {
+      // a. Reverse old impact
+      const oldImpact = transaction.direction === 'IN' ? -transaction.amount.toNumber() : transaction.amount.toNumber()
+      
+      await tx.account.update({
+        where: { id: transaction.accountId },
+        data: {
+          balance: {
+            increment: oldImpact
+          }
+        }
+      })
+
+      // b. Apply updates to the transaction
+      const updated = await tx.transaction.update({
+        where: { id },
+        data: {
+          amount: data.amount,
+          direction: data.direction,
+          currency: data.currency,
+          method: data.method,
+          category: data.category,
+          counterparty: data.counterparty,
+          notes: data.notes,
+          occurredAt: data.occurredAt
+        }
+      })
+
+      if (data.amount !== undefined && Number(transaction.amount) !== data.amount) {
+        await tx.auditLog.create({
+          data: {
+            action: 'UPDATE_AMOUNT',
+            entityType: 'Transaction',
+            entityId: id,
+            oldData: { amount: Number(transaction.amount) },
+            newData: { amount: data.amount },
+            orgId: orgId,
+            ...(userId ? { userId } : {})
+          }
+        })
+      }
+
+      // c. Apply new impact
+      const newImpact = updated.direction === 'IN' ? updated.amount.toNumber() : -updated.amount.toNumber()
+
+      await tx.account.update({
+        where: { id: updated.accountId },
+        data: {
+          balance: {
+            increment: newImpact
+          }
+        }
+      })
+
+      return updated
+    })
+  }
+
+  /**
    * Delete a transaction and reverse its impact on account balance
    */
   static async delete(id: string, orgId: string) {

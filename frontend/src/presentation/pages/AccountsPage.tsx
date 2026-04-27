@@ -14,26 +14,6 @@ const AccountsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-background">
-      {/* Top Navbar */}
-      <nav className="border-b border-white/10 glass px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-flow w-6 h-6" />
-            <span className="text-xl font-bold italic tracking-tighter">UBB <span className="text-trust">Flow&Trust</span></span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium">{user?.email}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-          </div>
-        </div>
-      </nav>
-
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">

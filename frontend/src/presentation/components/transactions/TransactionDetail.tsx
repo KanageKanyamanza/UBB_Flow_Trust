@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Transaction, TxnDirection } from '@/domain/entities/transaction.entity'
+import { useDeleteTransactionMutation } from '@/infrastructure/api/transactionApi'
 import { Button } from '../ui/button'
 import { cn } from '@/shared/utils/utils'
 
@@ -25,6 +26,9 @@ interface TransactionDetailProps {
 }
 
 export const TransactionDetail: React.FC<TransactionDetailProps> = ({ transaction, onClose }) => {
+  const [deleteTransaction, { isLoading: isDeleting }] = useDeleteTransactionMutation()
+  const [showConfirmDelete, setShowConfirmDelete] = React.useState(false)
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -42,6 +46,15 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({ transactio
       currency: currency || 'XAF',
       maximumFractionDigits: 0,
     }).format(amount)
+  }
+
+  const handleDelete = async () => {
+    try {
+      await deleteTransaction(transaction.id).unwrap()
+      onClose()
+    } catch (err) {
+      console.error('Failed to delete transaction:', err)
+    }
   }
 
   const isFlow = transaction.direction === TxnDirection.IN
@@ -153,9 +166,33 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({ transactio
 
       {/* Danger Zone */}
       <div className="pt-4">
-        <Button variant="outline" className="w-full border-destructive/20 text-destructive hover:bg-destructive/10 rounded-xl py-6 font-bold uppercase tracking-tighter">
-          Supprimer la transaction
-        </Button>
+        {!showConfirmDelete ? (
+          <Button 
+            variant="outline" 
+            onClick={() => setShowConfirmDelete(true)}
+            className="w-full border-destructive/20 text-destructive hover:bg-destructive/10 rounded-xl py-6 font-bold uppercase tracking-tighter"
+          >
+            Supprimer la transaction
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex-1 rounded-xl py-6 font-bold uppercase tracking-tighter"
+            >
+              {isDeleting ? 'Suppression...' : 'Confirmer'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfirmDelete(false)}
+              className="flex-1 border-white/10 text-white hover:bg-white/5 rounded-xl py-6 font-bold uppercase tracking-tighter"
+            >
+              Annuler
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

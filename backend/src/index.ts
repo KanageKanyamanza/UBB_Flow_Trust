@@ -30,11 +30,17 @@ import authRoutes from './routes/auth.routes.js'
 import accountRoutes from './routes/account.routes.js'
 import transactionRoutes from './routes/transaction.routes.js'
 import uploadRoutes from './routes/upload.routes.js'
+import analyticsRoutes from './routes/analytics.routes.js'
+import budgetRoutes from './routes/budget.routes.js'
+import recurringRuleRoutes from './routes/recurring-rule.routes.js'
 
 app.use('/auth', authRoutes)
 app.use('/accounts', accountRoutes)
 app.use('/transactions', transactionRoutes)
 app.use('/upload', uploadRoutes)
+app.use('/analytics', analyticsRoutes)
+app.use('/budgets', budgetRoutes)
+app.use('/recurring-rules', recurringRuleRoutes)
 
 // Serve local static uploads if STORAGE_TYPE=local
 if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {

@@ -29,6 +29,13 @@ router.get('/', TransactionController.list)
 router.get('/:id', TransactionController.getOne)
 
 /**
+ * @route   PUT /transactions/:id
+ * @desc    Update a transaction and adjust account balance
+ * @access  Private
+ */
+router.put('/:id', TransactionController.update)
+
+/**
  * @route   DELETE /transactions/:id
  * @desc    Delete a transaction and reverse its impact on account balance
  * @access  Private

@@ -1,111 +1,227 @@
 import React from 'react'
-import { TrendingUp, ShieldCheck, LogOut, LayoutDashboard, FileText, PieChart, Info, Upload } from 'lucide-react'
+import { 
+  TrendingUp, 
+  ShieldCheck, 
+  LogOut, 
+  LayoutDashboard, 
+  FileText, 
+  PieChart, 
+  Info, 
+  Upload,
+  ArrowUpRight,
+  ArrowDownRight,
+  Wallet,
+  Calendar,
+  Layers
+} from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../application/context/AuthContext'
 import { useGetAccountsQuery } from '../../infrastructure/api/accountApi'
+import { 
+  useGetCategorySummaryQuery, 
+  useGetDailyBalancesQuery, 
+  useGetDashboardStatsQuery,
+  useGetCashFlowForecastQuery
+} from '../../infrastructure/api/analyticsApi'
 import { AccountCard } from '../components/accounts/AccountCard'
-import { Plus, ChevronRight } from 'lucide-react'
+import { DailyBalanceChart } from '../components/dashboard/DailyBalanceChart'
+import { CategorySummaryChart } from '../components/dashboard/CategorySummaryChart'
+import { CashFlowForecastChart } from '../components/dashboard/CashFlowForecastChart'
+import { Plus, ChevronRight, Ban } from 'lucide-react'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { cn } from '@/shared/utils/utils'
 
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth()
-  const { data: accounts, isLoading } = useGetAccountsQuery()
+  const { data: accounts, isLoading: isAccountsLoading } = useGetAccountsQuery()
+  const { data: stats, isLoading: isStatsLoading } = useGetDashboardStatsQuery()
+  const { data: dailyBalances, isLoading: isDailyBalanceLoading } = useGetDailyBalancesQuery()
+  const { data: categorySummary, isLoading: isCategoryLoading } = useGetCategorySummaryQuery()
+  const { data: forecast, isLoading: isForecastLoading } = useGetCashFlowForecastQuery()
 
-  const totalBalance = accounts?.reduce((sum, acc) => sum + Number(acc.balance), 0) || 0
   const recentAccounts = accounts?.slice(0, 3) || []
 
   return (
-    <div className="flex flex-col min-h-screen animate-fade-in">
-      {/* Top Navbar */}
-      <nav className="border-b border-white/10 glass px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="text-flow w-6 h-6" />
-          <span className="text-xl font-bold italic tracking-tighter">UBB <span className="text-trust">Flow&Trust</span></span>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium">{user?.email}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+    <div className="flex flex-col min-h-screen animate-fade-in pb-20">
+      <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full space-y-8">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-4 justify-between">
+              <h1 className="text-3xl font-bold tracking-tight">Tableau de Bord</h1>
+              <Link to="/transactions/new">
+                <Button variant="flow" size="sm" className="h-8 rounded-full px-4 gap-2 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-flow/20">
+                  <Plus size={14} />
+                  <span className="hidden md:block">Nouvelle Transaction</span>
+                </Button>
+              </Link>
+            </div>
+            <p className="text-muted-foreground">Bienvenue ! Voici l'état actuel de votre santé financière.</p>
           </div>
-          <Button variant="outline" size="sm" onClick={logout} className="gap-2">
-            <LogOut className="w-4 h-4" />
-            Déconnexion
-          </Button>
-        </div>
-      </nav>
-
-      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Tableau de Bord</h1>
-          <p className="text-muted-foreground">Bienvenue ! Voici un aperçu global de votre entreprise.</p>
+          <div className="text-sm font-medium px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-flow" />
+            {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link to="/transactions" className="block md:col-start-1 md:col-end-2">
-            <Card className="glass glow-flow relative overflow-hidden h-full hover:scale-[1.02] transition-all duration-300 border-flow/20">
-              <div className="absolute right-[-10px] top-[-10px] opacity-10">
-                <PieChart size={80} className="text-flow" />
-              </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Trésorerie Totale</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-8 w-24 bg-white/5 animate-pulse rounded" />
-                ) : (
-                  <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR').format(totalBalance)} CFA</div>
-                )}
-                <p className="text-xs text-flow flex items-center gap-1 mt-1 font-medium">
-                  {accounts?.length || 0} comptes actifs
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to="/transactions" className="block">
-            <Card className="glass relative overflow-hidden h-full hover:scale-[1.02] transition-all duration-300 border-white/5">
-              <div className="absolute right-[-10px] top-[-10px] opacity-10">
-                <TrendingUp size={80} className="text-muted-foreground" />
-              </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Flux de Trésorerie</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">Historique</div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 font-medium">
-                  Voir toutes les transactions
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Card className="glass glow-trust relative overflow-hidden h-full">
-            <div className="absolute right-[-10px] top-[-10px] opacity-10">
-              <FileText size={80} className="text-trust" />
-            </div>
+        {/* Global Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Trésorerie Totale */}
+          <Card className="glass relative overflow-hidden group hover:bg-white/5 border-white/5">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Conformité</CardTitle>
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-flow" />
+                Trésorerie Totale
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">85% Complet</div>
-              <p className="text-xs text-trust flex items-center gap-1 mt-1 font-medium">
-                UBB Trust module actif
-              </p>
+              {isStatsLoading ? (
+                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
+              ) : (
+                <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR').format(stats?.totalBalance || 0)} CFA</div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Disponibilités globales</p>
+            </CardContent>
+          </Card>
+
+          {/* Entrées du mois */}
+          <Card className="glass relative overflow-hidden border-white/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <ArrowUpRight className="w-4 h-4 text-success" />
+                Entrées du Mois
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isStatsLoading ? (
+                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
+              ) : (
+                <div className="text-2xl font-bold text-success">
+                  +{new Intl.NumberFormat('fr-FR').format(stats?.currentMonthIn || 0)} CFA
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Recettes depuis le 1er {format(new Date(), 'MMMM', { locale: fr })}</p>
+            </CardContent>
+          </Card>
+
+          {/* Monthly Cash Burn */}
+          <Card className="glass relative overflow-hidden border-white/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <ArrowDownRight className="w-4 h-4 text-destructive" />
+                Cash Burn Mensuel
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isStatsLoading ? (
+                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
+              ) : (
+                <div className="text-2xl font-bold text-destructive">
+                  {new Intl.NumberFormat('fr-FR').format(stats?.monthlyBurnRate || 0)} CFA
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Moyenne des sorties</p>
+            </CardContent>
+          </Card>
+
+          {/* Estimated Runway */}
+          <Card className={cn(
+            "glass relative overflow-hidden",
+            stats?.runwayMonths && stats.runwayMonths < 3 ? "border-destructive/30 bg-destructive/5" : "border-trust/10 glow-trust"
+          )}>
+            <div className="absolute right-[-10px] top-[-10px] opacity-10">
+              <ShieldCheck size={80} className="text-trust" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Calendar className={cn("w-4 h-4", stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-trust")} />
+                Runway Estimé
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isStatsLoading ? (
+                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
+              ) : (
+                <div className={cn(
+                  "text-2xl font-bold",
+                  stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-white"
+                )}>
+                  {stats?.runwayMonths === 99 ? '∞' : `${stats?.runwayMonths} mois`}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Autonomie financière restante</p>
             </CardContent>
           </Card>
         </div>
 
-        <section className="space-y-4">
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="glass border-white/5">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2 font-bold">
+                <TrendingUp className="w-5 h-5 text-flow" />
+                Évolution du Solde Journalier
+              </CardTitle>
+              <CardDescription>Flux net (Entrées - Sorties) sur les 30 derniers jours</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DailyBalanceChart data={dailyBalances || []} isLoading={isDailyBalanceLoading} />
+            </CardContent>
+          </Card>
+
+          <Card className="glass border-white/5">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2 font-bold">
+                <Layers className="w-5 h-5 text-flow" />
+                Répartition des Opérations
+              </CardTitle>
+              <CardDescription>Somme des transactions par catégorie métier</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CategorySummaryChart data={categorySummary || []} isLoading={isCategoryLoading} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Forecast Section */}
+        <Card className="glass border-white/5">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-xl flex items-center gap-2 font-bold">
+                <ShieldCheck className="w-5 h-5 text-trust" />
+                Prévision de Trésorerie
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Anticipation des flux basée sur vos moyennes historiques</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-destructive/10 border border-destructive/20 rounded-full w-fit">
+              <Ban className="w-3 h-3 text-destructive" />
+              <span className="text-[10px] font-bold text-destructive uppercase tracking-wider whitespace-nowrap">Seuil de Vigilance</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CashFlowForecastChart 
+              data={forecast || []} 
+              isLoading={isForecastLoading} 
+              dangerThreshold={stats?.monthlyBurnRate ? stats.monthlyBurnRate * 0.5 : 500000}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Recent Accounts */}
+        <section className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight px-2">Comptes Récents</h2>
-            <Link to="/accounts" className="text-sm text-trust hover:underline flex items-center gap-1">
-              Voir tout <ChevronRight size={14} />
+            <h2 className="text-xl font-bold tracking-tight px-2 flex items-center gap-2">
+              <Wallet size={20} className="text-flow" />
+              Vos Comptes Connectés
+            </h2>
+            <Link to="/accounts" className="text-sm whitespace-nowrap text-trust hover:underline flex items-center gap-1 font-medium bg-trust/5 px-3 py-1 rounded-full border border-trust/10 transition-colors">
+              Gérer les comptes <ChevronRight size={14} />
             </Link>
           </div>
 
-          {isLoading ? (
+          {isAccountsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-32 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
@@ -133,28 +249,32 @@ const DashboardPage: React.FC = () => {
           )}
         </section>
 
-        <div className="bg-muted/30 border border-white/5 rounded-2xl p-8 text-center flex flex-col items-center justify-center space-y-4">
-          <div className="flex -space-x-2">
-            <div className="w-8 h-8 rounded-full bg-flow/20 border border-flow animate-pulse flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-flow" />
-            </div>
-            <div className="w-8 h-8 rounded-full bg-trust/20 border border-trust animate-pulse flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-trust" />
-            </div>
+        {/* Action Call for trust */}
+        <div className="bg-gradient-to-r from-trust/10 via-background to-flow/10 border border-white/5 rounded-3xl p-8 text-center sm:text-left flex flex-col sm:row gap-6 items-center justify-between overflow-hidden relative">
+          <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+            <ShieldCheck size={180} className="text-trust" />
           </div>
-          <div className="space-y-1">
-            <h3 className="text-xl font-medium">Nouveaux modules en cours</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Nous activons progressivement les outils d'IA pour vos prévisions de trésorerie et la gestion documentaire.
+          <div className="space-y-2 relative z-10">
+            <h3 className="text-2xl font-bold flex items-center justify-center sm:justify-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-trust/20 border border-trust/30 flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-trust" />
+              </div>
+              Renforcez votre Crédibilité
+            </h3>
+            <p className="text-muted-foreground max-w-xl">
+              Plus vous connectez de comptes et documentez vos transactions, plus votre Score UBB Trust s'améliore, débloquant des taux d'intérêt préférentiels auprès de nos partenaires.
             </p>
-            <div className="pt-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/upload-demo" className="gap-2">
-                  <Upload size={14} />
-                  Tester Drag & Drop
-                </Link>
-              </Button>
-            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 relative z-10">
+            <Button className="bg-trust hover:bg-trust-hover shadow-lg shadow-trust/20 border-none" asChild>
+              <Link to="/upload-demo" className="gap-2">
+                <Upload size={16} />
+                Justificatifs
+              </Link>
+            </Button>
+            <Button variant="outline" className="border-white/10 hover:bg-white/5" asChild>
+              <Link to="/transactions">Historique</Link>
+            </Button>
           </div>
         </div>
       </main>

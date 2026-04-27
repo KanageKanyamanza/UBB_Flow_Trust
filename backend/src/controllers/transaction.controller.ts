@@ -24,7 +24,42 @@ const querySchema = z.object({
   endDate: z.string().datetime().optional().transform(s => s ? new Date(s) : undefined),
 })
 
+const updateSchema = z.object({
+  amount: z.number().positive().optional(),
+  direction: z.nativeEnum(TxnDirection).optional(),
+  currency: z.string().optional(),
+  method: z.nativeEnum(TxnMethod).optional(),
+  category: z.nativeEnum(TxnCategory).optional(),
+  counterparty: z.string().optional(),
+  notes: z.string().optional(),
+  occurredAt: z.string().datetime().optional().transform(s => s ? new Date(s) : undefined),
+})
+
 export class TransactionController {
+  // ... other methods ...
+
+  /**
+   * Update a transaction and its balance impact
+   */
+  static async update(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
+      
+      const id = req.params.id as string
+      const validatedData = updateSchema.parse(req.body)
+      
+      const transaction = await TransactionService.update(id, req.user.orgId, validatedData, req.user.id)
+      
+      res.json(transaction)
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'Validation error', details: error.issues })
+      }
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      res.status(400).json({ error: message })
+    }
+  }
+
   /**
    * List all transactions with optional filters
    */

@@ -127,9 +127,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
   const toggleSortOrder = () => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* Search and Quick Filters */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl -mx-4 px-4 pt-2 pb-4 border-b border-white/5 space-y-4">
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl -mx-4 px-4 pt-2 pb-4 border-b border-white/5 space-y-4">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 group">
             <Search className={cn(
@@ -155,7 +155,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
             <Button
               variant="flow"
               size="icon"
-              className="h-12 w-12 rounded-2xl md:flex"
+              className="h-12 w-12 rounded-2xl flex"
               onClick={onAddClick}
             >
               <Plus className="w-6 h-6" />

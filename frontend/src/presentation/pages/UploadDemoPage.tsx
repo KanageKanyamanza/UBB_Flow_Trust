@@ -41,12 +41,6 @@ const UploadDemoPage: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col items-center p-6 md:p-12 animate-fade-in">
       <div className="w-full max-w-2xl space-y-8">
         <header className="flex items-center justify-between w-full">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-              <ArrowLeft size={16} />
-              Retour au Dashboard
-            </Button>
-          </Link>
           <div className="px-3 py-1 bg-trust/10 border border-trust/20 rounded-full text-xs font-bold text-trust flex items-center gap-1.5">
             <Wand2 size={12} />
             Demo Component

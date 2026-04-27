@@ -18,6 +18,7 @@ import {
   Wallet,
   MoreHorizontal
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
@@ -34,18 +35,33 @@ import { useUploadImageMutation } from '@/infrastructure/api/uploadApi'
 import { cn } from '@/shared/utils/utils'
 
 const CATEGORY_ICONS: Record<TxnCategory, React.ReactNode> = {
-  [TxnCategory.SALES]: <ShoppingBag className="w-5 h-5" />,
-  [TxnCategory.COGS]: <Truck className="w-5 h-5" />,
-  [TxnCategory.PAYROLL]: <User className="w-5 h-5" />,
-  [TxnCategory.RENT_UTILITIES]: <Briefcase className="w-5 h-5" />,
-  [TxnCategory.TRANSPORT]: <Truck className="w-5 h-5" />,
-  [TxnCategory.TAX]: <Receipt className="w-5 h-5" />,
-  [TxnCategory.DEBT_SERVICE]: <CreditCard className="w-5 h-5" />,
-  [TxnCategory.CAPEX]: <Plus className="w-5 h-5" />,
-  [TxnCategory.OWNER_DRAW]: <Banknote className="w-5 h-5" />,
-  [TxnCategory.FEES]: <Receipt className="w-5 h-5" />,
-  [TxnCategory.MARKETING]: <Tag className="w-5 h-5" />,
-  [TxnCategory.OTHER]: <MoreHorizontal className="w-5 h-5" />,
+  [TxnCategory.SALES]: <ShoppingBag />,
+  [TxnCategory.COGS]: <Truck />,
+  [TxnCategory.PAYROLL]: <User />,
+  [TxnCategory.RENT_UTILITIES]: <Briefcase />,
+  [TxnCategory.TRANSPORT]: <Truck />,
+  [TxnCategory.TAX]: <Receipt />,
+  [TxnCategory.DEBT_SERVICE]: <CreditCard />,
+  [TxnCategory.CAPEX]: <Plus />,
+  [TxnCategory.OWNER_DRAW]: <Banknote />,
+  [TxnCategory.FEES]: <Receipt />,
+  [TxnCategory.MARKETING]: <Tag />,
+  [TxnCategory.OTHER]: <MoreHorizontal />,
+}
+
+const CATEGORY_LABELS: Record<TxnCategory, string> = {
+  [TxnCategory.SALES]: 'Ventes',
+  [TxnCategory.COGS]: 'Achats / Stock',
+  [TxnCategory.PAYROLL]: 'Salaires',
+  [TxnCategory.RENT_UTILITIES]: 'Loyer / Charges',
+  [TxnCategory.TRANSPORT]: 'Transport',
+  [TxnCategory.TAX]: 'Impôts / Taxes',
+  [TxnCategory.DEBT_SERVICE]: 'Crédit',
+  [TxnCategory.CAPEX]: 'Investissement',
+  [TxnCategory.OWNER_DRAW]: 'Retrait Perso',
+  [TxnCategory.FEES]: 'Frais / Banques',
+  [TxnCategory.MARKETING]: 'Marketing',
+  [TxnCategory.OTHER]: 'Autre',
 }
 
 const QUICK_AMOUNTS = [1000, 5000, 10000, 50000]
@@ -194,33 +210,44 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
       {/* Account Selection - Horizontal Scrollable cards */}
       <div className="space-y-3">
         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Source / Destination</label>
-        <div className="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-none">
+        <div className="flex flex-wrap gap-3 px-1">
           {isLoadingAccounts ? (
-            <div className="flex gap-3">
-              {[1, 2].map(i => <div key={i} className="h-16 w-32 animate-pulse bg-muted/20 rounded-2xl" />)}
+            <div className="flex gap-3 w-full">
+              {[1, 2].map(i => <div key={i} className="h-16 flex-1 animate-pulse bg-muted/20 rounded-2xl" />)}
             </div>
           ) : (
-            accounts?.map((account) => (
-              <button
-                key={account.id}
-                type="button"
-                onClick={() => setFormData({ ...formData, accountId: account.id })}
-                className={cn(
-                  "flex-shrink-0 min-w-[120px] p-4 rounded-2xl border transition-all duration-300 text-left relative overflow-hidden",
-                  formData.accountId === account.id
-                    ? "bg-primary/20 border-primary text-primary glow-primary"
-                    : "bg-muted/10 border-white/5 text-muted-foreground hover:bg-muted/20"
-                )}
-              >
-                <div className="text-[10px] font-bold uppercase opacity-60 mb-1">{account.type}</div>
-                <div className="text-xs font-black truncate">{account.name}</div>
-                {formData.accountId === account.id && (
-                  <div className="absolute top-1 right-1">
-                    <Check size={12} className="text-primary" />
-                  </div>
-                )}
-              </button>
-            ))
+            <>
+              {accounts?.map((account) => (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, accountId: account.id })}
+                  className={cn(
+                    "p-4 rounded-2xl border transition-all duration-300 text-left relative overflow-hidden min-w-[140px] flex-1 sm:max-w-[200px]",
+                    formData.accountId === account.id
+                      ? "bg-primary/20 border-primary text-primary glow-primary"
+                      : "bg-muted/10 border-white/5 text-muted-foreground hover:bg-muted/20"
+                  )}
+                >
+                  <div className="text-[10px] font-bold uppercase opacity-60 mb-1">{account.type}</div>
+                  <div className="text-xs font-black truncate">{account.name}</div>
+                  {formData.accountId === account.id && (
+                    <div className="absolute top-2 right-2">
+                      <Check size={12} className="text-primary" />
+                    </div>
+                  )}
+                </button>
+              ))}
+              <Link to="/accounts" className="flex-1 sm:flex-none">
+                <button
+                  type="button"
+                  className="w-full h-full min-w-[140px] p-4 rounded-2xl border border-dashed border-white/10 text-muted-foreground hover:bg-white/5 hover:border-white/20 transition-all flex flex-col items-center justify-center gap-1"
+                >
+                  <Plus size={20} />
+                  <span className="text-[10px] font-black uppercase">Nouveau Compte</span>
+                </button>
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -228,27 +255,30 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
       {/* Category Grid - 3 Columns for larger touch areas */}
       <div className="space-y-3">
         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Catégorie d'opération</label>
-        <div className="grid grid-cols-3 gap-3 px-1">
+        <div className="flex flex-wrap gap-2 px-1">
           {Object.entries(TxnCategory).map(([key, value]) => (
             <button
               key={value}
               type="button"
               onClick={() => setFormData({ ...formData, category: value })}
               className={cn(
-                "flex flex-col items-center justify-center gap-2 p-3 rounded-2xl transition-all duration-300 border aspect-[5/4]",
+                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all duration-300 border min-w-[95px] flex-1 sm:max-w-[120px]",
                 formData.category === value
                   ? "bg-primary border-primary text-secondary shadow-lg shadow-primary/20 scale-[1.05] z-10"
                   : "bg-muted/10 border-white/5 text-muted-foreground hover:bg-muted/20 hover:border-white/10"
               )}
             >
               <div className={cn(
-                "p-2 rounded-xl",
+                "p-1.5 rounded-lg",
                 formData.category === value ? "bg-white/20" : "bg-white/5"
               )}>
-                {CATEGORY_ICONS[value]}
+                {React.isValidElement(CATEGORY_ICONS[value]) 
+                  ? React.cloneElement(CATEGORY_ICONS[value] as React.ReactElement, { size: 18 })
+                  : CATEGORY_ICONS[value]
+                }
               </div>
-              <span className="text-[9px] uppercase font-black tracking-tighter text-center leading-tight">
-                {key.replace('_', ' ')}
+              <span className="text-[10px] uppercase font-black tracking-tighter text-center leading-tight">
+                {CATEGORY_LABELS[value as TxnCategory]}
               </span>
             </button>
           ))}
@@ -326,29 +356,29 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
       </div>
 
       {/* Main CTA - One Tap Finalization */}
-      <div className="flex gap-4 pt-6 sticky bottom-0 bg-background/80 backdrop-blur-md pb-4 pt-4 -mx-2 px-2">
+      <div className="flex gap-4 pt-6 sticky bottom-0 bg-background/95 backdrop-blur-md pb-4 pt-4 -mx-10 px-10 z-20">
         <Button 
           type="submit" 
           variant="flow" 
           disabled={isCreating || isUploading || !formData.amount}
-          className="w-full h-16 rounded-2xl font-black text-xl shadow-2xl transition-all active:scale-[0.96] flex items-center justify-center gap-3 overflow-hidden group shadow-flow/30 hover:glow-flow"
+          className="w-full h-14 sm:h-16 rounded-2xl font-black text-sm sm:text-lg shadow-2xl transition-all active:scale-[0.96] flex items-center justify-center gap-2 overflow-hidden group shadow-flow/30 hover:glow-flow"
         >
           {isCreating || isUploading ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                <motion.div 
                  animate={{ rotate: 360 }} 
                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                >
-                 <Plus size={24} />
+                 <Plus size={20} />
                </motion.div>
-               {isUploading ? 'ENVOI DU REÇU...' : 'TRAITEMENT...'}
+               <span>{isUploading ? 'ENVOI...' : 'TRAITEMENT...'}</span>
             </div>
           ) : (
             <>
-              <div className="bg-white/20 p-2 rounded-xl group-hover:scale-110 transition-transform">
-                <Check className="w-6 h-6" strokeWidth={3} />
+              <div className="bg-white/20 p-1.5 rounded-lg group-hover:scale-110 transition-transform hidden sm:block">
+                <Check className="w-5 h-5" strokeWidth={3} />
               </div>
-              VALIDER LA TRANSACTION
+              <span className="whitespace-nowrap">VALIDER LA TRANSACTION</span>
             </>
           )}
         </Button>
