@@ -22,6 +22,7 @@ model Organization {
   flowScores        ReadinessScoreFlow[]
   recurringRules    RecurringRule[]
   smeProfile        SmeProfile?
+  budget            Budget[]
   transactions      Transaction[]
   trustScores       TrustScore[]
   users             User[]
@@ -293,4 +294,17 @@ enum AlertSeverity {
   INFO
   WARN
   CRITICAL
+}
+
+model Budget {
+  id           String       @id @default(uuid())
+  category     TxnCategory
+  amount       Decimal
+  period       String       @default("MONTHLY")
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([orgId, category, period])
 }

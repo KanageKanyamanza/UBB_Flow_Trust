@@ -9,7 +9,13 @@ import { Input } from '@/presentation/components/ui/input'
 import LoginPage from './presentation/pages/LoginPage'
 import RegisterPage from './presentation/pages/RegisterPage'
 import DashboardPage from './presentation/pages/DashboardPage'
+import AccountsPage from './presentation/pages/AccountsPage'
+import TransactionsPage from './presentation/pages/TransactionsPage'
+import BudgetPage from './presentation/pages/BudgetPage'
+import NewTransactionPage from './presentation/pages/NewTransactionPage'
+import UploadDemoPage from './presentation/pages/UploadDemoPage'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
+import MainLayout from './presentation/components/layout/MainLayout'
 
 function LandingPage() {
   return (
@@ -85,8 +91,14 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          {/* Add more protected routes here */}
+          <Route element={<MainLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/budget" element={<BudgetPage />} />
+            <Route path="/transactions/new" element={<NewTransactionPage />} />
+            <Route path="/upload-demo" element={<UploadDemoPage />} />
+          </Route>
         </Route>
 
         {/* Fallback */}
