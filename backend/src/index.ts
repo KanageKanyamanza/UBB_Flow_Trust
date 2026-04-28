@@ -19,7 +19,26 @@ const limiter = rateLimit({
   legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
 })
 
-app.use(cors())
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://ubb-flow-trust-frontend.vercel.app',
+  'https://www.ubb-flow-trust-frontend.vercel.app'
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
+      return callback(new Error(msg), false)
+    }
+    return callback(null, true)
+  },
+  credentials: true
+}))
 app.use(helmet())
 app.use(morgan('dev'))
 app.use(express.json())

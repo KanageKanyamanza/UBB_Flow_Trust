@@ -8,7 +8,7 @@ const TransactionsPage: React.FC = () => {
   const navigate = useNavigate()
 
   return (
-    <div className="container max-w-4xl mx-auto px-6 py-5 pb-24 animate-fade-in relative">
+    <div className="container py-5 pb-24 animate-fade-in relative">
       <div className="flex flex-col gap-4 mb-10">
         <header className="flex items-center justify-between">
           <div className="space-y-2">

@@ -226,4 +226,100 @@ export class AnalyticsService {
 
     return forecast
   }
+  /**
+   * Get Balance Projections for J+30, J+60, J+90
+   * Moteur de projection based on current balance and Recurring Rules
+   */
+  static async getProjections(orgId: string) {
+    const now = new Date()
+    const thirtyDays = new Date(now)
+    thirtyDays.setDate(now.getDate() + 30)
+    const sixtyDays = new Date(now)
+    sixtyDays.setDate(now.getDate() + 60)
+    const ninetyDays = new Date(now)
+    ninetyDays.setDate(now.getDate() + 90)
+
+    // 1. Current Total Balance
+    const accounts = await prisma.account.aggregate({
+      where: { orgId },
+      _sum: { balance: true }
+    })
+    const currentBalance = Number(accounts._sum.balance || 0)
+
+    // 2. Fetch all active recurring rules
+    const rules = await prisma.recurringRule.findMany({
+      where: {
+        orgId,
+        startDate: { lte: ninetyDays },
+        OR: [
+          { endDate: null },
+          { endDate: { gte: now } }
+        ]
+      }
+    })
+
+    // Calculate variations
+    let diff30 = 0
+    let diff60 = 0
+    let diff90 = 0
+
+    const calculateOccurrences = (rule: any, fromDate: Date, toDate: Date) => {
+      let count = 0
+      let current = new Date(rule.startDate)
+      
+      // Prevent infinite loops by enforcing a max iterations
+      let iterations = 0
+      const maxIterations = 1000
+
+      while (current <= toDate && iterations < maxIterations) {
+        iterations++
+        if (current >= fromDate && (!rule.endDate || current <= rule.endDate)) {
+          count++
+        }
+        
+        const freq = rule.frequency.toLowerCase()
+        if (freq === 'daily') {
+          current.setDate(current.getDate() + 1)
+        } else if (freq === 'weekly') {
+          current.setDate(current.getDate() + 7)
+        } else if (freq === 'monthly') {
+          current.setMonth(current.getMonth() + 1)
+        } else if (freq === 'yearly') {
+          current.setFullYear(current.getFullYear() + 1)
+        } else {
+          // fallback to monthly
+          current.setMonth(current.getMonth() + 1)
+        }
+      }
+      return count
+    }
+
+    rules.forEach(rule => {
+      const amount = Number(rule.amount)
+      const multiplier = rule.direction === 'IN' ? 1 : -1
+      const netAmount = amount * multiplier
+
+      const occurrences30 = calculateOccurrences(rule, now, thirtyDays)
+      const occurrences60 = calculateOccurrences(rule, now, sixtyDays)
+      const occurrences90 = calculateOccurrences(rule, now, ninetyDays)
+
+      diff30 += netAmount * occurrences30
+      diff60 += netAmount * occurrences60
+      diff90 += netAmount * occurrences90
+    })
+
+    return {
+      currentBalance,
+      projections: {
+        30: currentBalance + diff30,
+        60: currentBalance + diff60,
+        90: currentBalance + diff90
+      },
+      variations: {
+        30: diff30,
+        60: diff60,
+        90: diff90
+      }
+    }
+  }
 }

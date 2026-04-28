@@ -14,6 +14,18 @@ const baseQuery = fetchBaseQuery({
   },
 })
 
+let isRefreshing = false
+let refreshSubscribers: ((token: string) => void)[] = []
+
+const subscribeTokenRefresh = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb)
+}
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.map(cb => cb(token))
+  refreshSubscribers = []
+}
+
 // Custom base query with automatic refresh token logic
 const baseQueryWithReauth = async (
   args: string | FetchArgs,
@@ -23,34 +35,53 @@ const baseQueryWithReauth = async (
   let result = await baseQuery(args, api, extraOptions)
 
   if (result.error && result.error.status === 401) {
-    // Try to get a new token
-    const refreshToken = localStorage.getItem('refreshToken')
-    
-    if (refreshToken) {
-      const refreshResult = await baseQuery(
-        {
-          url: '/auth/refresh',
-          method: 'POST',
-          body: { refreshToken },
-        },
-        api,
-        extraOptions
-      )
+    if (!isRefreshing) {
+      isRefreshing = true
+      
+      const refreshToken = localStorage.getItem('refreshToken')
+      
+      if (refreshToken) {
+        const refreshResult = await baseQuery(
+          {
+            url: '/auth/refresh',
+            method: 'POST',
+            body: { refreshToken },
+          },
+          api,
+          extraOptions
+        )
 
-      if (refreshResult.data) {
-        // Save new tokens
-        const { accessToken, refreshToken: newRefreshToken } = refreshResult.data as any
-        localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('refreshToken', newRefreshToken)
+        if (refreshResult.data) {
+          // Save new tokens
+          const { accessToken, refreshToken: newRefreshToken } = refreshResult.data as any
+          localStorage.setItem('accessToken', accessToken)
+          localStorage.setItem('refreshToken', newRefreshToken)
 
-        // Retry the original query
-        result = await baseQuery(args, api, extraOptions)
+          onRefreshed(accessToken)
+
+          // Retry the original query
+          result = await baseQuery(args, api, extraOptions)
+        } else {
+          // Refresh failed, logout
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          window.location.href = '/login'
+        }
       } else {
-        // Refresh failed, logout
         localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
         window.location.href = '/login'
       }
+      
+      isRefreshing = false
+    } else {
+      // If already refreshing, wait for the new token
+      await new Promise(resolve => {
+        subscribeTokenRefresh((token: string) => {
+          resolve(token)
+        })
+      })
+      // Retry the original query
+      result = await baseQuery(args, api, extraOptions)
     }
   }
 
@@ -59,6 +90,6 @@ const baseQueryWithReauth = async (
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Account', 'Transaction', 'Budget'] as const,
+  tagTypes: ['Account', 'Transaction', 'Budget', 'RecurringRule'] as const,
   endpoints: () => ({}),
 })

@@ -14,6 +14,7 @@ import TransactionsPage from './presentation/pages/TransactionsPage'
 import BudgetPage from './presentation/pages/BudgetPage'
 import NewTransactionPage from './presentation/pages/NewTransactionPage'
 import UploadDemoPage from './presentation/pages/UploadDemoPage'
+import RecurringRulesPage from './presentation/pages/RecurringRulesPage'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 import MainLayout from './presentation/components/layout/MainLayout'
 
@@ -96,6 +97,7 @@ function App() {
             <Route path="/accounts" element={<AccountsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/budget" element={<BudgetPage />} />
+            <Route path="/recurring-rules" element={<RecurringRulesPage />} />
             <Route path="/transactions/new" element={<NewTransactionPage />} />
             <Route path="/upload-demo" element={<UploadDemoPage />} />
           </Route>

@@ -11,5 +11,6 @@ router.get('/summary', AnalyticsController.getSummaryByCategory)
 router.get('/daily-balance', AnalyticsController.getDailyBalances)
 router.get('/stats', AnalyticsController.getDashboardStats)
 router.get('/forecast', AnalyticsController.getForecast)
+router.get('/projections', AnalyticsController.getProjections)
 
 export default router
