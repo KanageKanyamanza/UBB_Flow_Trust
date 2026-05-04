@@ -114,6 +114,15 @@ model SmeProfile {
   country          String?
   address          String?
   governanceType   String?
+  industry         String?
+  description      String?
+  website          String?
+  email            String?
+  phone            String?
+  foundedDate      DateTime?
+  employeeCount    Int?
+  annualTurnover   Decimal?          @db.Decimal(15, 2)
+  currency         String            @default("XAF")
   orgId            String            @unique
   updatedAt        DateTime          @updatedAt
   beneficialOwners BeneficialOwner[]
@@ -125,6 +134,13 @@ model BeneficialOwner {
   name         String
   role         String?
   ownershipPct Float?
+  idType       String?
+  idNumber     String?
+  nationality  String?
+  email        String?
+  phone        String?
+  address      String?
+  birthDate    DateTime?
   profileId    String
   smeProfile   SmeProfile @relation(fields: [profileId], references: [id])
 }
