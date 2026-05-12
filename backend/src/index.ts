@@ -56,6 +56,7 @@ import alertRoutes from './routes/alert.routes.js'
 import profileRoutes from './routes/profile.routes.js'
 import documentRoutes from './routes/document.routes.js'
 import trustRoutes from './routes/trust.routes.js'
+import complianceRoutes from './routes/compliance.routes.js'
 
 app.use('/auth', authRoutes)
 app.use('/accounts', accountRoutes)
@@ -68,6 +69,7 @@ app.use('/alerts', alertRoutes)
 app.use('/profile', profileRoutes)
 app.use('/documents', documentRoutes)
 app.use('/trust', trustRoutes)
+app.use('/compliance', complianceRoutes)
 
 // Serve local static uploads if STORAGE_TYPE=local
 if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {

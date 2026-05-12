@@ -75,6 +75,10 @@ export class DocumentService {
 
     if (!doc) throw new Error('Document not found')
 
+    if (doc.status !== 'DRAFT') {
+      throw new Error('Seuls les documents au statut DRAFT peuvent être supprimés pour garantir l\'immutabilité.')
+    }
+
     // Delete files from storage
     for (const version of doc.versions) {
       await storageService.deleteFile(version.fileUrl)
@@ -83,5 +87,38 @@ export class DocumentService {
     // Delete versions first then document (Prisma doesn't always handle cascade delete on all adapters)
     await prisma.documentVersion.deleteMany({ where: { docId } })
     return await prisma.document.delete({ where: { id: docId } })
+  }
+
+  static async checkExpirations() {
+    const documents = await prisma.document.findMany({
+      where: {
+        status: {
+          not: 'EXPIRED'
+        }
+      },
+      include: {
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    })
+
+    const now = new Date()
+    let expiredCount = 0
+
+    for (const doc of documents) {
+      const latestVersion = doc.versions[0]
+      if (latestVersion && latestVersion.validUntil && latestVersion.validUntil < now) {
+        await prisma.document.update({
+          where: { id: doc.id },
+          data: { status: 'EXPIRED' }
+        })
+        expiredCount++
+      }
+    }
+
+    console.log(`[document-job]: Checked documents. Marked ${expiredCount} as EXPIRED.`)
+    return expiredCount
   }
 }

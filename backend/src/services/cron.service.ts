@@ -1,5 +1,6 @@
 import cron from 'node-cron'
 import { AlertService } from './alert.service.js'
+import { DocumentService } from './document.service.js'
 
 export class CronService {
   static init() {
@@ -9,21 +10,23 @@ export class CronService {
     cron.schedule('0 8 * * *', async () => {
       try {
         await AlertService.checkAllThresholds()
+        await DocumentService.checkExpirations()
       } catch (error) {
-        console.error('[cron]: Error running AlertService.checkAllThresholds:', error)
+        console.error('[cron]: Error running background jobs:', error)
       }
     })
 
     // Run a quick check on startup (delayed to ensure DB is ready)
     setTimeout(async () => {
-      console.log('[cron]: Running initial threshold check...')
+      console.log('[cron]: Running initial background checks...')
       try {
         await AlertService.checkAllThresholds()
+        await DocumentService.checkExpirations()
       } catch (error) {
-        console.error('[cron]: Initial threshold check failed:', error)
+        console.error('[cron]: Initial background checks failed:', error)
       }
     }, 10000)
     
-    console.log('[cron]: Scheduled AlertJob for 08:00 daily.')
+    console.log('[cron]: Scheduled background jobs.')
   }
 }

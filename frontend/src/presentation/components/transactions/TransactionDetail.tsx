@@ -17,6 +17,7 @@ import {
 import { motion } from 'framer-motion'
 import { Transaction, TxnDirection } from '@/domain/entities/transaction.entity'
 import { useDeleteTransactionMutation } from '@/infrastructure/api/transactionApi'
+import { BASE_URL } from '@/infrastructure/api/apiSlice'
 import { Button } from '../ui/button'
 import { cn } from '@/shared/utils/utils'
 
@@ -133,13 +134,13 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({ transactio
             {transaction.evidenceFiles?.map((file) => (
               <div key={file.id} className="relative group rounded-2xl overflow-hidden border border-white/10 glass shadow-2xl bg-black/40">
                 <img 
-                  src={file.fileUrl.startsWith('/') ? `http://localhost:5000${file.fileUrl}` : file.fileUrl} 
+                  src={file.fileUrl.startsWith('/') ? `${BASE_URL}${file.fileUrl}` : file.fileUrl} 
                   alt={file.fileName}
                   className="w-full h-auto max-h-[300px] object-cover"
                 />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 backdrop-blur-sm">
                    <Button variant="glass" size="icon" className="h-12 w-12 rounded-full" asChild>
-                     <a href={file.fileUrl.startsWith('/') ? `http://localhost:5000${file.fileUrl}` : file.fileUrl} target="_blank" rel="noopener noreferrer">
+                     <a href={file.fileUrl.startsWith('/') ? `${BASE_URL}${file.fileUrl}` : file.fileUrl} target="_blank" rel="noopener noreferrer">
                        <ExternalLink size={20} />
                      </a>
                    </Button>

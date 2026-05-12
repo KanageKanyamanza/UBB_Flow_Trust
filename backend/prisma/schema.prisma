@@ -188,6 +188,13 @@ model ChecklistItem {
   document    Document?           @relation(fields: [docId], references: [id])
 }
 
+model ChecklistTemplate {
+  id           String   @id @default(uuid())
+  market       String   @unique // "LOCAL" or "EU"
+  requirements String[]
+  createdAt    DateTime @default(now())
+}
+
 model TrustScore {
   id           String       @id @default(uuid())
   score        Int

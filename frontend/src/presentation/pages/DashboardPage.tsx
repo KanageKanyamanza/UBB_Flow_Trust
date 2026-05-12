@@ -271,7 +271,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-3 relative z-10">
             <Button className="bg-trust hover:bg-trust-hover shadow-lg shadow-trust/20 border-none" asChild>
-              <Link to="/upload-demo" className="gap-2">
+              <Link to="/documents" className="gap-2">
                 <Upload size={16} />
                 Justificatifs
               </Link>
