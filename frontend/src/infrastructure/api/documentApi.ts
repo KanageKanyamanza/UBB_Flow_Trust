@@ -24,7 +24,15 @@ export const documentApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Document', 'Trust'],
     }),
+    addVersion: builder.mutation<any, { id: string, formData: FormData }>({
+      query: ({ id, formData }) => ({
+        url: `/documents/${id}/versions`,
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['Document'],
+    }),
   }),
 })
 
-export const { useGetDocumentsQuery, useUploadDocumentMutation, useDeleteDocumentMutation } = documentApi
+export const { useGetDocumentsQuery, useUploadDocumentMutation, useDeleteDocumentMutation, useAddVersionMutation } = documentApi

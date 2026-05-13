@@ -171,7 +171,7 @@ const RecurringRulesPage: React.FC = () => {
                                 ? "bg-success/10 border-success/20 text-success" 
                                 : "bg-destructive/10 border-destructive/20 text-destructive"
                             )}
-                            title={`${event.name} - ${new Intl.NumberFormat('fr-FR').format(event.amount)} CFA`}
+                            title={`${event.name} - ${new Intl.NumberFormat('fr-FR').format(Number(event.amount))} CFA`}
                           >
                             {event.direction === 'IN' ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                             <span className="truncate">{event.name}</span>

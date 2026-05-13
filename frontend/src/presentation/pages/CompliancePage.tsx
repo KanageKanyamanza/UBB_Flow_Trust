@@ -1,10 +1,18 @@
-import React from 'react'
-import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import React, { useState } from 'react'
+import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { useGetTrustScoreQuery, useRefreshTrustScoreMutation } from '@/infrastructure/api/trustApi'
 import { useGetDocumentsQuery, useUploadDocumentMutation } from '@/infrastructure/api/documentApi'
 import { useGetComplianceQuery, useStartComplianceMutation } from '@/infrastructure/api/complianceApi'
+import { cn } from '@/shared/utils/utils'
+
+const STEPS = [
+  { id: "personal", title: "Informations", icon: User, description: "Vos données" },
+  { id: "document", title: "Identité", icon: FileText, description: "Passeport/CNI" },
+  { id: "selfie", title: "Selfie", icon: Camera, description: "Vérification" },
+  { id: "address", title: "Domicile", icon: MapPin, description: "Justificatif" },
+];
 
 export default function CompliancePage() {
   const { data: trustData, isLoading: trustLoading } = useGetTrustScoreQuery()
@@ -13,6 +21,16 @@ export default function CompliancePage() {
   const [refreshScore, { isLoading: isRefreshing }] = useRefreshTrustScoreMutation()
   const [uploadDocument, { isLoading: isUploading }] = useUploadDocumentMutation()
   const [startCompliance, { isLoading: isStarting }] = useStartComplianceMutation()
+
+  const [isJourneyActive, setIsJourneyActive] = useState(false)
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [journeyCompleted, setJourneyCompleted] = useState(false)
+
+  // Form states for the journey
+  const [personalInfo, setPersonalInfo] = useState({ profession: "", sourceOfFunds: "" })
+  const [documentFile, setDocumentFile] = useState<File | null>(null)
+  const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [addressFile, setAddressFile] = useState<File | null>(null)
 
   if (trustLoading || docsLoading || complianceLoading) {
     return (
@@ -29,6 +47,14 @@ export default function CompliancePage() {
     if (s >= 80) return 'text-trust'
     if (s >= 50) return 'text-yellow-500'
     return 'text-destructive'
+  }
+
+  const STATUS_LABELS: Record<string, string> = {
+    MISSING: 'Manquant',
+    IN_REVIEW: 'En révision',
+    PASS: 'Validé',
+    FAIL: 'Rejeté',
+    NOT_APPLICABLE: 'Non applicable'
   }
 
   const requirementToTypeMap: { [key: string]: string } = {
@@ -50,7 +76,7 @@ export default function CompliancePage() {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('type', type)
-    formData.append('name', type) // Default name to type for now
+    formData.append('name', type)
 
     try {
       await uploadDocument(formData).unwrap()
@@ -60,11 +86,123 @@ export default function CompliancePage() {
     }
   }
 
-  const handleStartJourney = async () => {
+  const submitJourney = async () => {
     try {
+      // In a real app, upload the files here
+      if (documentFile) await handleUpload("ID_DOCUMENT", documentFile)
+      if (addressFile) await handleUpload("ADDRESS_PROOF", addressFile)
+      // Selfie upload etc.
+      
       await startCompliance({ market: 'LOCAL' }).unwrap()
+      setJourneyCompleted(true)
     } catch (err) {
-      alert('Erreur lors du démarrage du parcours')
+      alert('Erreur lors de la soumission du dossier')
+    }
+  }
+
+  const handleNextStep = () => {
+    if (currentStepIndex < STEPS.length - 1) {
+      setCurrentStepIndex(prev => prev + 1)
+    } else {
+      submitJourney()
+    }
+  }
+
+  const isStepValid = () => {
+    const step = STEPS[currentStepIndex];
+    if (step.id === "personal") return personalInfo.profession && personalInfo.sourceOfFunds;
+    if (step.id === "document") return documentFile !== null;
+    if (step.id === "selfie") return selfieFile !== null;
+    if (step.id === "address") return addressFile !== null;
+    return false;
+  }
+
+  const renderJourneyStep = () => {
+    const step = STEPS[currentStepIndex]
+    switch (step.id) {
+      case "personal":
+        return (
+          <div className="space-y-4 animate-fade-in">
+            <h3 className="text-lg font-bold">Informations Complémentaires</h3>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Profession / Activité</label>
+              <input 
+                type="text" 
+                value={personalInfo.profession}
+                onChange={(e) => setPersonalInfo({...personalInfo, profession: e.target.value})}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-trust outline-none"
+                placeholder="Ex: Ingénieur, Commerçant..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Origine des fonds</label>
+              <select 
+                value={personalInfo.sourceOfFunds}
+                onChange={(e) => setPersonalInfo({...personalInfo, sourceOfFunds: e.target.value})}
+                className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-trust outline-none"
+              >
+                <option value="">Sélectionnez une origine</option>
+                <option value="salary">Salaire / Revenus</option>
+                <option value="business">Chiffre d'affaires</option>
+                <option value="savings">Épargne</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+          </div>
+        )
+      case "document":
+        return (
+          <div className="space-y-4 animate-fade-in">
+            <h3 className="text-lg font-bold">Pièce d'Identité</h3>
+            <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
+              <input 
+                type="file" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                accept="image/*,.pdf"
+              />
+              <UploadCloud className="w-8 h-8 text-trust mx-auto mb-2" />
+              <p className="font-semibold">{documentFile ? documentFile.name : "Télécharger votre pièce d'identité"}</p>
+              <p className="text-xs text-muted-foreground mt-1">Passeport, CNI ou Titre de séjour</p>
+            </div>
+          </div>
+        )
+      case "selfie":
+        return (
+          <div className="space-y-4 animate-fade-in">
+             <h3 className="text-lg font-bold">Vérification Faciale</h3>
+             <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
+              <input 
+                type="file" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => setSelfieFile(e.target.files?.[0] || null)}
+                accept="image/*"
+                capture="user"
+              />
+              <Camera className="w-8 h-8 text-trust mx-auto mb-2" />
+              <p className="font-semibold">{selfieFile ? selfieFile.name : "Prendre un selfie"}</p>
+              <p className="text-xs text-muted-foreground mt-1">Lieu bien éclairé, visage dégagé</p>
+            </div>
+          </div>
+        )
+      case "address":
+        return (
+          <div className="space-y-4 animate-fade-in">
+            <h3 className="text-lg font-bold">Justificatif de Domicile</h3>
+            <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
+              <input 
+                type="file" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => setAddressFile(e.target.files?.[0] || null)}
+                accept="image/*,.pdf"
+              />
+              <UploadCloud className="w-8 h-8 text-trust mx-auto mb-2" />
+              <p className="font-semibold">{addressFile ? addressFile.name : "Télécharger le justificatif"}</p>
+              <p className="text-xs text-muted-foreground mt-1">Facture d'eau, d'électricité ou relevé bancaire (- 3 mois)</p>
+            </div>
+          </div>
+        )
+      default: return null
     }
   }
 
@@ -135,40 +273,108 @@ export default function CompliancePage() {
         <CardHeader className="border-b border-white/5 bg-white/2">
           <CardTitle className="flex items-center gap-2">
             <FileCheck className="w-5 h-5 text-trust" />
-            Checklist de Crédibilité
+            Parcours de Conformité
           </CardTitle>
-          <CardDescription>Documents essentiels requis pour la plupart des lignes de crédit</CardDescription>
+          <CardDescription>Documents essentiels requis pour valider votre compte</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          {!complianceData ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
+          {!complianceData && !isJourneyActive ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
               <div className="p-4 bg-white/5 rounded-full text-muted-foreground">
-                <FileCheck size={40} />
+                <ShieldCheck size={48} />
               </div>
               <div>
-                <p className="font-bold text-lg">Aucun parcours de conformité démarré</p>
-                <p className="text-sm text-muted-foreground max-w-sm mt-1">Démarrez votre parcours pour savoir quels documents sont nécessaires pour votre dossier.</p>
+                <p className="font-bold text-xl mb-2">Vérification d'Identité (KYC)</p>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Afin de sécuriser votre compte et d'accéder à l'ensemble de nos services, nous devons vérifier votre identité.
+                </p>
               </div>
-              <Button onClick={handleStartJourney} disabled={isStarting} className="bg-trust hover:bg-trust/80 text-white">
-                {isStarting ? 'Démarrage...' : 'Démarrer le parcours'}
+              <Button onClick={() => setIsJourneyActive(true)} className="bg-trust hover:bg-trust/80 text-white px-8 mt-4">
+                Démarrer le parcours
               </Button>
+            </div>
+          ) : isJourneyActive && !journeyCompleted ? (
+            <div className="p-8 max-w-2xl mx-auto animate-slide-up">
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  {STEPS.map((step, index) => {
+                    const StepIcon = step.icon
+                    const isActive = index === currentStepIndex
+                    const isPast = index < currentStepIndex
+                    
+                    return (
+                      <div key={step.id} className="flex flex-col items-center relative">
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center z-10 transition-all duration-300",
+                          isActive ? "bg-trust text-white shadow-lg shadow-trust/30 scale-110" :
+                          isPast ? "bg-trust/20 text-trust" : "bg-white/5 text-muted-foreground border border-white/10"
+                        )}>
+                          {isPast ? <CheckCircle2 className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
+                        </div>
+                        <span className={cn("text-[10px] mt-2 font-bold absolute -bottom-5 w-24 text-center", isActive ? "text-trust" : "text-muted-foreground")}>
+                          {step.title}
+                        </span>
+                      </div>
+                    )
+                  })}
+                  <div className="absolute top-1/2 left-6 right-6 h-1 bg-white/5 -z-10 -translate-y-1/2 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-trust transition-all duration-500 ease-out"
+                      style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-12 bg-white/5 border border-white/10 rounded-2xl p-6">
+                {renderJourneyStep()}
+              </div>
+
+              <div className="mt-8 flex justify-between items-center">
+                {currentStepIndex > 0 ? (
+                  <Button variant="ghost" onClick={() => setCurrentStepIndex(p => p - 1)}>
+                    Retour
+                  </Button>
+                ) : <div />}
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isStepValid() || isStarting}
+                  className="bg-trust hover:bg-trust/90 text-white gap-2"
+                >
+                  {isStarting ? 'Traitement...' : currentStepIndex === STEPS.length - 1 ? 'Soumettre le dossier' : 'Continuer'}
+                  {currentStepIndex !== STEPS.length - 1 && <ArrowRight className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+          ) : journeyCompleted ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 animate-fade-in">
+               <div className="p-4 bg-trust/20 rounded-full text-trust">
+                 <CheckCircle2 size={48} />
+               </div>
+               <h2 className="text-2xl font-bold">Dossier Soumis !</h2>
+               <p className="text-muted-foreground max-w-md">
+                 Vos documents ont été envoyés avec succès. Notre équipe de conformité va les vérifier.
+                 Vous serez notifié une fois votre compte validé.
+               </p>
+               <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">
+                 Retour au tableau de bord
+               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/5">
-              {complianceData.items.map((item: any) => {
+              {complianceData?.items.map((item: any) => {
                 const isPass = item.status === 'PASS'
                 const isInReview = item.status === 'IN_REVIEW'
-                const isFail = item.status === 'FAIL'
                 
                 return (
                   <div key={item.id} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl transition-colors ${isPass ? 'bg-trust/20 text-trust' : isInReview ? 'bg-yellow-500/20 text-yellow-500' : 'bg-destructive/20 text-destructive'}`}>
+                      <div className={cn("p-3 rounded-xl transition-colors", isPass ? 'bg-trust/20 text-trust' : isInReview ? 'bg-yellow-500/20 text-yellow-500' : 'bg-destructive/20 text-destructive')}>
                         <FileCheck className="w-6 h-6" />
                       </div>
                       <div>
                           <span className="font-bold text-sm block group-hover:text-trust transition-colors">{item.requirement}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{item.status}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{STATUS_LABELS[item.status] || item.status}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -196,8 +402,8 @@ export default function CompliancePage() {
                         </div>
                       )}
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black px-3 py-1 rounded-full ${isPass ? 'bg-trust/10 text-trust' : isInReview ? 'bg-yellow-500/10 text-yellow-500' : 'bg-destructive/10 text-destructive'}`}>
-                            {item.status}
+                        <span className={cn("text-[10px] font-black px-3 py-1 rounded-full", isPass ? 'bg-trust/10 text-trust' : isInReview ? 'bg-yellow-500/10 text-yellow-500' : 'bg-destructive/10 text-destructive')}>
+                            {STATUS_LABELS[item.status] || item.status}
                         </span>
                         {isPass ? (
                             <CheckCircle2 className="w-6 h-6 text-trust" />

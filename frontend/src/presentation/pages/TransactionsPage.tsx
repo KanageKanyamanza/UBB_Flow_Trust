@@ -3,9 +3,43 @@ import { TransactionList } from '../components/transactions/TransactionList'
 import { Plus, Download } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Link, useNavigate } from 'react-router-dom'
+import { useListTransactionsQuery } from '@/infrastructure/api/transactionApi'
+import { format } from 'date-fns'
 
 const TransactionsPage: React.FC = () => {
   const navigate = useNavigate()
+  const { data: transactions, isLoading } = useListTransactionsQuery()
+
+  const exportToCSV = () => {
+    if (!transactions) return
+
+    const headers = ['Date', 'Direction', 'Montant', 'Devise', 'Méthode', 'Catégorie', 'Contrepartie', 'Notes']
+    const rows = transactions.map(t => [
+      format(new Date(t.occurredAt), 'yyyy-MM-dd HH:mm'),
+      t.direction,
+      t.amount,
+      t.currency,
+      t.method,
+      t.category,
+      t.counterparty || '',
+      t.notes || ''
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `transactions_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div className="container py-5 pb-24 animate-fade-in relative">
@@ -22,7 +56,13 @@ const TransactionsPage: React.FC = () => {
           </div>
           
           <div className="hidden md:flex gap-3">
-             <Button variant="outline" size="sm" className="gap-2 border-white/5 bg-white/5 hover:bg-white/10 uppercase font-black text-[10px] tracking-widest">
+             <Button 
+               variant="outline" 
+               size="sm" 
+               className="gap-2 border-white/5 bg-white/5 hover:bg-white/10 uppercase font-black text-[10px] tracking-widest"
+               onClick={exportToCSV}
+               disabled={isLoading || !transactions || transactions.length === 0}
+             >
                 <Download size={14} />
                 Exporter CSV
              </Button>
@@ -46,17 +86,6 @@ const TransactionsPage: React.FC = () => {
       <div className="space-y-6">
         <TransactionList onAddClick={() => navigate('/transactions/new')} />
       </div>
-
-      {/* Action Floating button for Mobile */}
-      {/* <div className="fixed bottom-6 right-6 z-50 md:hidden">
-        <Button
-          variant="flow"
-          onClick={() => navigate('/transactions/new')}
-          className="h-14 w-14 rounded-full shadow-2xl shadow-flow/50 glow-flow flex items-center justify-center p-0"
-        >
-          <Plus className="w-8 h-8" />
-        </Button>
-      </div> */}
     </div>
   )
 }

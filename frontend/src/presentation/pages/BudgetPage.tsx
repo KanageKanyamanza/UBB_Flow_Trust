@@ -199,9 +199,7 @@ const BudgetPage: React.FC = () => {
                               animate={{ width: `${Math.min(percentage, 100)}%` }}
                               className={cn(
                                 "h-full transition-all duration-700 ease-out relative z-10",
-                                percentage > 100 ? "bg-destructive" : 
-                                percentage > 75 ? "bg-warning" : 
-                                item.budget === 0 ? "bg-white/5" : "bg-flow"
+                                percentage > 100 ? "bg-destructive" : "bg-green-500"
                               )}
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />

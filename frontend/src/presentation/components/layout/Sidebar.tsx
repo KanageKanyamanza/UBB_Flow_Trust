@@ -35,7 +35,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, isCollapse
   <Link to={path} onClick={onClick}>
     <motion.div
       className={cn(
-        "flex items-center gap-2 p-2 mb-1  rounded-xl transition-all duration-300 group relative",
+        "flex items-center gap-2 p-2 mb-1 transition-all duration-300 group relative",
         active 
           ? "bg-flow/20 text-flow shadow-lg shadow-flow/5" 
           : "text-muted-foreground hover:bg-white/5 hover:text-white"
@@ -45,7 +45,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, isCollapse
     >
       <div className={cn(
         "flex-shrink-0 transition-transform duration-300",
-        active && "scale-110"
+        active && "scale-100"
       )}>
         {icon}
       </div>
@@ -91,7 +91,7 @@ export const Sidebar: React.FC = () => {
   ]
 
   const SidebarContent = (
-    <div className="flex flex-col h-full p-3">
+    <div className="flex flex-col h-full">
       {/* Logo Section */}
       <div className={cn(
         "flex items-center mb-12 transition-all duration-500",
@@ -104,7 +104,7 @@ export const Sidebar: React.FC = () => {
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              className="overflow-hidden"
+              className="overflow-hidden pt-3"
             >
               <span className="text-xl font-black italic tracking-tighter whitespace-nowrap">
                 UBB <span className="text-trust">Trust & Flow</span>
@@ -128,9 +128,9 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="pt-6 border-t border-white/5 space-y-4">
+      <div className="py-3 px-2 border-t border-white/5 space-y-2">
         {!isCollapsed && (
-          <div className="px-4 py-3 rounded-2xl bg-white/5 space-y-1">
+          <div className="px-4 py-3 rounded-xl bg-white/5 space-y-1">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Connecté en tant que</p>
             <p className="text-xs font-bold truncate">{user?.email}</p>
           </div>
