@@ -110,4 +110,41 @@ export class ComplianceService {
       orderBy: { createdAt: 'desc' }
     })
   }
+
+  static async getMissingDocuments(orgId: string, market: string) {
+    const template = await prisma.checklistTemplate.findUnique({
+      where: { market }
+    })
+    
+    if (!template) {
+      throw new Error(`No template found for market \${market}`)
+    }
+
+    const existingDocs = await prisma.document.findMany({
+      where: { orgId }
+    })
+
+    const missingRequirements = []
+
+    for (const requirement of template.requirements) {
+      const targetType = this.requirementToTypeMap[requirement]
+      let isPresent = false
+
+      if (targetType) {
+        const matchingDoc = existingDocs.find(d => 
+          d.type.toUpperCase() === targetType.toUpperCase() && 
+          d.status === 'VERIFIED'
+        )
+        if (matchingDoc) {
+          isPresent = true
+        }
+      }
+
+      if (!isPresent) {
+        missingRequirements.push(requirement)
+      }
+    }
+
+    return missingRequirements
+  }
 }

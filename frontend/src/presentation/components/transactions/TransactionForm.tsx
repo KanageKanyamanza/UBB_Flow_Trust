@@ -107,7 +107,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
         direction: formData.direction as TxnDirection,
         category: formData.category as TxnCategory,
         method: formData.method as TxnMethod,
-        accountId: formData.accountId,
+        accountId: formData.accountId!,
         occurredAt: new Date(formData.occurredAt!).toISOString(),
         notes: formData.notes,
         counterparty: formData.counterparty,

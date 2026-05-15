@@ -14,7 +14,11 @@ export const complianceApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Document'],
     }),
+    getGap: builder.query<{ missing: string[] }, { market: string }>({
+      query: ({ market }) => `/compliance/gap?market=\${market}`,
+      providesTags: ['Document'],
+    }),
   }),
 })
 
-export const { useGetComplianceQuery, useStartComplianceMutation } = complianceApi
+export const { useGetComplianceQuery, useStartComplianceMutation, useGetGapQuery } = complianceApi

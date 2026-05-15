@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/pre
 import { Button } from '@/presentation/components/ui/button'
 import { useGetTrustScoreQuery, useRefreshTrustScoreMutation } from '@/infrastructure/api/trustApi'
 import { useGetDocumentsQuery, useUploadDocumentMutation } from '@/infrastructure/api/documentApi'
-import { useGetComplianceQuery, useStartComplianceMutation } from '@/infrastructure/api/complianceApi'
+import { useGetComplianceQuery, useStartComplianceMutation, useGetGapQuery } from '@/infrastructure/api/complianceApi'
 import { cn } from '@/shared/utils/utils'
 
 const STEPS = [
@@ -18,6 +18,7 @@ export default function CompliancePage() {
   const { data: trustData, isLoading: trustLoading } = useGetTrustScoreQuery()
   const { data: documents, isLoading: docsLoading } = useGetDocumentsQuery()
   const { data: complianceData, isLoading: complianceLoading } = useGetComplianceQuery()
+  const { data: gapData } = useGetGapQuery({ market: 'LOCAL' })
   const [refreshScore, { isLoading: isRefreshing }] = useRefreshTrustScoreMutation()
   const [uploadDocument, { isLoading: isUploading }] = useUploadDocumentMutation()
   const [startCompliance, { isLoading: isStarting }] = useStartComplianceMutation()
@@ -254,7 +255,16 @@ export default function CompliancePage() {
                 </div>
               </div>
             ))}
-            {reasons.length === 0 && (
+            {gapData?.missing.map((req: string) => (
+              <div key={req} className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                <FileText className="w-6 h-6 text-yellow-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-sm tracking-tight">{req}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Document manquant pour le marché LOCAL.</p>
+                </div>
+              </div>
+            ))}
+            {reasons.length === 0 && (!gapData || gapData.missing.length === 0) && (
               <div className="flex flex-col items-center justify-center py-10 text-center space-y-4 bg-trust/10 rounded-2xl border border-trust/20 border-dashed">
                 <div className="p-4 bg-trust/20 rounded-full text-trust">
                   <CheckCircle2 size={40} />

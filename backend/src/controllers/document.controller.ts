@@ -32,7 +32,7 @@ export class DocumentController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' })
       
-      const { id } = req.params
+      const id = req.params.id as string
       const { validUntil } = req.body
       
       const version = await DocumentService.addVersion(id, req.user.orgId, req.file, validUntil)
@@ -46,7 +46,7 @@ export class DocumentController {
     try {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
-      const { id } = req.params
+      const id = req.params.id as string
       await DocumentService.deleteDocument(id, req.user.orgId)
       res.status(204).send()
     } catch (error: any) {

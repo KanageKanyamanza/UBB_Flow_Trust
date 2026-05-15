@@ -35,4 +35,19 @@ export class ComplianceController {
       res.status(500).json({ error: 'Internal server error' })
     }
   }
+
+  static async getGap(req: Request, res: Response) {
+    try {
+      const { market } = req.query as { market?: string }
+      if (!market) {
+        return res.status(400).json({ error: 'Market is required' })
+      }
+      const orgId = (req as any).user.orgId
+      const missing = await ComplianceService.getMissingDocuments(orgId, market)
+      res.json({ missing })
+    } catch (error: any) {
+      console.error('[ComplianceController] Error getting gap:', error)
+      res.status(500).json({ error: error.message || 'Internal server error' })
+    }
+  }
 }
