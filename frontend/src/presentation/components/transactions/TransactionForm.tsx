@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { ImageUpload } from '@/presentation/components/ui/ImageUpload'
+import { Modal } from '@/presentation/components/ui/modal'
 import {
   TxnDirection,
   TxnCategory,
@@ -88,6 +89,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [showOptions, setShowOptions] = useState(false)
+  const [isOverdraftModalOpen, setIsOverdraftModalOpen] = useState(false)
+  const [overdraftAccount, setOverdraftAccount] = useState<any>(null)
 
   // Set default account & auto-focus
   useEffect(() => {
@@ -96,10 +99,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
     }
   }, [accounts, formData.accountId])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.amount || !formData.accountId) return
-
+  const performSubmit = async () => {
     try {
       // 1. Create the transaction
       const transaction = await createTransaction({
@@ -107,7 +107,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
         direction: formData.direction as TxnDirection,
         category: formData.category as TxnCategory,
         method: formData.method as TxnMethod,
-        accountId: formData.accountId,
+        accountId: formData.accountId!,
         occurredAt: new Date(formData.occurredAt!).toISOString(),
         notes: formData.notes,
         counterparty: formData.counterparty,
@@ -125,6 +125,22 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
     } catch (err) {
       console.error('Failed to process transaction:', err)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.amount || !formData.accountId) return
+
+    if (formData.direction === TxnDirection.OUT) {
+      const selectedAccount = accounts?.find(a => a.id === formData.accountId)
+      if (selectedAccount && Number(selectedAccount.balance) < Number(formData.amount)) {
+        setOverdraftAccount(selectedAccount)
+        setIsOverdraftModalOpen(true)
+        return
+      }
+    }
+
+    await performSubmit()
   }
 
   const handleQuickAmount = (val: number) => {
@@ -383,6 +399,32 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
           )}
         </Button>
       </div>
+
+      <Modal 
+        isOpen={isOverdraftModalOpen} 
+        onClose={() => setIsOverdraftModalOpen(false)} 
+        title="Alerte de Découvert"
+      >
+        <div className="space-y-4">
+          <p className="text-white/80">
+            ⚠️ Attention : Le solde du compte sélectionné ({overdraftAccount ? Number(overdraftAccount.balance).toLocaleString() : ''} XAF) est insuffisant pour cette dépense.
+          </p>
+          <p className="text-white/80">
+            La transaction va créer un découvert (solde négatif). Voulez-vous continuer ?
+          </p>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button type="button" variant="ghost" onClick={() => setIsOverdraftModalOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="button" variant="destructive" onClick={async () => {
+              setIsOverdraftModalOpen(false)
+              await performSubmit()
+            }}>
+              Continuer
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </form>
   )
 }

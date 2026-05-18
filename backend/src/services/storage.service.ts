@@ -82,6 +82,40 @@ export class StorageService {
     throw new Error('Storage service not properly configured');
   }
 
+  async storeFile(fileBuffer: Buffer, originalName: string, mimeType: string): Promise<string> {
+    const ext = path.extname(originalName);
+    const filename = `${crypto.randomUUID()}${ext}`;
+    
+    if (this.storageType === 'local') {
+      const filepath = path.join(this.uploadDir, filename);
+      await fs.writeFile(filepath, fileBuffer);
+      return `/uploads/${filename}`;
+    }
+
+    if (this.s3Client) {
+      const command = new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: filename,
+        Body: fileBuffer,
+        ContentType: mimeType,
+      });
+
+      await this.s3Client.send(command);
+      
+      const endpoint = process.env.S3_ENDPOINT;
+      if (endpoint && (this.storageType === 'minio' || this.storageType === 's3')) {
+        // Simple URL construction. For production S3, might need a more robust URL builder
+        if (this.storageType === 'minio') {
+            return `${endpoint}/${this.bucket}/${filename}`;
+        }
+      }
+      
+      return `https://${this.bucket}.s3.${process.env.S3_REGION || 'eu-west-3'}.amazonaws.com/${filename}`;
+    }
+
+    throw new Error('Storage service not properly configured');
+  }
+
   async deleteFile(fileUrlOrKey: string): Promise<void> {
     if (this.storageType === 'local') {
       const filename = path.basename(fileUrlOrKey);

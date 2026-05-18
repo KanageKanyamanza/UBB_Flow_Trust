@@ -29,6 +29,7 @@ import { AccountCard } from '../components/accounts/AccountCard'
 import { DailyBalanceChart } from '../components/dashboard/DailyBalanceChart'
 import { CategorySummaryChart } from '../components/dashboard/CategorySummaryChart'
 import { CashFlowForecastChart } from '../components/dashboard/CashFlowForecastChart'
+import { AlertNotifications } from '../components/dashboard/AlertNotifications'
 import { Plus, ChevronRight, Ban } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -65,6 +66,9 @@ const DashboardPage: React.FC = () => {
             {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
           </div>
         </header>
+
+        {/* Alerts Section */}
+        <AlertNotifications />
 
         {/* Global Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -267,7 +271,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-3 relative z-10">
             <Button className="bg-trust hover:bg-trust-hover shadow-lg shadow-trust/20 border-none" asChild>
-              <Link to="/upload-demo" className="gap-2">
+              <Link to="/documents" className="gap-2">
                 <Upload size={16} />
                 Justificatifs
               </Link>

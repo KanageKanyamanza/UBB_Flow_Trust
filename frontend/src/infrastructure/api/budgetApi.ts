@@ -19,7 +19,7 @@ export const budgetApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getBudgets: builder.query<Budget[], void>({
       query: () => '/budgets',
-      providesTags: ['Budget']
+      providesTags: [{ type: 'Budget', id: 'LIST' }]
     }),
     setBudget: builder.mutation<Budget, { category: string, amount: number }>({
       query: (body) => ({
@@ -27,14 +27,14 @@ export const budgetApi = apiSlice.injectEndpoints({
         method: 'POST',
         body
       }),
-      invalidatesTags: ['Budget']
+      invalidatesTags: [{ type: 'Budget', id: 'LIST' }]
     }),
     getBudgetComparison: builder.query<BudgetComparison[], { month?: number, year?: number } | void>({
       query: (params) => ({
         url: '/budgets/comparison',
         params: params || {}
       }),
-      providesTags: ['Budget', 'Transaction']
+      providesTags: [{ type: 'Budget', id: 'LIST' }, { type: 'Transaction', id: 'LIST' }]
     })
   })
 })

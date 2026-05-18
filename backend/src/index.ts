@@ -19,7 +19,26 @@ const limiter = rateLimit({
   legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
 })
 
-app.use(cors())
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://ubb-flow-trust-frontend.vercel.app',
+  'https://www.ubb-flow-trust-frontend.vercel.app'
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
+      return callback(new Error(msg), false)
+    }
+    return callback(null, true)
+  },
+  credentials: true
+}))
 app.use(helmet())
 app.use(morgan('dev'))
 app.use(express.json())
@@ -33,6 +52,13 @@ import uploadRoutes from './routes/upload.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
 import budgetRoutes from './routes/budget.routes.js'
 import recurringRuleRoutes from './routes/recurring-rule.routes.js'
+import alertRoutes from './routes/alert.routes.js'
+import profileRoutes from './routes/profile.routes.js'
+import documentRoutes from './routes/document.routes.js'
+import trustRoutes from './routes/trust.routes.js'
+import complianceRoutes from './routes/compliance.routes.js'
+import consentGrantRoutes from './routes/consent-grant.routes.js'
+import partnerRoutes from './routes/partner.routes.js'
 
 app.use('/auth', authRoutes)
 app.use('/accounts', accountRoutes)
@@ -41,6 +67,13 @@ app.use('/upload', uploadRoutes)
 app.use('/analytics', analyticsRoutes)
 app.use('/budgets', budgetRoutes)
 app.use('/recurring-rules', recurringRuleRoutes)
+app.use('/alerts', alertRoutes)
+app.use('/profile', profileRoutes)
+app.use('/documents', documentRoutes)
+app.use('/trust', trustRoutes)
+app.use('/compliance', complianceRoutes)
+app.use('/consent-grants', consentGrantRoutes)
+app.use('/partner', partnerRoutes)
 
 // Serve local static uploads if STORAGE_TYPE=local
 if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
@@ -52,6 +85,10 @@ if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() })
 })
+
+// Initialize Cron Jobs
+import { CronService } from './services/cron.service.js'
+CronService.init()
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`)

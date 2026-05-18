@@ -25,6 +25,21 @@ import { Modal } from '@/presentation/components/ui/modal'
 import { TransactionDetail } from './TransactionDetail'
 import { cn } from '@/shared/utils/utils'
 
+const CATEGORY_LABELS: Record<string, string> = {
+  SALES: 'Ventes',
+  COGS: 'Coûts de vente',
+  PAYROLL: 'Salaires',
+  RENT_UTILITIES: 'Loyer/Services',
+  TRANSPORT: 'Transport',
+  TAX: 'Impôts',
+  DEBT_SERVICE: 'Dette',
+  CAPEX: 'Investissements',
+  OWNER_DRAW: 'Prélèvements',
+  FEES: 'Frais',
+  MARKETING: 'Marketing',
+  OTHER: 'Autre'
+}
+
 interface TransactionListProps {
   onAddClick?: () => void
 }
@@ -247,7 +262,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
                            : "bg-muted/20 border-white/5 text-muted-foreground hover:bg-muted/40"
                        )}
                      >
-                       {cat.replace('_', ' ')}
+                       {CATEGORY_LABELS[cat] || cat.replace('_', ' ')}
                      </button>
                    ))}
                  </div>
@@ -369,7 +384,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
                       <div className="flex-1 min-w-0">
                          <div className="flex items-center gap-2 mb-0.5">
                             <h4 className="font-black text-sm uppercase tracking-tight truncate">
-                              {txn.counterparty || txn.category.replace('_', ' ')}
+                              {txn.counterparty || CATEGORY_LABELS[txn.category] || txn.category.replace('_', ' ')}
                             </h4>
                             <span className={cn(
                               "text-[8px] font-black uppercase px-2 py-0.5 rounded-full border tracking-widest",
@@ -377,7 +392,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
                                 ? "bg-flow/5 border-flow/20 text-flow" 
                                 : "bg-destructive/5 border-destructive/20 text-destructive"
                             )}>
-                              {txn.category.replace('_', ' ')}
+                              {CATEGORY_LABELS[txn.category] || txn.category.replace('_', ' ')}
                             </span>
                             {txn.evidenceFiles && txn.evidenceFiles.length > 0 && (
                               <Paperclip size={12} className="text-primary animate-pulse" />

@@ -76,4 +76,18 @@ export class AnalyticsController {
       res.status(500).json({ error: error.message })
     }
   }
+
+  /**
+   * GET /analytics/projections
+   * Moteur de projection: get projected balance at J+30, J+60, J+90
+   */
+  static async getProjections(req: AuthRequest, res: Response) {
+    try {
+      const orgId = req.user!.orgId
+      const projections = await AnalyticsService.getProjections(orgId)
+      res.json(projections)
+    } catch (error: any) {
+      res.status(500).json({ error: error.message })
+    }
+  }
 }

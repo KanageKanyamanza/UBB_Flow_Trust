@@ -114,12 +114,28 @@ const BudgetPage: React.FC = () => {
                     const percentage = item.budget > 0 ? (item.actual / item.budget) * 100 : 0
                     const isOver = item.actual > item.budget && item.budget > 0
 
+                    const CATEGORY_TRANSLATIONS: Record<string, string> = {
+                      SALES: 'Ventes',
+                      COGS: 'Coût des marchandises',
+                      PAYROLL: 'Salaires',
+                      RENT_UTILITIES: 'Loyer & Charges',
+                      TRANSPORT: 'Transport',
+                      TAX: 'Taxes',
+                      DEBT_SERVICE: 'Remboursement de dette',
+                      CAPEX: 'Investissements',
+                      OWNER_DRAW: 'Rémunération dirigeant',
+                      FEES: 'Frais & Commissions',
+                      MARKETING: 'Marketing',
+                      OTHER: 'Autre'
+                    }
+                    const categoryName = CATEGORY_TRANSLATIONS[item.category] || item.category
+
                     return (
                       <div key={item.category} className="p-6 hover:bg-white/[0.01] transition-colors">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-black uppercase tracking-widest text-white/90">{item.category}</span>
+                              <span className="text-sm font-black uppercase tracking-widest text-white/90">{categoryName}</span>
                               {isOver && (
                                 <div className="flex items-center gap-1 text-[10px] font-black text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded-full uppercase tracking-tighter">
                                   <AlertCircle size={10} />
@@ -142,7 +158,7 @@ const BudgetPage: React.FC = () => {
                                       type="number"
                                       value={editAmount}
                                       onChange={(e) => setEditAmount(e.target.value)}
-                                      className="w-28 bg-transparent border-none text-white text-right font-bold focus:ring-0 px-2"
+                                      className="w-28 bg-transparent border-none text-white text-right font-bold focus:outline-none focus:ring-0 px-2 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                                       autoFocus
                                     />
                                     <button 
@@ -183,9 +199,7 @@ const BudgetPage: React.FC = () => {
                               animate={{ width: `${Math.min(percentage, 100)}%` }}
                               className={cn(
                                 "h-full transition-all duration-700 ease-out relative z-10",
-                                percentage > 100 ? "bg-destructive" : 
-                                percentage > 75 ? "bg-warning" : 
-                                item.budget === 0 ? "bg-white/5" : "bg-flow"
+                                percentage > 100 ? "bg-destructive" : "bg-green-500"
                               )}
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20" />

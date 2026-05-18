@@ -78,12 +78,13 @@ export const CategorySummaryChart: React.FC<CategorySummaryChartProps> = ({ data
             axisLine={false} 
             tickLine={false} 
             tick={{ fontSize: 10, fill: '#888888', textAnchor: 'end' }} 
-            width={60}
+            width={100}
           />
           <Tooltip 
             contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
             formatter={(value: number) => [new Intl.NumberFormat('fr-FR').format(value) + ' CFA', 'Total (abs)']}
             labelStyle={{ color: '#888' }}
+            cursor={false}
           />
           <Legend wrapperStyle={{ paddingTop: '20px' }} />
           <Bar dataKey="totalIn" name="Entrant" fill="#41db8d" radius={[0, 4, 4, 0]} barSize={10} />

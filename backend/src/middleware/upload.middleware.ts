@@ -17,3 +17,23 @@ export const upload = multer({
     }
   },
 });
+export const uploadDoc = multer({
+  storage,
+  limits: {
+    fileSize: 20 * 1024 * 1024, // 20 MB max
+  },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error('Format non supporté (PDF, JPEG, PNG, DOCX autorisés).'))
+    }
+  },
+});

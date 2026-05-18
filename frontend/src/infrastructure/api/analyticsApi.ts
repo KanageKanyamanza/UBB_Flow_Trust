@@ -34,22 +34,22 @@ export const analyticsApi = apiSlice.injectEndpoints({
         url: '/analytics/summary',
         params: params || {}
       }),
-      providesTags: ['Transaction']
+      providesTags: [{ type: 'Transaction', id: 'LIST' }, { type: 'Account', id: 'LIST' }]
     }),
     getDailyBalances: builder.query<DailyBalance[], { startDate?: string, endDate?: string } | void>({
       query: (params) => ({
         url: '/analytics/daily-balance',
         params: params || {}
       }),
-      providesTags: ['Transaction']
+      providesTags: [{ type: 'Transaction', id: 'LIST' }, { type: 'Account', id: 'LIST' }]
     }),
     getDashboardStats: builder.query<DashboardStats, void>({
       query: () => '/analytics/stats',
-      providesTags: ['Transaction']
+      providesTags: [{ type: 'Transaction', id: 'LIST' }, { type: 'Account', id: 'LIST' }]
     }),
     getCashFlowForecast: builder.query<ForecastPoint[], void>({
       query: () => '/analytics/forecast',
-      providesTags: ['Transaction']
+      providesTags: [{ type: 'Transaction', id: 'LIST' }, { type: 'Account', id: 'LIST' }]
     })
   })
 })
