@@ -62,16 +62,18 @@ export class OcrService {
     } else {
       // Identity data extraction
       const nomMatch = text.match(/(?:NOM|SURNAME|LAST NAME)[(S)]*[\s:]+([A-Z\s.-]{2,})/i);
-      data.nom = nomMatch ? nomMatch[1].trim().split('\n')[0] : '';
+      data.nom = nomMatch?.[1]?.trim().split('\n')[0] ?? '';
 
       const prenomMatch = text.match(/(?:PRÉ?NOMS?|GIVEN NAMES?|FIRST NAME)[(S)]*[\s:]+([A-Z\s.-]{2,})/i);
-      data.prenom = prenomMatch ? prenomMatch[1].trim().split('\n')[0] : '';
+      data.prenom = prenomMatch?.[1]?.trim().split('\n')[0] ?? '';
 
       const pieceMatch = text.match(/(?:N°|NO|NUMÉ?RO|ID|IDENTITY|PIÈ?CE|CONSULAIRE|DOCUMENT|PASSPORT)[\s:]+([A-Z0-9\s-]{4,})/i);
-      data.numeroPiece = pieceMatch ? pieceMatch[1].trim().split('\n')[0] : '';
+      data.numeroPiece = pieceMatch?.[1]?.trim().split('\n')[0] ?? '';
 
       const dateMatch = text.match(/(\d{2})[/.-](\d{2})[/.-](\d{4})/);
-      if (dateMatch) data.dateNaissance = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+      if (dateMatch?.[1] && dateMatch?.[2] && dateMatch?.[3]) {
+        data.dateNaissance = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+      }
 
       if (!data.nom || !data.prenom) {
         const uppercaseLines = lines.filter(l => /^[A-Z\s.-]{3,}$/.test(l) && !l.includes('REPUBLIQUE') && !l.includes('CARTE'));
