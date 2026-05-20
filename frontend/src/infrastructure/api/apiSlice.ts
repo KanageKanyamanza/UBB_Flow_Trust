@@ -6,9 +6,13 @@ export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   prepareHeaders: (headers) => {
-    const token = localStorage.getItem('accessToken')
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`)
+    const partnerToken = localStorage.getItem('partnerToken')
+    const accessToken = localStorage.getItem('accessToken')
+    
+    if (partnerToken && (!accessToken || window.location.pathname.startsWith('/partner'))) {
+      headers.set('authorization', `Bearer ${partnerToken}`)
+    } else if (accessToken) {
+      headers.set('authorization', `Bearer ${accessToken}`)
     }
     return headers
   },
@@ -90,6 +94,6 @@ const baseQueryWithReauth = async (
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Account', 'Transaction', 'Budget', 'RecurringRule', 'Alerts', 'Profile', 'Document', 'Trust', 'ConsentGrant'] as const,
+  tagTypes: ['Account', 'Transaction', 'Budget', 'RecurringRule', 'Alerts', 'Profile', 'Document', 'Trust', 'ConsentGrant', 'Team'] as const,
   endpoints: () => ({}),
 })

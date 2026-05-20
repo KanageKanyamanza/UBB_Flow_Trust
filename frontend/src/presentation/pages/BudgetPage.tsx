@@ -18,12 +18,23 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { cn } from '@/shared/utils/utils'
 import { motion } from 'framer-motion'
+import { useAuth } from '../../application/context/AuthContext'
+import { useGetAccountsQuery } from '../../infrastructure/api/accountApi'
 
 const BudgetPage: React.FC = () => {
+  const { user } = useAuth()
+  const { data: accounts } = useGetAccountsQuery()
+  
+  // Gérants/Agents are restricted to their assigned accountId
+  const defaultAccountId = user?.role === 'OWNER' ? '' : (user?.accountId || '')
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(defaultAccountId)
+
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<string>('')
   
-  const { data: comparison, isLoading } = useGetBudgetComparisonQuery()
+  const { data: comparison, isLoading } = useGetBudgetComparisonQuery({
+    accountId: selectedAccountId || undefined
+  })
   const { data: transactions } = useListTransactionsQuery()
   const [setBudget] = useSetBudgetMutation()
 
@@ -33,7 +44,11 @@ const BudgetPage: React.FC = () => {
   }
 
   const handleSave = async (category: string) => {
-    await setBudget({ category, amount: parseFloat(editAmount) || 0 })
+    await setBudget({ 
+      category, 
+      amount: parseFloat(editAmount) || 0,
+      accountId: selectedAccountId || null
+    })
     setIsEditing(null)
   }
 
@@ -82,6 +97,27 @@ const BudgetPage: React.FC = () => {
           </Button>
         </header>
 
+        {user?.role === 'OWNER' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl animate-fade-in">
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-white">Boutique / Point de Vente</p>
+              <p className="text-xs text-muted-foreground">Sélectionnez une boutique pour configurer ses budgets ou voir ses statistiques.</p>
+            </div>
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="flex h-10 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:outline-none focus:border-trust cursor-pointer hover:bg-white/10 transition-colors w-full sm:w-72"
+            >
+              <option value="" className="bg-neutral-900 text-white">Toutes les boutiques (Vue d'ensemble)</option>
+              {accounts?.map((acc) => (
+                <option key={acc.id} value={acc.id} className="bg-neutral-900 text-white">
+                  {acc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-6">
           {isLoading ? (
             <div className="space-y-4">
@@ -100,6 +136,9 @@ const BudgetPage: React.FC = () => {
                     </CardTitle>
                     <CardDescription>
                       Période : <span className="text-white font-medium capitalize">{format(new Date(), 'MMMM yyyy', { locale: fr })}</span>
+                      {selectedAccountId === "" && user?.role === 'OWNER' && (
+                        <span className="ml-2 text-trust font-bold text-xs uppercase tracking-wider">(Agrégé - Vue Globale)</span>
+                      )}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1 bg-trust/10 border border-trust/20 rounded-full">
@@ -176,17 +215,23 @@ const BudgetPage: React.FC = () => {
                                       <X size={16} />
                                     </button>
                                   </div>
-                                ) : (
-                                  <div className="flex items-center gap-3 group bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 hover:border-trust/30 transition-all cursor-pointer" onClick={() => handleEdit(item.category, item.budget)}>
-                                    <span className={cn(
-                                      "font-bold transition-colors",
-                                      item.budget === 0 ? "text-muted-foreground/40 italic" : "text-white"
-                                    )}>
-                                      {item.budget === 0 ? 'Non défini' : `${new Intl.NumberFormat('fr-FR').format(item.budget)} CFA`}
-                                    </span>
-                                    <Edit3 size={14} className="text-muted-foreground group-hover:text-trust opacity-0 group-hover:opacity-100 transition-all" />
-                                  </div>
-                                )}
+                                ) : selectedAccountId === "" ? (
+                                   <div className="flex items-center gap-3 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 text-muted-foreground/60 cursor-not-allowed" title="Sélectionnez une boutique spécifique pour modifier son budget">
+                                     <span className="font-bold text-white/80">
+                                       {item.budget === 0 ? 'Non défini' : `${new Intl.NumberFormat('fr-FR').format(item.budget)} CFA`}
+                                     </span>
+                                   </div>
+                                 ) : (
+                                   <div className="flex items-center gap-3 group bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 hover:border-trust/30 transition-all cursor-pointer" onClick={() => handleEdit(item.category, item.budget)}>
+                                     <span className={cn(
+                                       "font-bold transition-colors",
+                                       item.budget === 0 ? "text-muted-foreground/40 italic" : "text-white"
+                                     )}>
+                                       {item.budget === 0 ? 'Non défini' : `${new Intl.NumberFormat('fr-FR').format(item.budget)} CFA`}
+                                     </span>
+                                     <Edit3 size={14} className="text-muted-foreground group-hover:text-trust opacity-0 group-hover:opacity-100 transition-all" />
+                                   </div>
+                                 )}
                               </div>
                             </div>
                           </div>

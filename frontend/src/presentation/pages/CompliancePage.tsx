@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight } from 'lucide-react'
+import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { useGetTrustScoreQuery, useRefreshTrustScoreMutation } from '@/infrastructure/api/trustApi'
 import { useGetDocumentsQuery, useUploadDocumentMutation } from '@/infrastructure/api/documentApi'
 import { useGetComplianceQuery, useStartComplianceMutation, useGetGapQuery } from '@/infrastructure/api/complianceApi'
 import { cn } from '@/shared/utils/utils'
+import { useAuth } from '@/application/context/AuthContext'
 
 const STEPS = [
   { id: "personal", title: "Informations", icon: User, description: "Vos données" },
@@ -15,6 +16,7 @@ const STEPS = [
 ];
 
 export default function CompliancePage() {
+  const { user } = useAuth()
   const { data: trustData, isLoading: trustLoading } = useGetTrustScoreQuery()
   const { data: documents, isLoading: docsLoading } = useGetDocumentsQuery()
   const { data: complianceData, isLoading: complianceLoading } = useGetComplianceQuery()
@@ -22,6 +24,23 @@ export default function CompliancePage() {
   const [refreshScore, { isLoading: isRefreshing }] = useRefreshTrustScoreMutation()
   const [uploadDocument, { isLoading: isUploading }] = useUploadDocumentMutation()
   const [startCompliance, { isLoading: isStarting }] = useStartComplianceMutation()
+
+  // Only owners can access this page
+  if (user?.role !== 'OWNER') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
+          <ShieldAlert className="w-16 h-16 text-yellow-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Seul le propriétaire principal de l'organisation peut configurer et gérer le statut de conformité.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const [isJourneyActive, setIsJourneyActive] = useState(false)
   const [currentStepIndex, setCurrentStepIndex] = useState(0)

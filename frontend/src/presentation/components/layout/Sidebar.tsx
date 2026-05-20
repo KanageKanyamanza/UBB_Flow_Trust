@@ -14,7 +14,8 @@ import {
   PieChart,
   RefreshCw,
   Building2,
-  FolderOpen
+  FolderOpen,
+  Users
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -81,14 +82,20 @@ export const Sidebar: React.FC = () => {
 
   const navItems = [
     { icon: <LayoutDashboard size={22} />, label: 'Tableau de Bord', path: '/dashboard' },
-    { icon: <Building2 size={22} />, label: 'Profil PME', path: '/profile' },
-    { icon: <ShieldCheck size={22} />, label: 'Conformité', path: '/compliance' },
-    { icon: <FolderOpen size={22} />, label: 'Data Room', path: '/documents' },
+    ...(user?.role === 'OWNER' ? [
+      { icon: <Building2 size={22} />, label: 'Profil PME', path: '/profile' },
+      { icon: <ShieldCheck size={22} />, label: 'Conformité', path: '/compliance' },
+      { icon: <FolderOpen size={22} />, label: 'Data Room', path: '/documents' },
+    ] : []),
     { icon: <TrendingUp size={22} />, label: 'Flux Financiers', path: '/transactions' },
     { icon: <PieChart size={22} />, label: 'Budget vs Réel', path: '/budget' },
     { icon: <RefreshCw size={22} />, label: 'Échéances', path: '/recurring-rules' },
     { icon: <Wallet size={22} />, label: 'Comptes', path: '/accounts' },
   ]
+
+  if (user?.role === 'OWNER') {
+    navItems.push({ icon: <Users size={22} />, label: 'Équipe', path: '/team' })
+  }
 
   const SidebarContent = (
     <div className="flex flex-col h-full">

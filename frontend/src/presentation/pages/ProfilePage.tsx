@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { useGetProfileQuery, useUpdateProfileMutation } from '@/infrastructure/api/profileApi'
+import { useAuth } from '@/application/context/AuthContext'
 
 export default function ProfilePage() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('general')
   const { data: profile, isLoading } = useGetProfileQuery()
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation()
@@ -17,6 +19,23 @@ export default function ProfilePage() {
       setFormData(profile)
     }
   }, [profile])
+
+  // Only owners can access this page
+  if (user?.role !== 'OWNER') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
+          <ShieldAlert className="w-16 h-16 text-yellow-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Seul le propriétaire principal de l'organisation peut configurer et modifier le profil de la PME.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading || !formData) {
     return (

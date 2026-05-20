@@ -17,11 +17,14 @@ export interface BudgetComparison {
 
 export const budgetApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getBudgets: builder.query<Budget[], void>({
-      query: () => '/budgets',
+    getBudgets: builder.query<Budget[], { accountId?: string } | void>({
+      query: (params) => ({
+        url: '/budgets',
+        params: params || {}
+      }),
       providesTags: [{ type: 'Budget', id: 'LIST' }]
     }),
-    setBudget: builder.mutation<Budget, { category: string, amount: number }>({
+    setBudget: builder.mutation<Budget, { category: string, amount: number, accountId?: string | null }>({
       query: (body) => ({
         url: '/budgets',
         method: 'POST',
@@ -29,7 +32,7 @@ export const budgetApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'Budget', id: 'LIST' }]
     }),
-    getBudgetComparison: builder.query<BudgetComparison[], { month?: number, year?: number } | void>({
+    getBudgetComparison: builder.query<BudgetComparison[], { month?: number, year?: number, accountId?: string } | void>({
       query: (params) => ({
         url: '/budgets/comparison',
         params: params || {}

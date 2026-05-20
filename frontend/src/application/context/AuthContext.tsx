@@ -8,6 +8,7 @@ interface User {
   role: string
   firstName?: string | null
   lastName?: string | null
+  accountId?: string | null
 }
 
 interface AuthContextType {

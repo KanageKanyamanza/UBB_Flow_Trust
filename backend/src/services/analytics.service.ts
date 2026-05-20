@@ -4,11 +4,12 @@ export class AnalyticsService {
   /**
    * Get transaction sums by category within a date range
    */
-  static async getSummaryByCategory(orgId: string, startDate?: Date, endDate?: Date) {
+  static async getSummaryByCategory(orgId: string, startDate?: Date, endDate?: Date, accountId?: string) {
     const summary = await prisma.transaction.groupBy({
       by: ['category', 'direction'],
       where: {
         orgId,
+        ...(accountId && { accountId }),
         ...(startDate || endDate ? {
           occurredAt: {
             ...(startDate && { gte: startDate }),
@@ -45,23 +46,33 @@ export class AnalyticsService {
   /**
    * Get daily net balances within a date range
    */
-  static async getDailyBalances(orgId: string, startDate: Date, endDate: Date) {
-    // We use a raw query for better date grouping in PostgreSQL
-    // If using SQLite or another DB, this might need adjustment.
-    // For now, assuming PostgreSQL as per schema.prisma datasource provider
-    
-    const results = await prisma.$queryRaw<any[]>`
-      SELECT 
-        DATE_TRUNC('day', "occurredAt") as date,
-        SUM(CASE WHEN direction = 'IN' THEN amount ELSE 0 END) as "totalIn",
-        SUM(CASE WHEN direction = 'OUT' THEN amount ELSE 0 END) as "totalOut"
-      FROM "Transaction"
-      WHERE "orgId" = ${orgId}
-        AND "occurredAt" >= ${startDate}
-        AND "occurredAt" <= ${endDate}
-      GROUP BY DATE_TRUNC('day', "occurredAt")
-      ORDER BY date ASC
-    `
+  static async getDailyBalances(orgId: string, startDate: Date, endDate: Date, accountId?: string) {
+    const results = accountId
+      ? await prisma.$queryRaw<any[]>`
+          SELECT 
+            DATE_TRUNC('day', "occurredAt") as date,
+            SUM(CASE WHEN direction = 'IN' THEN amount ELSE 0 END) as "totalIn",
+            SUM(CASE WHEN direction = 'OUT' THEN amount ELSE 0 END) as "totalOut"
+          FROM "Transaction"
+          WHERE "orgId" = ${orgId}
+            AND "accountId" = ${accountId}
+            AND "occurredAt" >= ${startDate}
+            AND "occurredAt" <= ${endDate}
+          GROUP BY DATE_TRUNC('day', "occurredAt")
+          ORDER BY date ASC
+        `
+      : await prisma.$queryRaw<any[]>`
+          SELECT 
+            DATE_TRUNC('day', "occurredAt") as date,
+            SUM(CASE WHEN direction = 'IN' THEN amount ELSE 0 END) as "totalIn",
+            SUM(CASE WHEN direction = 'OUT' THEN amount ELSE 0 END) as "totalOut"
+          FROM "Transaction"
+          WHERE "orgId" = ${orgId}
+            AND "occurredAt" >= ${startDate}
+            AND "occurredAt" <= ${endDate}
+          GROUP BY DATE_TRUNC('day', "occurredAt")
+          ORDER BY date ASC
+        `
 
     // Fill the gaps for every day in the range
     const filledData = []
@@ -94,14 +105,17 @@ export class AnalyticsService {
   /**
    * Get advanced KPIs (Total Balance, Cash Burn, Runway, Current Month Inflow)
    */
-  static async getKpis(orgId: string) {
+  static async getKpis(orgId: string, accountId?: string) {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
 
     // 1. Total Balance across all accounts
     const accounts = await prisma.account.aggregate({
-      where: { orgId },
+      where: {
+        orgId,
+        ...(accountId && { id: accountId })
+      },
       _sum: { balance: true }
     })
     const totalBalance = Number(accounts._sum.balance || 0)
@@ -110,6 +124,7 @@ export class AnalyticsService {
     const monthInflow = await prisma.transaction.aggregate({
       where: {
         orgId,
+        ...(accountId && { accountId }),
         direction: 'IN',
         occurredAt: { gte: startOfMonth }
       },
@@ -121,6 +136,7 @@ export class AnalyticsService {
     const monthOutflow = await prisma.transaction.aggregate({
       where: {
         orgId,
+        ...(accountId && { accountId }),
         direction: 'OUT',
         occurredAt: { gte: startOfMonth }
       },
@@ -133,6 +149,7 @@ export class AnalyticsService {
       by: ['direction'],
       where: {
         orgId,
+        ...(accountId && { accountId }),
         direction: 'OUT',
         occurredAt: { gte: threeMonthsAgo }
       },
@@ -157,14 +174,17 @@ export class AnalyticsService {
   /**
    * Get cash flow forecast for the next 30 days
    */
-  static async getForecast(orgId: string) {
+  static async getForecast(orgId: string, accountId?: string) {
     const now = new Date()
     const thirtyDaysAgo = new Date(new Date().setDate(now.getDate() - 30))
     const ninetyDaysAgo = new Date(new Date().setDate(now.getDate() - 90))
     
     // 1. Current Total Balance
     const accounts = await prisma.account.aggregate({
-      where: { orgId },
+      where: {
+        orgId,
+        ...(accountId && { id: accountId })
+      },
       _sum: { balance: true }
     })
     const currentBalance = Number(accounts._sum.balance || 0)
@@ -174,6 +194,7 @@ export class AnalyticsService {
       by: ['direction'],
       where: {
         orgId,
+        ...(accountId && { accountId }),
         occurredAt: { gte: ninetyDaysAgo, lte: now }
       },
       _sum: { amount: true }
@@ -187,8 +208,7 @@ export class AnalyticsService {
     const projectedDailyNet = avgDailyIn - avgDailyOut
 
     // 3. Last 7 days of actual balances (relative to current balance)
-    // To simplify, we'll just show the last 7 days of net change leading up to current balance
-    const last7DaysNet = await this.getDailyBalances(orgId, new Date(new Date().setDate(now.getDate() - 7)), now)
+    const last7DaysNet = await this.getDailyBalances(orgId, new Date(new Date().setDate(now.getDate() - 7)), now, accountId)
     
     const forecast = []
     
@@ -226,11 +246,12 @@ export class AnalyticsService {
 
     return forecast
   }
+
   /**
    * Get Balance Projections for J+30, J+60, J+90
    * Moteur de projection based on current balance and Recurring Rules
    */
-  static async getProjections(orgId: string) {
+  static async getProjections(orgId: string, accountId?: string) {
     const now = new Date()
     const thirtyDays = new Date(now)
     thirtyDays.setDate(now.getDate() + 30)
@@ -241,7 +262,10 @@ export class AnalyticsService {
 
     // 1. Current Total Balance
     const accounts = await prisma.account.aggregate({
-      where: { orgId },
+      where: {
+        orgId,
+        ...(accountId && { id: accountId })
+      },
       _sum: { balance: true }
     })
     const currentBalance = Number(accounts._sum.balance || 0)

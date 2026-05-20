@@ -1,11 +1,12 @@
 import { Router } from 'express'
 import { DocumentController } from '../controllers/document.controller.js'
-import { isAuthenticated } from '../middleware/auth.middleware.js'
+import { isAuthenticated, authorizeRole } from '../middleware/auth.middleware.js'
 import { uploadDoc } from '../middleware/upload.middleware.js'
 
 const router = Router()
 
 router.use(isAuthenticated)
+router.use(authorizeRole(['OWNER']))
 
 router.post('/', uploadDoc.single('file'), DocumentController.upload)
 router.get('/', DocumentController.list)

@@ -1,23 +1,218 @@
 import React from 'react'
-import { FileText, Download, Trash2, ExternalLink, Search, LayoutGrid, List, UploadCloud } from 'lucide-react'
+import { FileText, Download, Trash2, ExternalLink, Search, LayoutGrid, List, UploadCloud, Share2, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { Modal } from '@/presentation/components/ui/modal'
 import { useGetDocumentsQuery, useDeleteDocumentMutation, useAddVersionMutation, useUploadDocumentMutation } from '@/infrastructure/api/documentApi'
 import { BASE_URL } from '@/infrastructure/api/apiSlice'
+import { CreateConsentGrantModal } from '@/presentation/components/compliance/CreateConsentGrantModal'
+import { useGetConsentGrantsQuery, useRevokeConsentGrantMutation } from '@/infrastructure/api/consentGrantApi'
+import { useAuth } from '@/application/context/AuthContext'
 
 export default function DocumentsPage() {
+  const { user } = useAuth()
   const { data: documents, isLoading } = useGetDocumentsQuery()
   const [deleteDocument] = useDeleteDocumentMutation()
   const [addVersion] = useAddVersionMutation()
   const [uploadDocument] = useUploadDocumentMutation()
+
+  // Only owners can access this page
+  if (user?.role !== 'OWNER') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
+          <ShieldAlert className="w-16 h-16 text-yellow-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Seul le propriétaire principal de l'organisation peut accéder aux documents de la Data Room.
+          </p>
+        </div>
+      </div>
+    )
+  }
   const [searchTerm, setSearchTerm] = React.useState('')
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid')
   
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
   const [selectedType, setSelectedType] = React.useState('')
+
+  // New States and API Hooks for Access Sharing
+  const [activeTab, setActiveTab] = React.useState<'dataroom' | 'shares'>('dataroom')
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false)
+  const { data: shares, isLoading: isSharesLoading } = useGetConsentGrantsQuery()
+  const [revokeShare] = useRevokeConsentGrantMutation()
+
+  const handleRevokeShare = async (id: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir révoquer cet accès ? Le partenaire ne pourra plus accéder à vos données.')) {
+      try {
+        await revokeShare(id).unwrap()
+        alert('Accès révoqué avec succès')
+      } catch (err: any) {
+        alert(err?.data?.error || 'Erreur lors de la révocation')
+      }
+    }
+  }
+
+  const renderSharesTab = () => {
+    if (isSharesLoading) {
+      return (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-trust"></div>
+        </div>
+      )
+    }
+
+    const hasShares = shares && shares.length > 0
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/5 border border-white/10 p-6 rounded-2xl gap-4">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">Partages actifs ({shares?.length || 0})</h2>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+              Ces autorisations permettent à vos partenaires de consulter vos données financières et documentaires. Vous pouvez révoquer ces accès à tout moment.
+            </p>
+          </div>
+          <Button 
+            variant="trust" 
+            className="gap-2 shadow-lg shadow-trust/20 shrink-0"
+            onClick={() => setIsShareModalOpen(true)}
+          >
+            <Share2 size={16} />
+            Autoriser un Partenaire
+          </Button>
+        </div>
+
+        {!hasShares ? (
+          <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/2">
+            <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
+              <Share2 className="w-12 h-12 text-muted-foreground opacity-20" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Aucun accès partagé</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto mb-8">
+              Vous n'avez pas encore configuré d'accès tiers. Générez un token sécurisé pour vos banquiers ou auditeurs.
+            </p>
+            <Button variant="trust" size="lg" className="rounded-full px-8" onClick={() => setIsShareModalOpen(true)}>
+              Générer mon premier accès
+            </Button>
+          </div>
+        ) : (
+          <div className="glass border-white/10 rounded-[2rem] overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/2 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                    <th className="px-6 py-4">Partenaire</th>
+                    <th className="px-6 py-4">But de l'accès</th>
+                    <th className="px-6 py-4">Périmètre</th>
+                    <th className="px-6 py-4">Créé le</th>
+                    <th className="px-6 py-4">Expiration</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {shares.map((share) => {
+                    const isExpired = new Date(share.expiresAt).getTime() <= Date.now()
+                    return (
+                      <tr key={share.id} className="hover:bg-white/2 transition-colors">
+                        <td className="px-6 py-4 font-bold text-sm">{share.partnerName}</td>
+                        <td className="px-6 py-4 text-xs text-muted-foreground max-w-xs truncate">{share.purpose}</td>
+                        <td className="px-6 py-4">
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                            share.scope === '*' 
+                              ? 'bg-trust/10 text-trust border border-trust/20' 
+                              : 'bg-white/10 text-white/85 border border-white/10'
+                          }`}>
+                            {share.scope === '*' ? 'Accès Complet' : 'Vue Profil'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-muted-foreground">
+                          {new Date(share.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className={`text-xs font-semibold ${isExpired ? 'text-destructive' : 'text-green-500'}`}>
+                              {isExpired ? 'Expiré' : 'Actif'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
+                              {new Date(share.expiresAt).toLocaleString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevokeShare(share.id)}
+                            className="text-destructive hover:bg-destructive/10 h-8 font-black uppercase tracking-widest text-[9px] border border-destructive/10"
+                          >
+                            Révoquer
+                          </Button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="md:hidden divide-y divide-white/5">
+              {shares.map((share) => {
+                const isExpired = new Date(share.expiresAt).getTime() <= Date.now()
+                return (
+                  <div key={share.id} className="p-6 space-y-4 hover:bg-white/2 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-base">{share.partnerName}</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">{share.purpose}</p>
+                      </div>
+                      <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        share.scope === '*' 
+                          ? 'bg-trust/10 text-trust border border-trust/20' 
+                          : 'bg-white/10 text-white/85 border border-white/10'
+                      }`}>
+                        {share.scope === '*' ? 'Accès Complet' : 'Vue Profil'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Créé le</span>
+                        <span className="font-semibold text-white/90">{new Date(share.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Expiration</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${isExpired ? 'bg-destructive' : 'bg-green-500'}`} />
+                          <span className={`font-semibold ${isExpired ? 'text-destructive' : 'text-green-500'}`}>
+                            {new Date(share.expiresAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleRevokeShare(share.id)}
+                      className="w-full text-destructive hover:bg-destructive/10 border border-destructive/10 text-[10px] uppercase tracking-widest font-black h-9"
+                    >
+                      Révoquer l'accès
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const ALL_DOC_TYPES = [
     'STATUTS', 'RCCM', 'NUI', 'ETATS_FINANCIERS', 'QUITANCE_IMPOTS', 'BAIL', 'CONTRAT_TRAVAIL', 'AUTRE'
@@ -99,63 +294,163 @@ export default function DocumentsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Data Room</h1>
           <p className="text-muted-foreground">Votre coffre-fort numérique pour les audits et financements</p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-1 border border-white/10 rounded-lg p-1 bg-white/5">
-            <Button 
-              variant={viewMode === 'grid' ? 'trust' : 'ghost'} 
-              size="icon" 
-              className="h-8 w-8 rounded-md" 
-              onClick={() => setViewMode('grid')}
-              title="Vue Grille"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant={viewMode === 'list' ? 'trust' : 'ghost'} 
-              size="icon" 
-              className="h-8 w-8 rounded-md" 
-              onClick={() => setViewMode('list')}
-              title="Vue Liste"
-            >
-              <List className="w-4 h-4" />
-            </Button>
+        {activeTab === 'dataroom' && (
+          <div className="flex items-center gap-3 w-full md:w-auto animate-fade-in">
+            <div className="flex items-center gap-1 border border-white/10 rounded-lg p-1 bg-white/5">
+              <Button 
+                variant={viewMode === 'grid' ? 'trust' : 'ghost'} 
+                size="icon" 
+                className="h-8 w-8 rounded-md" 
+                onClick={() => setViewMode('grid')}
+                title="Vue Grille"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'trust' : 'ghost'} 
+                size="icon" 
+                className="h-8 w-8 rounded-md" 
+                onClick={() => setViewMode('list')}
+                title="Vue Liste"
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Rechercher un doc..." 
+                className="pl-9 bg-white/5 border-white/10 h-10"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="relative">
+              <input 
+                type="file" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                title="Ajouter un document"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleFileSelect(e.target.files[0])
+                }}
+              />
+              <Button variant="trust" className="gap-2 shadow-lg shadow-trust/20 pointer-events-none">
+                Ajouter
+              </Button>
+            </div>
           </div>
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Rechercher un doc..." 
-              className="pl-9 bg-white/5 border-white/10 h-10"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="relative">
-            <input 
-              type="file" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-              title="Ajouter un document"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleFileSelect(e.target.files[0])
-              }}
-            />
-            <Button variant="trust" className="gap-2 shadow-lg shadow-trust/20 pointer-events-none">
-              Ajouter
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDocs?.map((doc: any) => (
-            <Card key={doc.id} className="glass border-white/10 hover:border-trust/30 transition-all group relative overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div className="p-3 bg-trust/20 rounded-xl text-trust group-hover:scale-110 transition-transform">
-                    <FileText size={24} />
+      {/* Onglets */}
+      <div className="flex border-b border-white/10 gap-6">
+        <button
+          onClick={() => setActiveTab('dataroom')}
+          className={`pb-3 text-sm font-bold transition-all relative ${
+            activeTab === 'dataroom' ? 'text-trust' : 'text-muted-foreground hover:text-white'
+          }`}
+        >
+          Coffre-fort Documentaire
+          {activeTab === 'dataroom' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('shares')}
+          className={`pb-3 text-sm font-bold transition-all relative ${
+            activeTab === 'shares' ? 'text-trust' : 'text-muted-foreground hover:text-white'
+          }`}
+        >
+          Partages & Accès Tiers
+          {activeTab === 'shares' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'dataroom' ? (
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+              {filteredDocs?.map((doc: any) => (
+                <Card key={doc.id} className="glass border-white/10 hover:border-trust/30 transition-all group relative overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="p-3 bg-trust/20 rounded-xl text-trust group-hover:scale-110 transition-transform">
+                        <FileText size={24} />
+                      </div>
+                      <CardTitle className="text-lg truncate font-bold tracking-tight">{doc.name}</CardTitle>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="relative">
+                          <input 
+                            type="file" 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                            title="Mettre à jour"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) handleUpdate(doc.id, e.target.files[0])
+                            }}
+                          />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-trust/10 text-trust hover:bg-trust hover:text-white transition-colors">
+                            <UploadCloud size={14} />
+                          </Button>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm relative z-20" asChild title="Ouvrir">
+                          <a href={getFullUrl(doc.versions[0]?.fileUrl)} target="_blank" rel="noreferrer">
+                            <ExternalLink size={14} />
+                          </a>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors" 
+                          onClick={() => handleDelete(doc.id)}
+                          title="Supprimer"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription className="text-[10px] uppercase font-black tracking-[0.2em] text-trust mt-1">
+                      {doc.type.replace(/_/g, ' ')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                     <div className="space-y-4">
+                       <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground bg-white/5 p-2 rounded-lg border border-white/5">
+                         <span>Mise à jour : {new Date(doc.updatedAt).toLocaleDateString()}</span>
+                         <span>{((doc.versions[0]?.fileSize || 0) / 1024 / 1024).toFixed(2)} Mo</span>
+                       </div>
+                       <Button variant="outline" className="w-full gap-2 text-xs font-bold h-10 border-white/10 bg-white/5 hover:bg-trust/10 transition-colors" asChild>
+                         <a href={getFullUrl(doc.versions[0]?.fileUrl)} download={doc.versions[0]?.fileName}>
+                           <Download size={14} />
+                           Télécharger la version
+                         </a>
+                       </Button>
+                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3 animate-fade-in">
+              {filteredDocs?.map((doc: any) => (
+                <div key={doc.id} className="glass border-white/10 hover:border-trust/30 transition-all p-4 rounded-xl flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-trust/20 rounded-lg text-trust">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm">{doc.name}</h3>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <span className="text-trust uppercase font-black text-[9px] tracking-wider">{doc.type.replace(/_/g, ' ')}</span>
+                        <span>•</span>
+                        <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{((doc.versions[0]?.fileSize || 0) / 1024 / 1024).toFixed(2)} Mo</span>
+                      </div>
+                    </div>
                   </div>
-                  <CardTitle className="text-lg truncate font-bold tracking-tight">{doc.name}</CardTitle>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2">
                     <div className="relative">
                       <input 
                         type="file" 
@@ -165,19 +460,24 @@ export default function DocumentsPage() {
                           if (e.target.files?.[0]) handleUpdate(doc.id, e.target.files[0])
                         }}
                       />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-trust/10 text-trust hover:bg-trust hover:text-white transition-colors">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-trust/10 text-trust">
                         <UploadCloud size={14} />
                       </Button>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm relative z-20" asChild title="Ouvrir">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full relative z-20" asChild title="Ouvrir">
                       <a href={getFullUrl(doc.versions[0]?.fileUrl)} target="_blank" rel="noreferrer">
                         <ExternalLink size={14} />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild title="Télécharger">
+                      <a href={getFullUrl(doc.versions[0]?.fileUrl)} download={doc.versions[0]?.fileName}>
+                        <Download size={14} />
                       </a>
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors" 
+                      className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10" 
                       onClick={() => handleDelete(doc.id)}
                       title="Supprimer"
                     >
@@ -185,133 +485,66 @@ export default function DocumentsPage() {
                     </Button>
                   </div>
                 </div>
-                <CardDescription className="text-[10px] uppercase font-black tracking-[0.2em] text-trust mt-1">
-                  {doc.type.replace(/_/g, ' ')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                 <div className="space-y-4">
-                   <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground bg-white/5 p-2 rounded-lg border border-white/5">
-                     <span>Mise à jour : {new Date(doc.updatedAt).toLocaleDateString()}</span>
-                     <span>{((doc.versions[0]?.fileSize || 0) / 1024 / 1024).toFixed(2)} Mo</span>
-                   </div>
-                   <Button variant="outline" className="w-full gap-2 text-xs font-bold h-10 border-white/10 bg-white/5 hover:bg-trust/10 transition-colors" asChild>
-                     <a href={getFullUrl(doc.versions[0]?.fileUrl)} download={doc.versions[0]?.fileName}>
-                       <Download size={14} />
-                       Télécharger la version
-                     </a>
-                   </Button>
-                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredDocs?.map((doc: any) => (
-            <div key={doc.id} className="glass border-white/10 hover:border-trust/30 transition-all p-4 rounded-xl flex items-center justify-between group">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-trust/20 rounded-lg text-trust">
-                  <FileText size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm">{doc.name}</h3>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                    <span className="text-trust uppercase font-black text-[9px] tracking-wider">{doc.type.replace(/_/g, ' ')}</span>
-                    <span>•</span>
-                    <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
-                    <span>•</span>
-                    <span>{((doc.versions[0]?.fileSize || 0) / 1024 / 1024).toFixed(2)} Mo</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <input 
-                    type="file" 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                    title="Mettre à jour"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) handleUpdate(doc.id, e.target.files[0])
-                    }}
-                  />
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-trust/10 text-trust">
-                    <UploadCloud size={14} />
-                  </Button>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full relative z-20" asChild title="Ouvrir">
-                  <a href={getFullUrl(doc.versions[0]?.fileUrl)} target="_blank" rel="noreferrer">
-                    <ExternalLink size={14} />
-                  </a>
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild title="Télécharger">
-                  <a href={getFullUrl(doc.versions[0]?.fileUrl)} download={doc.versions[0]?.fileName}>
-                    <Download size={14} />
-                  </a>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10" 
-                  onClick={() => handleDelete(doc.id)}
-                  title="Supprimer"
-                >
-                  <Trash2 size={14} />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {(!filteredDocs || filteredDocs.length === 0) && (
-        <div className="text-center py-24 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/2">
-           <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
-              <FileText className="w-12 h-12 text-muted-foreground opacity-20" />
-           </div>
-           <h3 className="text-xl font-bold mb-2">Votre coffre-fort est vide</h3>
-           <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-             Uploadez vos documents juridiques et financiers pour constituer votre Data Room et rassurer vos partenaires.
-           </p>
-           <Button variant="trust" size="lg" className="rounded-full px-8" asChild>
-             <a href="/compliance">Uploader mes premiers documents</a>
-           </Button>
-        </div>
-      )}
-
-      <Modal isOpen={isModalOpen} onClose={() => {
-        setIsModalOpen(false)
-        setSelectedFile(null)
-      }} title="Ajouter un document">
-        <div className="space-y-6">
-          <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4">
-            <div className="p-2 bg-trust/20 rounded-lg text-trust">
-              <FileText size={24} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold truncate">{selectedFile?.name}</p>
-              <p className="text-xs text-muted-foreground">Fichier sélectionné</p>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Type de document</label>
-            <select 
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-trust outline-none"
-            >
-              {missingTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
               ))}
-            </select>
-          </div>
+            </div>
+          )}
 
-          <Button onClick={confirmUpload} variant="trust" className="w-full h-12 text-base font-bold">
-            Uploader le document
-          </Button>
+          {(!filteredDocs || filteredDocs.length === 0) && (
+            <div className="text-center py-24 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/2">
+               <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
+                  <FileText className="w-12 h-12 text-muted-foreground opacity-20" />
+               </div>
+               <h3 className="text-xl font-bold mb-2">Votre coffre-fort est vide</h3>
+               <p className="text-muted-foreground max-w-sm mx-auto mb-8">
+                 Uploadez vos documents juridiques et financiers pour constituer votre Data Room et rassurer vos partenaires.
+               </p>
+               <Button variant="trust" size="lg" className="rounded-full px-8" asChild>
+                 <a href="/compliance">Uploader mes premiers documents</a>
+               </Button>
+            </div>
+          )}
+
+          <Modal isOpen={isModalOpen} onClose={() => {
+            setIsModalOpen(false)
+            setSelectedFile(null)
+          }} title="Ajouter un document">
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4">
+                <div className="p-2 bg-trust/20 rounded-lg text-trust">
+                  <FileText size={24} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold truncate">{selectedFile?.name}</p>
+                  <p className="text-xs text-muted-foreground">Fichier sélectionné</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Type de document</label>
+                <select 
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-trust outline-none"
+                >
+                  {missingTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <Button onClick={confirmUpload} variant="trust" className="w-full h-12 text-base font-bold">
+                Uploader le document
+              </Button>
+            </div>
+          </Modal>
+        </>
+      ) : (
+        <div className="animate-fade-in">
+          {renderSharesTab()}
         </div>
-      </Modal>
+      )}
+
+      <CreateConsentGrantModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
     </div>
   )
 }

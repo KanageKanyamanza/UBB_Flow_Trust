@@ -17,6 +17,8 @@ import RecurringRulesPage from './presentation/pages/RecurringRulesPage'
 import ProfilePage from './presentation/pages/ProfilePage'
 import CompliancePage from './presentation/pages/CompliancePage'
 import DocumentsPage from './presentation/pages/DocumentsPage'
+import PartnerPortalPage from './presentation/pages/PartnerPortalPage'
+import TeamPage from './presentation/pages/TeamPage'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 import MainLayout from './presentation/components/layout/MainLayout'
 
@@ -92,6 +94,9 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        {/* Partner Portal (Public access route with custom token verification) */}
+        <Route path="/partner/portal" element={<PartnerPortalPage />} />
+
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
@@ -104,6 +109,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/compliance" element={<CompliancePage />} />
             <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/team" element={<TeamPage />} />
           </Route>
         </Route>
 
