@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { BASE_URL } from '../../infrastructure/api/apiSlice'
 import { 
   useGetPartnerProfileQuery,
   useGetPartnerAccountsQuery,
@@ -378,7 +379,12 @@ const PartnerPortalPage: React.FC = () => {
                           className="text-muted-foreground hover:text-trust hover:bg-trust/10 border border-white/5 h-9 w-9"
                           asChild
                         >
-                          <a href={latestVersion.fileUrl} target="_blank" rel="noopener noreferrer" download={latestVersion.fileName}>
+                          <a 
+                            href={`${BASE_URL}/partner/documents/${doc.id}/download?token=${partnerToken}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            download={latestVersion.fileName}
+                          >
                             <Download className="w-4 h-4" />
                           </a>
                         </Button>

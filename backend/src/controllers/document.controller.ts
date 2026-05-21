@@ -53,4 +53,14 @@ export class DocumentController {
       res.status(400).json({ error: error.message })
     }
   }
+
+  static async getLogs(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
+      const logs = await DocumentService.getConsultationLogs(req.user.orgId)
+      res.json(logs)
+    } catch (error: any) {
+      res.status(500).json({ error: error.message })
+    }
+  }
 }

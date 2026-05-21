@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/pre
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { Modal } from '@/presentation/components/ui/modal'
-import { useGetDocumentsQuery, useDeleteDocumentMutation, useAddVersionMutation, useUploadDocumentMutation } from '@/infrastructure/api/documentApi'
+import { useGetDocumentsQuery, useDeleteDocumentMutation, useAddVersionMutation, useUploadDocumentMutation, useGetDocumentLogsQuery } from '@/infrastructure/api/documentApi'
 import { BASE_URL } from '@/infrastructure/api/apiSlice'
 import { CreateConsentGrantModal } from '@/presentation/components/compliance/CreateConsentGrantModal'
 import { useGetConsentGrantsQuery, useRevokeConsentGrantMutation } from '@/infrastructure/api/consentGrantApi'
@@ -41,10 +41,13 @@ export default function DocumentsPage() {
   const [selectedType, setSelectedType] = React.useState('')
 
   // New States and API Hooks for Access Sharing
-  const [activeTab, setActiveTab] = React.useState<'dataroom' | 'shares'>('dataroom')
+  const [activeTab, setActiveTab] = React.useState<'dataroom' | 'shares' | 'logs'>('dataroom')
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false)
   const { data: shares, isLoading: isSharesLoading } = useGetConsentGrantsQuery()
   const [revokeShare] = useRevokeConsentGrantMutation()
+  const { data: logs, isLoading: isLogsLoading } = useGetDocumentLogsQuery(undefined, {
+    skip: activeTab !== 'logs'
+  })
 
   const handleRevokeShare = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir révoquer cet accès ? Le partenaire ne pourra plus accéder à vos données.')) {
@@ -214,6 +217,144 @@ export default function DocumentsPage() {
     )
   }
 
+  const renderLogsTab = () => {
+    if (isLogsLoading) {
+      return (
+        <div className="flex items-center justify-center py-20 animate-fade-in">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-trust"></div>
+        </div>
+      )
+    }
+
+    const hasLogs = logs && logs.length > 0
+
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/5 border border-white/10 p-6 rounded-2xl gap-4">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">Historique de consultation ({logs?.length || 0})</h2>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+              Suivi et traçabilité des consultations et téléchargements de vos documents par des tiers (banquiers, auditeurs, partenaires).
+            </p>
+          </div>
+        </div>
+
+        {!hasLogs ? (
+          <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/2">
+            <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
+              <FileText className="w-12 h-12 text-muted-foreground opacity-20" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Aucune consultation pour le moment</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">
+              Vos documents partagés n'ont pas encore été consultés par vos partenaires.
+            </p>
+          </div>
+        ) : (
+          <div className="glass border-white/10 rounded-[2rem] overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/2 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                    <th className="px-6 py-4">Date & Heure</th>
+                    <th className="px-6 py-4">Partenaire</th>
+                    <th className="px-6 py-4">Action</th>
+                    <th className="px-6 py-4">Document concerné</th>
+                    <th className="px-6 py-4">Motif / But</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {logs.map((log: any) => {
+                    const data = log.newData || {}
+                    const isDownload = log.action === 'PARTNER_DOWNLOAD_DOCUMENT'
+                    return (
+                      <tr key={log.id} className="hover:bg-white/2 transition-colors">
+                        <td className="px-6 py-4 text-xs text-muted-foreground">
+                          {new Date(log.createdAt).toLocaleString('fr-FR')}
+                        </td>
+                        <td className="px-6 py-4 font-bold text-sm text-white">
+                          {data.partnerName || 'Partenaire inconnu'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                            isDownload 
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          }`}>
+                            {isDownload ? 'Téléchargement' : 'Consultation Liste'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-white/90 font-medium">
+                          {isDownload ? (
+                            <span className="flex items-center gap-1.5">
+                              <FileText size={14} className="text-muted-foreground" />
+                              {data.documentName || data.fileName || 'Document'}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic">
+                              Tous les documents ({data.count || 0})
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-muted-foreground max-w-xs truncate">
+                          {data.purpose || 'Non spécifié'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="md:hidden divide-y divide-white/5">
+              {logs.map((log: any) => {
+                const data = log.newData || {}
+                const isDownload = log.action === 'PARTNER_DOWNLOAD_DOCUMENT'
+                return (
+                  <div key={log.id} className="p-6 space-y-3 hover:bg-white/2 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-sm text-white">{data.partnerName || 'Partenaire inconnu'}</h4>
+                        <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                          {new Date(log.createdAt).toLocaleString('fr-FR')}
+                        </span>
+                      </div>
+                      <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        isDownload 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      }`}>
+                        {isDownload ? 'Téléchargé' : 'Consulté'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs">
+                      <div>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Document concerné</span>
+                        <span className="font-semibold text-white/90">
+                          {isDownload ? (
+                            data.documentName || data.fileName || 'Document'
+                          ) : (
+                            `Tous les documents (${data.count || 0})`
+                          )}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">But de l'accès</span>
+                        <span className="text-muted-foreground">{data.purpose || 'Non spécifié'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const ALL_DOC_TYPES = [
     'STATUTS', 'RCCM', 'NUI', 'ETATS_FINANCIERS', 'QUITANCE_IMPOTS', 'BAIL', 'CONTRAT_TRAVAIL', 'AUTRE'
   ]
@@ -363,6 +504,17 @@ export default function DocumentsPage() {
         >
           Partages & Accès Tiers
           {activeTab === 'shares' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('logs')}
+          className={`pb-3 text-sm font-bold transition-all relative ${
+            activeTab === 'logs' ? 'text-trust' : 'text-muted-foreground hover:text-white'
+          }`}
+        >
+          Historique d'accès
+          {activeTab === 'logs' && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
           )}
         </button>
@@ -538,9 +690,13 @@ export default function DocumentsPage() {
             </div>
           </Modal>
         </>
-      ) : (
+      ) : activeTab === 'shares' ? (
         <div className="animate-fade-in">
           {renderSharesTab()}
+        </div>
+      ) : (
+        <div className="animate-fade-in">
+          {renderLogsTab()}
         </div>
       )}
 

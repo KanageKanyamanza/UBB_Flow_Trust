@@ -10,6 +10,7 @@ router.use(authorizeRole(['OWNER']))
 
 router.post('/', uploadDoc.single('file'), DocumentController.upload)
 router.get('/', DocumentController.list)
+router.get('/logs', DocumentController.getLogs)
 router.post('/:id/versions', uploadDoc.single('file'), DocumentController.addVersion)
 router.delete('/:id', DocumentController.delete)
 

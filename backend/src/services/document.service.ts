@@ -121,4 +121,18 @@ export class DocumentService {
     console.log(`[document-job]: Checked documents. Marked ${expiredCount} as EXPIRED.`)
     return expiredCount
   }
+
+  static async getConsultationLogs(orgId: string) {
+    return await prisma.auditLog.findMany({
+      where: {
+        orgId,
+        action: {
+          in: ['PARTNER_LIST_DOCUMENTS', 'PARTNER_DOWNLOAD_DOCUMENT']
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+  }
 }
