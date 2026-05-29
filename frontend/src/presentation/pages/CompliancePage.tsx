@@ -92,9 +92,9 @@ export default function CompliancePage() {
   }
 
   if (!reasons.includes('DOCUMENTS_MANQUANTS')) {
-    positiveFactors.push({ text: 'Statuts, RCCM & NUI fournis', pts: '+40' })
+    positiveFactors.push({ text: 'Statuts, RCCM & NUI validés', pts: '+40' })
   } else {
-    negativeFactors.push({ text: 'Pièces administratives manquantes', pts: '-40' })
+    negativeFactors.push({ text: 'Pièces réglementaires non validées', pts: '-40' })
   }
 
   if (!reasons.includes('ACTIVITE_FAIBLE') && !reasons.includes('AUCUNE_ACTIVITE')) {

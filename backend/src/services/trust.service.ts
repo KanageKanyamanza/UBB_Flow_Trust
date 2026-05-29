@@ -32,7 +32,10 @@ export class TrustService {
 
     // 3. Documents (40 points)
     const documents = await prisma.document.findMany({
-      where: { orgId }
+      where: { 
+        orgId,
+        status: 'VERIFIED'
+      }
     })
     
     const requiredTypes = ['STATUTS', 'RCCM', 'NUI']
