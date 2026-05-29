@@ -28,6 +28,21 @@ router.get('/profile', requireConsentScope('profile:read'), async (req: ConsentG
       return res.status(404).json({ error: 'Profil PME introuvable pour cette organisation' })
     }
 
+    // Log this action in AuditLog
+    await prisma.auditLog.create({
+      data: {
+        action: 'PARTNER_VIEW_PROFILE',
+        entityType: 'SmeProfile',
+        entityId: profile.id,
+        orgId,
+        newData: {
+          partnerName: req.consentGrant!.partnerName,
+          consentGrantId: req.consentGrant!.id,
+          purpose: req.consentGrant!.purpose,
+        }
+      }
+    })
+
     res.json(profile)
   } catch (error: any) {
     res.status(500).json({ error: error.message })
@@ -46,6 +61,22 @@ router.get('/transactions', requireConsentScope('transactions:read'), async (req
       take: 50, // Limite par sécurité pour un accès partenaire
       include: {
         evidenceFiles: true
+      }
+    })
+
+    // Log this action in AuditLog
+    await prisma.auditLog.create({
+      data: {
+        action: 'PARTNER_VIEW_TRANSACTIONS',
+        entityType: 'Transaction',
+        entityId: 'ALL',
+        orgId,
+        newData: {
+          partnerName: req.consentGrant!.partnerName,
+          consentGrantId: req.consentGrant!.id,
+          purpose: req.consentGrant!.purpose,
+          count: transactions.length
+        }
       }
     })
 
@@ -99,6 +130,22 @@ router.get('/trust-score', requireConsentScope('trust:read'), async (req: Consen
     if (!score) {
       return res.status(404).json({ error: 'Aucun score de confiance calculé pour cette organisation' })
     }
+
+    // Log this action in AuditLog
+    await prisma.auditLog.create({
+      data: {
+        action: 'PARTNER_VIEW_TRUST_SCORE',
+        entityType: 'TrustScore',
+        entityId: score.id,
+        orgId,
+        newData: {
+          partnerName: req.consentGrant!.partnerName,
+          consentGrantId: req.consentGrant!.id,
+          purpose: req.consentGrant!.purpose,
+          score: score.score
+        }
+      }
+    })
 
     res.json(score)
   } catch (error: any) {
@@ -238,6 +285,23 @@ router.get('/accounts', requireConsentScope(['accounts:read', 'transactions:read
       where: { orgId },
       orderBy: { name: 'asc' }
     })
+
+    // Log this action in AuditLog
+    await prisma.auditLog.create({
+      data: {
+        action: 'PARTNER_VIEW_ACCOUNTS',
+        entityType: 'Account',
+        entityId: 'ALL',
+        orgId,
+        newData: {
+          partnerName: req.consentGrant!.partnerName,
+          consentGrantId: req.consentGrant!.id,
+          purpose: req.consentGrant!.purpose,
+          count: accounts.length
+        }
+      }
+    })
+
     res.json(accounts)
   } catch (error: any) {
     res.status(500).json({ error: error.message })

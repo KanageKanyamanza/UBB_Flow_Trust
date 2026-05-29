@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
@@ -8,6 +9,7 @@ import { useAuth } from '@/application/context/AuthContext'
 
 export default function ProfilePage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('general')
   const { data: profile, isLoading } = useGetProfileQuery()
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation()
@@ -223,62 +225,91 @@ export default function ProfilePage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
-              {formData.beneficialOwners?.map((bo: any, index: number) => (
-                <div key={index} className="p-6 bg-white/5 border border-white/10 rounded-2xl relative space-y-4 hover:bg-white/10 transition-colors group">
-                  <button 
-                    onClick={() => removeOfficer(index)}
-                    className="absolute top-4 right-4 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nom Complet</label>
-                      <Input 
-                        placeholder="Nom et Prénom"
-                        value={bo.name} 
-                        onChange={e => updateOfficer(index, 'name', e.target.value)}
-                      />
+              {formData.beneficialOwners && formData.beneficialOwners.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {formData.beneficialOwners.map((bo: any, index: number) => (
+                    <div key={index} className="p-5 bg-white/5 border border-white/10 rounded-2xl relative hover:bg-white/10 transition-colors group flex flex-col justify-between">
+                      <button 
+                        onClick={() => removeOfficer(index)}
+                        className="absolute top-3 right-3 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+
+                      {/* Header Card */}
+                      <div className="flex items-center gap-3 mb-4 pr-6">
+                        <div className="w-10 h-10 rounded-full bg-trust/20 flex items-center justify-center text-trust font-black text-xs uppercase shrink-0">
+                          {bo.name ? bo.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : '??'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider">Dirigeant</p>
+                          <p className="font-bold text-sm truncate text-white">{bo.name || 'Nouveau membre'}</p>
+                        </div>
+                        <div className="bg-trust/10 text-trust font-mono font-bold text-xs px-2 py-0.5 rounded-full border border-trust/20 shrink-0">
+                          {bo.ownershipPct || 0}%
+                        </div>
+                      </div>
+
+                      {/* Content Form */}
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Nom Complet</label>
+                            <Input 
+                              placeholder="Nom et Prénom"
+                              value={bo.name} 
+                              className="h-8 text-xs px-2"
+                              onChange={e => updateOfficer(index, 'name', e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Rôle</label>
+                            <Input 
+                              placeholder="Ex: Gérant"
+                              value={bo.role || ''} 
+                              className="h-8 text-xs px-2"
+                              onChange={e => updateOfficer(index, 'role', e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Détention (%)</label>
+                            <Input 
+                              type="number"
+                              placeholder="0"
+                              value={bo.ownershipPct || 0} 
+                              className="h-8 text-xs px-2"
+                              onChange={e => updateOfficer(index, 'ownershipPct', parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Nationalité</label>
+                            <Input 
+                              placeholder="Ex: Camerounaise"
+                              value={bo.nationality || ''} 
+                              className="h-8 text-xs px-2"
+                              onChange={e => updateOfficer(index, 'nationality', e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Email</label>
+                          <Input 
+                            type="email"
+                            placeholder="email@exemple.com"
+                            value={bo.email || ''} 
+                            className="h-8 text-xs px-2"
+                            onChange={e => updateOfficer(index, 'email', e.target.value)}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Rôle / Fonction</label>
-                      <Input 
-                        placeholder="Ex: Gérant, Actionnaire..."
-                        value={bo.role || ''} 
-                        onChange={e => updateOfficer(index, 'role', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">% Détention</label>
-                      <Input 
-                        type="number"
-                        placeholder="0"
-                        value={bo.ownershipPct || 0} 
-                        onChange={e => updateOfficer(index, 'ownershipPct', parseFloat(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nationalité</label>
-                      <Input 
-                        placeholder="Ex: Camerounaise"
-                        value={bo.nationality || ''} 
-                        onChange={e => updateOfficer(index, 'nationality', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Email</label>
-                      <Input 
-                        type="email"
-                        placeholder="email@exemple.com"
-                        value={bo.email || ''} 
-                        onChange={e => updateOfficer(index, 'email', e.target.value)}
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
               {(!formData.beneficialOwners || formData.beneficialOwners.length === 0) && (
                 <div className="text-center py-16 border-2 border-dashed border-white/10 rounded-2xl">
                   <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
@@ -317,7 +348,7 @@ export default function ProfilePage() {
                            {cat.types.map(t => (
                              <div key={t} className="text-xs flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5">
                                 <span className="text-muted-foreground">{t}</span>
-                                <Button variant="ghost" size="sm" className="h-6 text-[10px] text-trust" onClick={() => setActiveTab('docs')}>
+                                <Button variant="ghost" size="sm" className="h-6 text-[10px] text-trust hover:bg-trust/10 transition-colors" onClick={() => navigate('/documents')}>
                                   Gérer
                                 </Button>
                              </div>

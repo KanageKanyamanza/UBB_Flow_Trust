@@ -114,6 +114,18 @@ export class DocumentService {
           where: { id: doc.id },
           data: { status: 'EXPIRED' }
         })
+
+        // Create an alert to notify that document expiration impacts the score
+        await prisma.alert.create({
+          data: {
+            orgId: doc.orgId,
+            severity: 'CRITICAL',
+            type: 'DOCUMENT_EXPIRED',
+            message: `Alerte : Le document "${doc.name}" (${doc.type.replace(/_/g, ' ')}) a expiré, ce qui diminue votre Trust Score. Veuillez uploader une nouvelle version.`,
+            isAck: false
+          }
+        })
+
         expiredCount++
       }
     }
@@ -127,7 +139,14 @@ export class DocumentService {
       where: {
         orgId,
         action: {
-          in: ['PARTNER_LIST_DOCUMENTS', 'PARTNER_DOWNLOAD_DOCUMENT']
+          in: [
+            'PARTNER_LIST_DOCUMENTS',
+            'PARTNER_DOWNLOAD_DOCUMENT',
+            'PARTNER_VIEW_PROFILE',
+            'PARTNER_VIEW_TRANSACTIONS',
+            'PARTNER_VIEW_TRUST_SCORE',
+            'PARTNER_VIEW_ACCOUNTS'
+          ]
         }
       },
       orderBy: {

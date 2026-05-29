@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight, ShieldAlert } from 'lucide-react'
+import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight, ShieldAlert, TrendingUp, TrendingDown } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { useGetTrustScoreQuery, useRefreshTrustScoreMutation } from '@/infrastructure/api/trustApi'
@@ -62,6 +63,49 @@ export default function CompliancePage() {
 
   const score = trustData?.score || 0
   const reasons = trustData?.reasonCodes || []
+
+  // SVG parameters for animated circular Trust Score badge
+  const radius = 60
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (score / 100) * circumference
+
+  const getScoreStrokeColor = (s: number) => {
+    if (s >= 80) return 'stroke-trust'
+    if (s >= 50) return 'stroke-yellow-500'
+    return 'stroke-destructive'
+  }
+
+  // Dynamic calculations for score factors of impact (Hausse / Baisse)
+  const positiveFactors = []
+  const negativeFactors = []
+
+  if (!reasons.includes('PROFIL_MANQUANT') && !reasons.includes('PROFIL_INCOMPLET')) {
+    positiveFactors.push({ text: 'Profil complété', pts: '+20 pts' })
+  } else {
+    negativeFactors.push({ text: 'Profil incomplet/manquant', pts: '-20 pts' })
+  }
+
+  if (!reasons.includes('OFFICIERS_MANQUANTS')) {
+    positiveFactors.push({ text: 'UBOs déclarés', pts: '+20' })
+  } else {
+    negativeFactors.push({ text: 'UBOs manquants', pts: '-20' })
+  }
+
+  if (!reasons.includes('DOCUMENTS_MANQUANTS')) {
+    positiveFactors.push({ text: 'Statuts, RCCM & NUI fournis', pts: '+40' })
+  } else {
+    negativeFactors.push({ text: 'Pièces administratives manquantes', pts: '-40' })
+  }
+
+  if (!reasons.includes('ACTIVITE_FAIBLE') && !reasons.includes('AUCUNE_ACTIVITE')) {
+    positiveFactors.push({ text: 'Activité financière active', pts: '+20' })
+  } else {
+    if (reasons.includes('ACTIVITE_FAIBLE')) {
+      negativeFactors.push({ text: 'Activité transactionnelle faible', pts: '-10' })
+    } else {
+      negativeFactors.push({ text: 'Aucune transaction enregistrée', pts: '-20' })
+    }
+  }
 
   const getScoreColor = (s: number) => {
     if (s >= 80) return 'text-trust'
@@ -240,20 +284,81 @@ export default function CompliancePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 glass border-white/10 flex flex-col justify-center items-center p-8 text-center relative overflow-hidden group">
+        <Card className="md:col-span-1 glass border-white/10 flex flex-col items-center p-6 text-center relative overflow-hidden group">
           <div className="absolute inset-0 bg-trust/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative mb-4">
-            <div className="w-40 h-40 rounded-full border-8 border-white/5 flex items-center justify-center bg-white/2">
-              <span className={`text-5xl font-black ${getScoreColor(score)}`}>{score}</span>
+          
+          {/* Animated Circular Score Badge */}
+          <div className="relative w-40 h-40 mb-4 flex items-center justify-center">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle
+                cx="80"
+                cy="80"
+                r={radius}
+                className="stroke-white/5"
+                strokeWidth="8"
+                fill="transparent"
+              />
+              <motion.circle
+                cx="80"
+                cy="80"
+                r={radius}
+                className={cn("transition-all duration-500", getScoreStrokeColor(score))}
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <motion.span 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className={cn("text-4xl font-black font-mono", getScoreColor(score))}
+              >
+                {score}
+              </motion.span>
+              <span className="text-[9px] uppercase font-black tracking-widest text-muted-foreground mt-0.5">SCORE</span>
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1 shadow-xl">
-              <ShieldCheck className="w-12 h-12 text-trust" />
+            <div className="absolute bottom-1 right-1 bg-background rounded-full p-1 shadow-xl">
+              <ShieldCheck className="w-8 h-8 text-trust" />
             </div>
           </div>
-          <h2 className="text-xl font-bold">Trust Score</h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-[200px]">
-            Votre score de crédibilité actuel basé sur vos données déclarées et vérifiées.
-          </p>
+
+          <div className="space-y-4 w-full">
+            <div>
+              <h2 className="text-lg font-bold">Trust Score</h2>
+              <p className="text-[10px] text-muted-foreground uppercase font-black tracking-wider mt-0.5">
+                Facteurs d'impact
+              </p>
+            </div>
+
+            {/* Impact factors - Positive & Negative */}
+            <div className="space-y-2 text-left w-full border-t border-white/5 pt-4">
+              {positiveFactors.map((factor, index) => (
+                <div key={index} className="flex justify-between items-center bg-green-500/5 border border-green-500/10 px-3 py-1.5 rounded-xl text-xs">
+                  <span className="text-green-400/90 font-medium flex items-center gap-1.5">
+                    <TrendingUp size={12} className="text-green-400" />
+                    {factor.text}
+                  </span>
+                  <span className="text-green-400 font-bold font-mono text-[10px]">{factor.pts}</span>
+                </div>
+              ))}
+
+              {negativeFactors.map((factor, index) => (
+                <div key={index} className="flex justify-between items-center bg-destructive/5 border border-destructive/10 px-3 py-1.5 rounded-xl text-xs">
+                  <span className="text-destructive/90 font-medium flex items-center gap-1.5">
+                    <TrendingDown size={12} className="text-destructive" />
+                    {factor.text}
+                  </span>
+                  <span className="text-destructive font-bold font-mono text-[10px]">{factor.pts}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </Card>
 
         <Card className="md:col-span-2 glass border-white/10">

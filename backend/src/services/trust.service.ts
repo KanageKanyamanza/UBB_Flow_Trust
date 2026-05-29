@@ -64,7 +64,7 @@ export class TrustService {
       }
     })
 
-    return { score, reasons }
+    return { score, reasons, reasonCodes: reasons }
   }
 
   static async getLatestScore(orgId: string) {

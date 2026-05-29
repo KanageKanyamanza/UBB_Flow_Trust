@@ -1,0 +1,4 @@
+# Terminal Command Execution Restriction Rule
+You are strictly forbidden from running any commands in the terminal (i.e. using the `run_command` tool). 
+Whenever a terminal command needs to be executed (like starting a server, running tests, database migrations, etc.), you must provide the exact command to the user, explain what it does, and ask the user to run it and paste the output.
+You should edit files directly using `write_to_file`, `replace_file_content`, and `multi_replace_file_content`, but do not run them or execute any code.

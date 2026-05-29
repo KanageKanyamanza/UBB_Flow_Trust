@@ -22,7 +22,7 @@ export const hasValidConsent = async (req: ConsentGrantRequest, res: Response, n
     let token = ''
 
     if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1]
+      token = authHeader.split(' ')[1] || ''
     } else if (req.query.token && typeof req.query.token === 'string') {
       token = req.query.token
     }

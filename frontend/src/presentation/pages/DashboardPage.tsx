@@ -29,7 +29,7 @@ import { AccountCard } from '../components/accounts/AccountCard'
 import { DailyBalanceChart } from '../components/dashboard/DailyBalanceChart'
 import { CategorySummaryChart } from '../components/dashboard/CategorySummaryChart'
 import { CashFlowForecastChart } from '../components/dashboard/CashFlowForecastChart'
-import { AlertNotifications } from '../components/dashboard/AlertNotifications'
+import { NotificationBell } from '../components/dashboard/NotificationBell'
 import { Plus, ChevronRight, Ban } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -61,30 +61,33 @@ const DashboardPage: React.FC = () => {
             </div>
             <p className="text-muted-foreground">Bienvenue ! Voici l'état actuel de votre santé financière.</p>
           </div>
-          <div className="text-sm font-medium px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-flow" />
-            {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+          <div className="flex items-center gap-3">
+            <div className="text-sm font-medium px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-flow" />
+              {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+            </div>
+            <NotificationBell />
           </div>
         </header>
-
-        {/* Alerts Section */}
-        <AlertNotifications />
 
         {/* Global Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Trésorerie Totale */}
           <Card className="glass relative overflow-hidden group hover:bg-white/5 border-white/5">
-            <CardHeader className="pb-2">
+            <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.06] pointer-events-none">
+              <Wallet size={80} className="text-flow" />
+            </div>
+            <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-flow" />
                 Trésorerie Totale
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-4 pt-0">
               {isStatsLoading ? (
                 <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
               ) : (
-                <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR').format(stats?.totalBalance || 0)} CFA</div>
+                <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.totalBalance || 0)} CFA</div>
               )}
               <p className="text-xs text-muted-foreground mt-1">Disponibilités globales</p>
             </CardContent>
@@ -92,18 +95,21 @@ const DashboardPage: React.FC = () => {
 
           {/* Entrées du mois */}
           <Card className="glass relative overflow-hidden border-white/5">
-            <CardHeader className="pb-2">
+            <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.06] pointer-events-none">
+              <ArrowUpRight size={80} className="text-success" />
+            </div>
+            <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <ArrowUpRight className="w-4 h-4 text-success" />
                 Entrées du Mois
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-4 pt-0">
               {isStatsLoading ? (
                 <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
               ) : (
                 <div className="text-2xl font-bold text-success">
-                  +{new Intl.NumberFormat('fr-FR').format(stats?.currentMonthIn || 0)} CFA
+                  +{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.currentMonthIn || 0)} CFA
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-1">Recettes depuis le 1er {format(new Date(), 'MMMM', { locale: fr })}</p>
@@ -112,18 +118,21 @@ const DashboardPage: React.FC = () => {
 
           {/* Monthly Cash Burn */}
           <Card className="glass relative overflow-hidden border-white/5">
-            <CardHeader className="pb-2">
+            <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.06] pointer-events-none">
+              <ArrowDownRight size={80} className="text-destructive" />
+            </div>
+            <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <ArrowDownRight className="w-4 h-4 text-destructive" />
                 Cash Burn Mensuel
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-4 pt-0">
               {isStatsLoading ? (
                 <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
               ) : (
                 <div className="text-2xl font-bold text-destructive">
-                  {new Intl.NumberFormat('fr-FR').format(stats?.monthlyBurnRate || 0)} CFA
+                  {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.monthlyBurnRate || 0)} CFA
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-1">Moyenne des sorties</p>
@@ -135,16 +144,16 @@ const DashboardPage: React.FC = () => {
             "glass relative overflow-hidden",
             stats?.runwayMonths && stats.runwayMonths < 3 ? "border-destructive/30 bg-destructive/5" : "border-trust/10 glow-trust"
           )}>
-            <div className="absolute right-[-10px] top-[-10px] opacity-10">
-              <ShieldCheck size={80} className="text-trust" />
+            <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.06] pointer-events-none">
+              <ShieldCheck size={80} className={stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-trust"} />
             </div>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <Calendar className={cn("w-4 h-4", stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-trust")} />
                 Runway Estimé
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-4 pt-0">
               {isStatsLoading ? (
                 <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
               ) : (

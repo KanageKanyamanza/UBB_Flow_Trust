@@ -31,10 +31,11 @@ export class ComplianceService {
     })
 
     if (existingChecklist) {
-      // If it exists, we might want to refresh the auto-mapping for missing items
-      // or just return it. Let's return it for now to avoid duplicates.
-      // But the user asked to "Start", so maybe we should return the existing one.
-      return existingChecklist
+      await this.syncChecklist(orgId)
+      return await prisma.checklist.findFirst({
+        where: { id: existingChecklist.id },
+        include: { items: true }
+      })
     }
 
     // 2. Create Checklist
@@ -104,6 +105,7 @@ export class ComplianceService {
   }
 
   static async getJourney(orgId: string) {
+    await this.syncChecklist(orgId)
     return await prisma.checklist.findFirst({
       where: { orgId },
       include: { items: true },
@@ -146,5 +148,64 @@ export class ComplianceService {
     }
 
     return missingRequirements
+  }
+
+  static async syncChecklist(orgId: string) {
+    const checklist = await prisma.checklist.findFirst({
+      where: { orgId },
+      include: { items: true },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    if (!checklist) return null
+
+    const existingDocs = await prisma.document.findMany({
+      where: { orgId }
+    })
+
+    for (const item of checklist.items) {
+      const targetType = this.requirementToTypeMap[item.requirement]
+      if (targetType) {
+        const matchingDoc = existingDocs.find(d => d.type.toUpperCase() === targetType.toUpperCase())
+        let docId = item.docId
+        let status = item.status
+
+        if (matchingDoc) {
+          docId = matchingDoc.id
+          switch (matchingDoc.status) {
+            case 'VERIFIED':
+              status = 'PASS'
+              break
+            case 'SUBMITTED':
+            case 'DRAFT':
+              status = 'IN_REVIEW'
+              break
+            case 'REJECTED':
+            case 'EXPIRED':
+              status = 'FAIL'
+              break
+            default:
+              status = 'MISSING'
+          }
+        } else {
+          if (item.status !== 'NOT_APPLICABLE') {
+            docId = null
+            status = 'MISSING'
+          }
+        }
+
+        if (docId !== item.docId || status !== item.status) {
+          await prisma.checklistItem.update({
+            where: { id: item.id },
+            data: { docId, status }
+          })
+        }
+      }
+    }
+
+    return await prisma.checklist.findUnique({
+      where: { id: checklist.id },
+      include: { items: true }
+    })
   }
 }

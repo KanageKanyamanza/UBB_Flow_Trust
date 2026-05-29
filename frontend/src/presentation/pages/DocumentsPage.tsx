@@ -12,13 +12,35 @@ import { useAuth } from '@/application/context/AuthContext'
 
 export default function DocumentsPage() {
   const { user } = useAuth()
-  const { data: documents, isLoading } = useGetDocumentsQuery()
+  const isOwner = user?.role === 'OWNER'
+
+  const { data: documents, isLoading, error: documentsError } = useGetDocumentsQuery(undefined, {
+    skip: !isOwner
+  })
   const [deleteDocument] = useDeleteDocumentMutation()
   const [addVersion] = useAddVersionMutation()
   const [uploadDocument] = useUploadDocumentMutation()
 
+  const [searchTerm, setSearchTerm] = React.useState('')
+  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid')
+  
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
+  const [selectedType, setSelectedType] = React.useState('')
+
+  // New States and API Hooks for Access Sharing
+  const [activeTab, setActiveTab] = React.useState<'dataroom' | 'shares' | 'logs'>('dataroom')
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false)
+  const { data: shares, isLoading: isSharesLoading, error: sharesError } = useGetConsentGrantsQuery(undefined, {
+    skip: !isOwner
+  })
+  const [revokeShare] = useRevokeConsentGrantMutation()
+  const { data: logs, isLoading: isLogsLoading, error: logsError } = useGetDocumentLogsQuery(undefined, {
+    skip: activeTab !== 'logs' || !isOwner
+  })
+
   // Only owners can access this page
-  if (user?.role !== 'OWNER') {
+  if (!isOwner) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
@@ -33,21 +55,6 @@ export default function DocumentsPage() {
       </div>
     )
   }
-  const [searchTerm, setSearchTerm] = React.useState('')
-  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid')
-  
-  const [isModalOpen, setIsModalOpen] = React.useState(false)
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
-  const [selectedType, setSelectedType] = React.useState('')
-
-  // New States and API Hooks for Access Sharing
-  const [activeTab, setActiveTab] = React.useState<'dataroom' | 'shares' | 'logs'>('dataroom')
-  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false)
-  const { data: shares, isLoading: isSharesLoading } = useGetConsentGrantsQuery()
-  const [revokeShare] = useRevokeConsentGrantMutation()
-  const { data: logs, isLoading: isLogsLoading } = useGetDocumentLogsQuery(undefined, {
-    skip: activeTab !== 'logs'
-  })
 
   const handleRevokeShare = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir révoquer cet accès ? Le partenaire ne pourra plus accéder à vos données.')) {
@@ -65,6 +72,15 @@ export default function DocumentsPage() {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-trust"></div>
+        </div>
+      )
+    }
+
+    if (sharesError) {
+      return (
+        <div className="p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-destructive text-sm text-center">
+          <p className="font-bold">Erreur de chargement des partages</p>
+          <p className="text-xs mt-1">{(sharesError as any)?.data?.error || 'Impossible de récupérer les partages actifs'}</p>
         </div>
       )
     }
@@ -91,7 +107,7 @@ export default function DocumentsPage() {
         </div>
 
         {!hasShares ? (
-          <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/2">
+          <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-xl bg-white/2">
             <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
               <Share2 className="w-12 h-12 text-muted-foreground opacity-20" />
             </div>
@@ -104,7 +120,7 @@ export default function DocumentsPage() {
             </Button>
           </div>
         ) : (
-          <div className="glass border-white/10 rounded-[2rem] overflow-hidden">
+          <div className="glass border-white/10 rounded-xl overflow-hidden">
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -226,6 +242,65 @@ export default function DocumentsPage() {
       )
     }
 
+    if (logsError) {
+      return (
+        <div className="p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-destructive text-sm text-center animate-fade-in">
+          <p className="font-bold">Erreur de chargement de l'historique d'accès</p>
+          <p className="text-xs mt-1">{(logsError as any)?.data?.error || 'Impossible de récupérer l\'historique d\'accès'}</p>
+        </div>
+      )
+    }
+
+    const getActionLabel = (action: string) => {
+      switch (action) {
+        case 'PARTNER_DOWNLOAD_DOCUMENT': return 'Téléchargement'
+        case 'PARTNER_LIST_DOCUMENTS': return 'Data Room'
+        case 'PARTNER_VIEW_PROFILE': return 'Profil & UBOs'
+        case 'PARTNER_VIEW_TRANSACTIONS': return 'Transactions'
+        case 'PARTNER_VIEW_TRUST_SCORE': return 'Trust Score'
+        case 'PARTNER_VIEW_ACCOUNTS': return 'Comptes'
+        default: return action
+      }
+    }
+
+    const getActionStyle = (action: string) => {
+      switch (action) {
+        case 'PARTNER_DOWNLOAD_DOCUMENT':
+          return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+        case 'PARTNER_LIST_DOCUMENTS':
+          return 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+        case 'PARTNER_VIEW_PROFILE':
+          return 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+        case 'PARTNER_VIEW_TRANSACTIONS':
+          return 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+        case 'PARTNER_VIEW_TRUST_SCORE':
+          return 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
+        case 'PARTNER_VIEW_ACCOUNTS':
+          return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+        default:
+          return 'bg-white/10 text-white/80 border border-white/10'
+      }
+    }
+
+    const getResourceLabel = (action: string, data: any) => {
+      switch (action) {
+        case 'PARTNER_DOWNLOAD_DOCUMENT':
+          return data.documentName || data.fileName || 'Document'
+        case 'PARTNER_LIST_DOCUMENTS':
+          return `Tous les documents (${data.count || 0})`
+        case 'PARTNER_VIEW_PROFILE':
+          return 'Données de l\'entreprise (Profil & UBOs)'
+        case 'PARTNER_VIEW_TRANSACTIONS':
+          return `Historique des transactions (${data.count || 0} lignes)`
+        case 'PARTNER_VIEW_TRUST_SCORE':
+          return `Score de confiance (Score : ${data.score || 0})`
+        case 'PARTNER_VIEW_ACCOUNTS':
+          return `Comptes bancaires (${data.count || 0} comptes)`
+        default:
+          return 'Données de l\'organisation'
+      }
+    }
+
     const hasLogs = logs && logs.length > 0
 
     return (
@@ -240,7 +315,7 @@ export default function DocumentsPage() {
         </div>
 
         {!hasLogs ? (
-          <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/2">
+          <div className="text-center py-20 border-2 border-dashed border-white/10 rounded-xl bg-white/2">
             <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
               <FileText className="w-12 h-12 text-muted-foreground opacity-20" />
             </div>
@@ -250,7 +325,7 @@ export default function DocumentsPage() {
             </p>
           </div>
         ) : (
-          <div className="glass border-white/10 rounded-[2rem] overflow-hidden">
+          <div className="glass border-white/10 rounded-xl overflow-hidden">
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -259,7 +334,7 @@ export default function DocumentsPage() {
                     <th className="px-6 py-4">Date & Heure</th>
                     <th className="px-6 py-4">Partenaire</th>
                     <th className="px-6 py-4">Action</th>
-                    <th className="px-6 py-4">Document concerné</th>
+                    <th className="px-6 py-4">Données consultées / Fichier</th>
                     <th className="px-6 py-4">Motif / But</th>
                   </tr>
                 </thead>
@@ -276,23 +351,19 @@ export default function DocumentsPage() {
                           {data.partnerName || 'Partenaire inconnu'}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                            isDownload 
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                          }`}>
-                            {isDownload ? 'Téléchargement' : 'Consultation Liste'}
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${getActionStyle(log.action)}`}>
+                            {getActionLabel(log.action)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-white/90 font-medium">
                           {isDownload ? (
                             <span className="flex items-center gap-1.5">
                               <FileText size={14} className="text-muted-foreground" />
-                              {data.documentName || data.fileName || 'Document'}
+                              {getResourceLabel(log.action, data)}
                             </span>
                           ) : (
                             <span className="text-muted-foreground italic">
-                              Tous les documents ({data.count || 0})
+                              {getResourceLabel(log.action, data)}
                             </span>
                           )}
                         </td>
@@ -310,7 +381,6 @@ export default function DocumentsPage() {
             <div className="md:hidden divide-y divide-white/5">
               {logs.map((log: any) => {
                 const data = log.newData || {}
-                const isDownload = log.action === 'PARTNER_DOWNLOAD_DOCUMENT'
                 return (
                   <div key={log.id} className="p-6 space-y-3 hover:bg-white/2 transition-colors">
                     <div className="flex justify-between items-start">
@@ -320,24 +390,16 @@ export default function DocumentsPage() {
                           {new Date(log.createdAt).toLocaleString('fr-FR')}
                         </span>
                       </div>
-                      <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                        isDownload 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      }`}>
-                        {isDownload ? 'Téléchargé' : 'Consulté'}
+                      <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${getActionStyle(log.action)}`}>
+                        {getActionLabel(log.action)}
                       </span>
                     </div>
 
                     <div className="space-y-1.5 text-xs">
                       <div>
-                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Document concerné</span>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Données consultées</span>
                         <span className="font-semibold text-white/90">
-                          {isDownload ? (
-                            data.documentName || data.fileName || 'Document'
-                          ) : (
-                            `Tous les documents (${data.count || 0})`
-                          )}
+                          {getResourceLabel(log.action, data)}
                         </span>
                       </div>
                       <div>
@@ -374,6 +436,15 @@ export default function DocumentsPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust"></div>
+      </div>
+    )
+  }
+
+  if (documentsError) {
+    return (
+      <div className="p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-destructive text-sm text-center max-w-6xl mx-auto mt-6">
+        <p className="font-bold">Erreur de chargement des documents</p>
+        <p className="text-xs mt-1">{(documentsError as any)?.data?.error || 'Impossible de charger les documents'}</p>
       </div>
     )
   }
