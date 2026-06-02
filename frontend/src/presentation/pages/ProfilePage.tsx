@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert } from 'lucide-react'
+import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert, Globe, Copy, ExternalLink, ShieldCheck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
-import { useGetProfileQuery, useUpdateProfileMutation } from '@/infrastructure/api/profileApi'
+import {
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useGetPublicProfileStatusQuery,
+  useSetupPublicProfileMutation
+} from '@/infrastructure/api/profileApi'
+import { useGetTrustScoreQuery } from '@/infrastructure/api/trustApi'
 import { useAuth } from '@/application/context/AuthContext'
 
 export default function ProfilePage() {
@@ -13,7 +19,19 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('general')
   const { data: profile, isLoading } = useGetProfileQuery()
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation()
-  
+
+  // Public Profile State
+  const { data: publicStatus } = useGetPublicProfileStatusQuery()
+  const [setupPublicProfile, { isLoading: isSavingPublic }] = useSetupPublicProfileMutation()
+  const { data: trustData } = useGetTrustScoreQuery()
+  const [publicSlug, setPublicSlug] = useState('')
+  const [publicActive, setPublicActive] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const isPublicDirty = publicStatus
+    ? (publicSlug !== (publicStatus.slug || '') || publicActive !== (publicStatus.isActive || false))
+    : false
+
   const [formData, setFormData] = useState<any>(null)
 
   useEffect(() => {
@@ -21,6 +39,13 @@ export default function ProfilePage() {
       setFormData(profile)
     }
   }, [profile])
+
+  useEffect(() => {
+    if (publicStatus) {
+      setPublicSlug(publicStatus.slug || '')
+      setPublicActive(publicStatus.isActive || false)
+    }
+  }, [publicStatus])
 
   // Only owners can access this page
   if (user?.role !== 'OWNER') {
@@ -48,6 +73,15 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
+    if (activeTab === 'public') {
+      try {
+        await setupPublicProfile({ slug: publicSlug, isActive: publicActive }).unwrap()
+        alert('Profil public mis à jour avec succès')
+      } catch (err: any) {
+        alert(err?.data?.error || 'Erreur lors de la mise à jour du profil public')
+      }
+      return
+    }
     try {
       await updateProfile(formData).unwrap()
       alert('Profil mis à jour avec succès')
@@ -85,13 +119,13 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold tracking-tight">Profil PME</h1>
           <p className="text-muted-foreground">Gérez l'identité et la structure de votre entreprise pour renforcer votre crédibilité</p>
         </div>
-        <Button onClick={handleSave} disabled={isUpdating} variant="trust" className="gap-2 shadow-lg shadow-trust/20">
+        <Button onClick={handleSave} disabled={isUpdating || isSavingPublic} variant="trust" className="gap-2 shadow-lg shadow-trust/20 w-full md:w-auto justify-center">
           <Save className="w-4 h-4" />
           Enregistrer les modifications
         </Button>
       </div>
 
-      <div className="flex overflow-x-auto gap-2 border-b border-white/10 mb-6 scrollbar-hide">
+      <div className="flex overflow-x-auto gap-2 border-b border-white/10 mb-6 scrollbar-none pb-px">
         <button 
           onClick={() => setActiveTab('general')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'general' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
@@ -109,6 +143,12 @@ export default function ProfilePage() {
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'docs' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
           <FileText className="w-4 h-4" /> Architecture Documentaire
+        </button>
+        <button 
+          onClick={() => setActiveTab('public')}
+          className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'public' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <Globe className="w-4 h-4" /> Profil Public
         </button>
       </div>
 
@@ -373,6 +413,162 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'public' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="glass border-white/10 md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-trust animate-pulse" />
+                  Configuration du Profil Public
+                </CardTitle>
+                <CardDescription>
+                  Partagez de manière sécurisée votre identité PME et votre score de confiance avec vos partenaires, fournisseurs et institutions financières.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm text-white">Activer le profil public</p>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      Une fois activé, n'importe qui disposant du lien pourra consulter vos informations de base et votre Trust Score.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPublicActive(!publicActive)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${publicActive ? 'bg-trust' : 'bg-white/10'}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${publicActive ? 'translate-x-6' : 'translate-x-1'}`}
+                    />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Lien Public Personnalisé (Slug)</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-xl px-3 focus-within:border-trust transition-all">
+                      <span className="text-muted-foreground text-xs select-none pr-1">{window.location.origin}/p/</span>
+                      <input
+                        type="text"
+                        placeholder="nom-de-votre-entreprise"
+                        value={publicSlug}
+                        onChange={e => setPublicSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
+                        className="bg-transparent border-none outline-none text-white text-sm w-full py-2.5 font-medium"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Seuls les caractères alphanumériques minuscules, tirets (-) et underscores (_) sont autorisés.
+                  </p>
+                </div>
+
+                {publicActive && publicSlug && (
+                  isPublicDirty ? (
+                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-yellow-500">
+                          <ShieldAlert className="w-4.5 h-4.5" />
+                          <span className="text-xs font-bold uppercase tracking-wider">Modifications non enregistrées</span>
+                        </div>
+                        <Button
+                          variant="trust"
+                          size="sm"
+                          onClick={handleSave}
+                          disabled={isSavingPublic}
+                          className="h-8 text-xs gap-1.5"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          Enregistrer
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Vous avez modifié vos paramètres de profil public. Veuillez enregistrer pour les appliquer.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-trust/10 border border-trust/20 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-trust">
+                          <ShieldCheck className="w-4 h-4" />
+                          <span className="text-xs font-bold uppercase tracking-wider">Votre profil est en ligne</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/p/${publicSlug}`)
+                              setCopied(true)
+                              setTimeout(() => setCopied(false), 2000)
+                            }}
+                            className="h-8 text-xs text-trust hover:bg-trust/10 gap-1.5"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            {copied ? 'Copié !' : 'Copier'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            className="h-8 text-xs text-white hover:bg-white/10 gap-1.5"
+                          >
+                            <a href={`/p/${publicSlug}`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              Voir
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground select-all break-all font-mono bg-background/50 p-2 rounded-lg border border-white/5">
+                        {window.location.origin}/p/{publicSlug}
+                      </p>
+                    </div>
+                  )
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+              <Card className="glass border-white/10 overflow-hidden">
+                <CardHeader className="bg-white/5 border-b border-white/10 py-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    Aperçu de la Carte
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3 relative overflow-hidden">
+                    <div className="absolute -top-12 -right-12 w-24 h-24 bg-trust/10 rounded-full blur-xl pointer-events-none" />
+                    
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-flow/20 text-flow border border-flow/10 text-[9px] font-black uppercase tracking-wider mb-2">
+                          <ShieldCheck className="w-3 h-3" /> SME Verified
+                        </div>
+                        <h4 className="font-bold text-white text-base truncate max-w-[140px]">{formData.legalName || 'Votre PME'}</h4>
+                        <p className="text-[10px] text-muted-foreground">{formData.industry || 'Secteur d\'activité'}</p>
+                      </div>
+                      {trustData && (
+                        <div className="text-right flex flex-col items-end">
+                          <span className="text-[10px] text-muted-foreground font-black uppercase tracking-wider">Score</span>
+                          <span className="text-2xl font-black text-white font-mono">{trustData.score}</span>
+                          <span className="text-[10px] text-trust font-bold tracking-widest">
+                            {trustData.score >= 90 ? 'AAA' : trustData.score >= 80 ? 'AA' : trustData.score >= 70 ? 'A' : trustData.score >= 60 ? 'BBB' : trustData.score >= 50 ? 'BB' : 'B'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-[10px] text-muted-foreground leading-relaxed">
+                    Cet aperçu montre comment vos partenaires verront votre carte simplifiée sur leur tableau de bord ou portail.
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>

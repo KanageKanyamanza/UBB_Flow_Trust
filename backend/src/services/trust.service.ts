@@ -70,8 +70,27 @@ export class TrustService {
     return { score, reasons, reasonCodes: reasons }
   }
 
+  /**
+   * Retourne le score le plus récent depuis le cache DB.
+   * Si aucun score n'existe, déclenche un premier calcul synchrone.
+   */
   static async getLatestScore(orgId: string) {
-    // For now, always recalculate to ensure real-time updates in dev
+    const cached = await prisma.trustScore.findFirst({
+      where: { orgId },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    if (cached) {
+      return {
+        score: cached.score,
+        reasons: cached.reasonCodes,
+        reasonCodes: cached.reasonCodes,
+        cachedAt: cached.createdAt
+      }
+    }
+
+    // Aucun score en cache : premier calcul synchrone (bootstrap)
+    console.log(`[trust-service]: No cached score for org ${orgId}, running initial sync calculation...`)
     return this.calculateScore(orgId)
   }
 }

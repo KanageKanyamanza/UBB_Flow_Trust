@@ -19,6 +19,7 @@ import CompliancePage from './presentation/pages/CompliancePage'
 import DocumentsPage from './presentation/pages/DocumentsPage'
 import PartnerPortalPage from './presentation/pages/PartnerPortalPage'
 import TeamPage from './presentation/pages/TeamPage'
+import VerifiedSmePage from './presentation/pages/VerifiedSmePage'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 import MainLayout from './presentation/components/layout/MainLayout'
 
@@ -171,6 +172,9 @@ function App() {
 
         {/* Partner Portal (Public access route with custom token verification) */}
         <Route path="/partner/portal" element={<PartnerPortalPage />} />
+
+        {/* Public Verified SME profile page */}
+        <Route path="/p/:slug" element={<VerifiedSmePage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

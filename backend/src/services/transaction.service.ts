@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js'
 import { TxnDirection, TxnMethod, TxnCategory } from '@prisma/client'
 import { storageService } from './storage.service.js'
+import { scoreQueue } from './score-queue.service.js'
 
 export interface CreateTransactionInput {
   amount: number
@@ -98,7 +99,7 @@ export class TransactionService {
     }
 
     // 2. Perform transaction in a prisma transaction block
-    return await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       // a. Create the transaction
       const transaction = await tx.transaction.create({
         data: {
@@ -130,6 +131,11 @@ export class TransactionService {
 
       return transaction
     })
+
+    // Déclenche un recalcul du score après création d'une transaction (pilier Activité)
+    scoreQueue.enqueue(data.orgId)
+
+    return created
   }
 
   /**
@@ -235,9 +241,15 @@ export class TransactionService {
       })
       
       // 4. Delete the transaction
-      return await tx.transaction.delete({
+      const deleted = await tx.transaction.delete({
         where: { id }
       })
+
+      return deleted
+    }).then((deleted) => {
+      // Déclenche un recalcul du score après suppression (pilier Activité)
+      scoreQueue.enqueue(orgId)
+      return deleted
     })
   }
 }

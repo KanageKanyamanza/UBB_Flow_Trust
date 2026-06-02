@@ -59,6 +59,9 @@ import trustRoutes from './routes/trust.routes.js'
 import complianceRoutes from './routes/compliance.routes.js'
 import consentGrantRoutes from './routes/consent-grant.routes.js'
 import partnerRoutes from './routes/partner.routes.js'
+import publicProfileRoutes from './routes/public-profile.routes.js'
+import exportRoutes from './routes/export.routes.js'
+import { scoreQueue } from './services/score-queue.service.js'
 
 app.use('/auth', authRoutes)
 app.use('/accounts', accountRoutes)
@@ -74,6 +77,9 @@ app.use('/trust', trustRoutes)
 app.use('/compliance', complianceRoutes)
 app.use('/consent-grants', consentGrantRoutes)
 app.use('/partner', partnerRoutes)
+app.use('/public', publicProfileRoutes)
+app.use('/api/export', exportRoutes)
+app.use('/export', exportRoutes)
 
 // Serve local static uploads if STORAGE_TYPE=local
 if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
@@ -83,7 +89,11 @@ if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
 }
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() })
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    scoreQueue: scoreQueue.getStats()
+  })
 })
 
 // Initialize Cron Jobs

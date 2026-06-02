@@ -140,3 +140,12 @@
   transform-origin: top center;
 }
 
+/* Utility to hide scrollbars for clean swipeable layouts */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

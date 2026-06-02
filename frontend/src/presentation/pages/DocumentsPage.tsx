@@ -14,6 +14,52 @@ export default function DocumentsPage() {
   const { user } = useAuth()
   const isOwner = user?.role === 'OWNER'
 
+  const [isDownloading, setIsDownloading] = React.useState(false)
+
+  const handleDownloadBankPack = async () => {
+    setIsDownloading(true)
+    try {
+      let token = localStorage.getItem('accessToken') || localStorage.getItem('partnerToken')
+      if (token && token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1)
+      }
+      
+      const response = await fetch(`${BASE_URL}/export/bank-pack`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || 'Échec du téléchargement du dossier bancaire')
+      }
+      
+      const blob = await response.blob()
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'Dossier_Bancaire.zip'
+      if (contentDisposition) {
+        const matches = /filename="?([^"]+)"?/g.exec(contentDisposition)
+        if (matches && matches[1]) {
+          filename = decodeURIComponent(matches[1])
+        }
+      }
+      
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la génération du dossier')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   const { data: documents, isLoading, error: documentsError } = useGetDocumentsQuery(undefined, {
     skip: !isOwner
   })
@@ -507,7 +553,7 @@ export default function DocumentsPage() {
           <p className="text-muted-foreground">Votre coffre-fort numérique pour les audits et financements</p>
         </div>
         {activeTab === 'dataroom' && (
-          <div className="flex items-center gap-3 w-full md:w-auto animate-fade-in">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto animate-fade-in mt-2 md:mt-0">
             <div className="flex items-center gap-1 border border-white/10 rounded-lg p-1 bg-white/5">
               <Button 
                 variant={viewMode === 'grid' ? 'trust' : 'ghost'} 
@@ -528,7 +574,7 @@ export default function DocumentsPage() {
                 <List className="w-4 h-4" />
               </Button>
             </div>
-            <div className="relative flex-1 md:w-64">
+            <div className="relative flex-1 min-w-[140px] md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
                 placeholder="Rechercher un doc..." 
@@ -550,12 +596,21 @@ export default function DocumentsPage() {
                 Ajouter
               </Button>
             </div>
+            <Button
+              onClick={handleDownloadBankPack}
+              disabled={isDownloading}
+              variant="outline"
+              className="gap-2 border-trust/50 text-trust hover:bg-trust/10 h-10 shrink-0"
+            >
+              <Download size={16} className={isDownloading ? 'animate-bounce' : ''} />
+              {isDownloading ? 'Génération...' : 'Dossier Bancaire'}
+            </Button>
           </div>
         )}
       </div>
 
       {/* Onglets */}
-      <div className="flex border-b border-white/10 gap-6">
+      <div className="flex border-b border-white/10 gap-6 overflow-x-auto whitespace-nowrap scrollbar-none pb-px">
         <button
           onClick={() => setActiveTab('dataroom')}
           className={`pb-3 text-sm font-bold transition-all relative ${

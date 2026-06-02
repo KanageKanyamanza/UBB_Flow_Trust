@@ -116,6 +116,43 @@ export class StorageService {
     throw new Error('Storage service not properly configured');
   }
 
+  async getFileBuffer(fileUrlOrKey: string): Promise<Buffer> {
+    if (this.storageType === 'local' || !fileUrlOrKey.startsWith('http')) {
+      const filename = path.basename(fileUrlOrKey);
+      const filepath = path.join(this.uploadDir, filename);
+      return await fs.readFile(filepath);
+    }
+
+    if (this.storageType === 's3' || this.storageType === 'minio') {
+      if (this.s3Client) {
+        const key = path.basename(fileUrlOrKey);
+        const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+        const command = new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        });
+        const response = await this.s3Client.send(command);
+        if (response.Body) {
+          const chunks: any[] = [];
+          const stream = response.Body as any;
+          for await (const chunk of stream) {
+            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+          }
+          return Buffer.concat(chunks);
+        }
+      }
+
+      const response = await fetch(fileUrlOrKey);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file from remote storage: ${response.statusText}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+
+    throw new Error('Storage service not properly configured');
+  }
+
   async deleteFile(fileUrlOrKey: string): Promise<void> {
     if (this.storageType === 'local') {
       const filename = path.basename(fileUrlOrKey);

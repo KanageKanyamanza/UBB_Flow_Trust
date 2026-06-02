@@ -14,7 +14,28 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Profile', 'Trust'],
     }),
+    getPublicProfileStatus: builder.query<any, void>({
+      query: () => '/public/me/status',
+      providesTags: ['PublicProfileStatus' as any],
+    }),
+    setupPublicProfile: builder.mutation<any, { slug: string; isActive: boolean }>({
+      query: (data) => ({
+        url: '/public/setup',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['PublicProfileStatus' as any],
+    }),
+    getPublicProfile: builder.query<any, string>({
+      query: (slug) => `/public/${slug}`,
+    }),
   }),
 })
 
-export const { useGetProfileQuery, useUpdateProfileMutation } = profileApi
+export const {
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useGetPublicProfileStatusQuery,
+  useSetupPublicProfileMutation,
+  useGetPublicProfileQuery,
+} = profileApi

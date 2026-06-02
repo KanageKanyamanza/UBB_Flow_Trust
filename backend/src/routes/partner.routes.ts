@@ -241,7 +241,7 @@ router.get(
         return res.status(404).json({ error: 'Document ou version introuvable' })
       }
 
-      const version = document.versions[0]
+      const version = document.versions[0]!
 
       // Enregistrer le téléchargement dans AuditLog
       await prisma.auditLog.create({
