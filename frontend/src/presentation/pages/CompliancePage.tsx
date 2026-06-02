@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
-import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight } from 'lucide-react'
+import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight, ShieldAlert, TrendingUp, TrendingDown, Download } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { useGetTrustScoreQuery, useRefreshTrustScoreMutation } from '@/infrastructure/api/trustApi'
 import { useGetDocumentsQuery, useUploadDocumentMutation } from '@/infrastructure/api/documentApi'
 import { useGetComplianceQuery, useStartComplianceMutation, useGetGapQuery } from '@/infrastructure/api/complianceApi'
 import { cn } from '@/shared/utils/utils'
+import { useAuth } from '@/application/context/AuthContext'
+import { BASE_URL } from '@/infrastructure/api/apiSlice'
 
 const STEPS = [
   { id: "personal", title: "Informations", icon: User, description: "Vos données" },
@@ -15,6 +18,7 @@ const STEPS = [
 ];
 
 export default function CompliancePage() {
+  const { user } = useAuth()
   const { data: trustData, isLoading: trustLoading } = useGetTrustScoreQuery()
   const { data: documents, isLoading: docsLoading } = useGetDocumentsQuery()
   const { data: complianceData, isLoading: complianceLoading } = useGetComplianceQuery()
@@ -22,7 +26,9 @@ export default function CompliancePage() {
   const [refreshScore, { isLoading: isRefreshing }] = useRefreshTrustScoreMutation()
   const [uploadDocument, { isLoading: isUploading }] = useUploadDocumentMutation()
   const [startCompliance, { isLoading: isStarting }] = useStartComplianceMutation()
+  const [refreshQueued, setRefreshQueued] = React.useState(false)
 
+  const [isDownloading, setIsDownloading] = React.useState(false)
   const [isJourneyActive, setIsJourneyActive] = useState(false)
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [journeyCompleted, setJourneyCompleted] = useState(false)
@@ -32,6 +38,78 @@ export default function CompliancePage() {
   const [documentFile, setDocumentFile] = useState<File | null>(null)
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [addressFile, setAddressFile] = useState<File | null>(null)
+
+  const handleDownloadBankPack = async () => {
+    setIsDownloading(true)
+    try {
+      let token = localStorage.getItem('accessToken') || localStorage.getItem('partnerToken')
+      if (token && token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1)
+      }
+      
+      const response = await fetch(`${BASE_URL}/export/bank-pack`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || 'Échec du téléchargement du dossier bancaire')
+      }
+      
+      const blob = await response.blob()
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'Dossier_Bancaire.zip'
+      if (contentDisposition) {
+        const matches = /filename="?([^"]+)"?/g.exec(contentDisposition)
+        if (matches && matches[1]) {
+          filename = decodeURIComponent(matches[1])
+        }
+      }
+      
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la génération du dossier')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  const handleRefreshScore = async () => {
+    try {
+      await refreshScore().unwrap()
+      setRefreshQueued(true)
+      setTimeout(() => setRefreshQueued(false), 4000)
+    } catch {
+      // handled by RTK Query
+    }
+  }
+
+
+  // Only owners can access this page
+  if (user?.role !== 'OWNER') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
+          <ShieldAlert className="w-16 h-16 text-yellow-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Seul le propriétaire principal de l'organisation peut configurer et gérer le statut de conformité.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (trustLoading || docsLoading || complianceLoading) {
     return (
@@ -43,6 +121,49 @@ export default function CompliancePage() {
 
   const score = trustData?.score || 0
   const reasons = trustData?.reasonCodes || []
+
+  // SVG parameters for animated circular Trust Score badge
+  const radius = 60
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (score / 100) * circumference
+
+  const getScoreStrokeColor = (s: number) => {
+    if (s >= 80) return 'stroke-trust'
+    if (s >= 50) return 'stroke-yellow-500'
+    return 'stroke-destructive'
+  }
+
+  // Dynamic calculations for score factors of impact (Hausse / Baisse)
+  const positiveFactors = []
+  const negativeFactors = []
+
+  if (!reasons.includes('PROFIL_MANQUANT') && !reasons.includes('PROFIL_INCOMPLET')) {
+    positiveFactors.push({ text: 'Profil complété', pts: '+20 pts' })
+  } else {
+    negativeFactors.push({ text: 'Profil incomplet/manquant', pts: '-20 pts' })
+  }
+
+  if (!reasons.includes('OFFICIERS_MANQUANTS')) {
+    positiveFactors.push({ text: 'UBOs déclarés', pts: '+20' })
+  } else {
+    negativeFactors.push({ text: 'UBOs manquants', pts: '-20' })
+  }
+
+  if (!reasons.includes('DOCUMENTS_MANQUANTS')) {
+    positiveFactors.push({ text: 'Statuts, RCCM & NUI validés', pts: '+40' })
+  } else {
+    negativeFactors.push({ text: 'Pièces réglementaires non validées', pts: '-40' })
+  }
+
+  if (!reasons.includes('ACTIVITE_FAIBLE') && !reasons.includes('AUCUNE_ACTIVITE')) {
+    positiveFactors.push({ text: 'Activité financière active', pts: '+20' })
+  } else {
+    if (reasons.includes('ACTIVITE_FAIBLE')) {
+      negativeFactors.push({ text: 'Activité transactionnelle faible', pts: '-10' })
+    } else {
+      negativeFactors.push({ text: 'Aucune transaction enregistrée', pts: '-20' })
+    }
+  }
 
   const getScoreColor = (s: number) => {
     if (s >= 80) return 'text-trust'
@@ -214,27 +335,112 @@ export default function CompliancePage() {
           <h1 className="text-3xl font-bold tracking-tight">Conformité & Trust</h1>
           <p className="text-muted-foreground">Suivez votre éligibilité au financement et votre score de crédibilité</p>
         </div>
-        <Button onClick={() => refreshScore()} disabled={isRefreshing} variant="outline" className="gap-2 border-trust/50 text-trust hover:bg-trust/10">
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Actualiser le score
-        </Button>
+        <div className="flex flex-col items-stretch sm:items-end gap-2 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <Button
+              onClick={handleDownloadBankPack}
+              disabled={isDownloading}
+              variant="trust"
+              className="gap-2 shadow-lg shadow-trust/20 w-full sm:w-auto"
+            >
+              <Download size={16} className={isDownloading ? 'animate-bounce' : ''} />
+              {isDownloading ? 'Génération du zip...' : 'Générer mon dossier bancaire'}
+            </Button>
+            <Button 
+              onClick={handleRefreshScore} 
+              disabled={isRefreshing} 
+              variant="outline" 
+              className="gap-2 border-trust/50 text-trust hover:bg-trust/10 w-full sm:w-auto"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Mise en file...' : 'Actualiser le score'}
+            </Button>
+          </div>
+          {refreshQueued && (
+            <span className="text-[10px] font-black uppercase tracking-widest text-trust animate-fade-in flex items-center justify-center sm:justify-end gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-trust animate-pulse inline-block" />
+              Recalcul en cours en arrière-plan…
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 glass border-white/10 flex flex-col justify-center items-center p-8 text-center relative overflow-hidden group">
+        <Card className="md:col-span-1 glass border-white/10 flex flex-col items-center p-6 text-center relative overflow-hidden group">
           <div className="absolute inset-0 bg-trust/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative mb-4">
-            <div className="w-40 h-40 rounded-full border-8 border-white/5 flex items-center justify-center bg-white/2">
-              <span className={`text-5xl font-black ${getScoreColor(score)}`}>{score}</span>
+          
+          {/* Animated Circular Score Badge */}
+          <div className="relative w-40 h-40 mb-4 flex items-center justify-center">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle
+                cx="80"
+                cy="80"
+                r={radius}
+                className="stroke-white/5"
+                strokeWidth="8"
+                fill="transparent"
+              />
+              <motion.circle
+                cx="80"
+                cy="80"
+                r={radius}
+                className={cn("transition-all duration-500", getScoreStrokeColor(score))}
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <motion.span 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className={cn("text-4xl font-black font-mono", getScoreColor(score))}
+              >
+                {score}
+              </motion.span>
+              <span className="text-[9px] uppercase font-black tracking-widest text-muted-foreground mt-0.5">SCORE</span>
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1 shadow-xl">
-              <ShieldCheck className="w-12 h-12 text-trust" />
+            <div className="absolute bottom-1 right-1 bg-background rounded-full p-1 shadow-xl">
+              <ShieldCheck className="w-8 h-8 text-trust" />
             </div>
           </div>
-          <h2 className="text-xl font-bold">Trust Score</h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-[200px]">
-            Votre score de crédibilité actuel basé sur vos données déclarées et vérifiées.
-          </p>
+
+          <div className="space-y-4 w-full">
+            <div>
+              <h2 className="text-lg font-bold">Trust Score</h2>
+              <p className="text-[10px] text-muted-foreground uppercase font-black tracking-wider mt-0.5">
+                Facteurs d'impact
+              </p>
+            </div>
+
+            {/* Impact factors - Positive & Negative */}
+            <div className="space-y-2 text-left w-full border-t border-white/5 pt-4">
+              {positiveFactors.map((factor, index) => (
+                <div key={index} className="flex justify-between items-center bg-green-500/5 border border-green-500/10 px-3 py-1.5 rounded-xl text-xs">
+                  <span className="text-green-400/90 font-medium flex items-center gap-1.5">
+                    <TrendingUp size={12} className="text-green-400" />
+                    {factor.text}
+                  </span>
+                  <span className="text-green-400 font-bold font-mono text-[10px]">{factor.pts}</span>
+                </div>
+              ))}
+
+              {negativeFactors.map((factor, index) => (
+                <div key={index} className="flex justify-between items-center bg-destructive/5 border border-destructive/10 px-3 py-1.5 rounded-xl text-xs">
+                  <span className="text-destructive/90 font-medium flex items-center gap-1.5">
+                    <TrendingDown size={12} className="text-destructive" />
+                    {factor.text}
+                  </span>
+                  <span className="text-destructive font-bold font-mono text-[10px]">{factor.pts}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </Card>
 
         <Card className="md:col-span-2 glass border-white/10">
@@ -321,7 +527,10 @@ export default function CompliancePage() {
                         )}>
                           {isPast ? <CheckCircle2 className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
                         </div>
-                        <span className={cn("text-[10px] mt-2 font-bold absolute -bottom-5 w-24 text-center", isActive ? "text-trust" : "text-muted-foreground")}>
+                        <span className={cn(
+                          "text-[10px] mt-2 font-bold absolute -bottom-5 w-24 text-center transition-all duration-300",
+                          isActive ? "text-trust scale-105 opacity-100" : "text-muted-foreground hidden sm:block opacity-75"
+                        )}>
                           {step.title}
                         </span>
                       </div>
@@ -377,17 +586,17 @@ export default function CompliancePage() {
                 const isInReview = item.status === 'IN_REVIEW'
                 
                 return (
-                  <div key={item.id} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors group">
+                  <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 hover:bg-white/5 transition-colors group gap-4">
                     <div className="flex items-center gap-4">
-                      <div className={cn("p-3 rounded-xl transition-colors", isPass ? 'bg-trust/20 text-trust' : isInReview ? 'bg-yellow-500/20 text-yellow-500' : 'bg-destructive/20 text-destructive')}>
+                      <div className={cn("p-3 rounded-xl transition-colors shrink-0", isPass ? 'bg-trust/20 text-trust' : isInReview ? 'bg-yellow-500/20 text-yellow-500' : 'bg-destructive/20 text-destructive')}>
                         <FileCheck className="w-6 h-6" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                           <span className="font-bold text-sm block group-hover:text-trust transition-colors">{item.requirement}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{STATUS_LABELS[item.status] || item.status}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest block mt-0.5">{STATUS_LABELS[item.status] || item.status}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t border-white/5 sm:border-none pt-3 sm:pt-0">
                       {!isPass && !isInReview && (
                         <div className="flex items-center gap-2">
                           <input 
@@ -405,22 +614,22 @@ export default function CompliancePage() {
                             size="sm" 
                             disabled={isUploading}
                             onClick={() => document.getElementById(`upload-${item.id}`)?.click()}
-                            className="h-8 text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/10"
+                            className="h-8 text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/10 px-3"
                           >
                             {isUploading ? '...' : 'Uploader'}
                           </Button>
                         </div>
                       )}
-                      <div className="flex items-center gap-2">
-                        <span className={cn("text-[10px] font-black px-3 py-1 rounded-full", isPass ? 'bg-trust/10 text-trust' : isInReview ? 'bg-yellow-500/10 text-yellow-500' : 'bg-destructive/10 text-destructive')}>
+                      <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                        <span className={cn("text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider", isPass ? 'bg-trust/10 text-trust' : isInReview ? 'bg-yellow-500/10 text-yellow-500' : 'bg-destructive/10 text-destructive')}>
                             {STATUS_LABELS[item.status] || item.status}
                         </span>
                         {isPass ? (
-                            <CheckCircle2 className="w-6 h-6 text-trust" />
+                            <CheckCircle2 className="w-6 h-6 text-trust shrink-0" />
                         ) : isInReview ? (
-                            <Clock className="w-6 h-6 text-yellow-500" />
+                            <Clock className="w-6 h-6 text-yellow-500 shrink-0" />
                         ) : (
-                            <XCircle className="w-6 h-6 text-destructive" />
+                            <XCircle className="w-6 h-6 text-destructive shrink-0" />
                         )}
                       </div>
                     </div>

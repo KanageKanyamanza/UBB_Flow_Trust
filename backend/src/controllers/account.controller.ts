@@ -22,6 +22,11 @@ export class AccountController {
     try {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
+      // Assigned users (managers) are not allowed to create accounts/shops
+      if (req.user.accountId) {
+        return res.status(403).json({ error: 'Forbidden: Managers cannot create accounts' })
+      }
+
       const validatedData = createSchema.parse(req.body)
       const account = await AccountService.create({
         ...validatedData,
@@ -42,6 +47,12 @@ export class AccountController {
     try {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
+      // If manager has assigned account, only return that account
+      if (req.user.accountId) {
+        const account = await AccountService.getById(req.user.accountId, req.user.orgId)
+        return res.json([account])
+      }
+
       const accounts = await AccountService.listByOrg(req.user.orgId)
       res.json(accounts)
     } catch (error: unknown) {
@@ -55,8 +66,13 @@ export class AccountController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
       const id = req.params.id as string
+
+      // Block access to other accounts
+      if (req.user.accountId && req.user.accountId !== id) {
+        return res.status(403).json({ error: 'Forbidden: You do not have access to this account' })
+      }
+
       const account = await AccountService.getById(id, req.user.orgId)
-      
       res.json(account)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -69,8 +85,13 @@ export class AccountController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
       const id = req.params.id as string
+
+      // Block access to other accounts
+      if (req.user.accountId && req.user.accountId !== id) {
+        return res.status(403).json({ error: 'Forbidden: You do not have access to this account' })
+      }
+
       const validatedData = updateSchema.parse(req.body)
-      
       const account = await AccountService.update(id, req.user.orgId, validatedData)
       res.json(account)
     } catch (error: unknown) {
@@ -86,6 +107,11 @@ export class AccountController {
     try {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
+      // Assigned users (managers) are not allowed to delete accounts/shops
+      if (req.user.accountId) {
+        return res.status(403).json({ error: 'Forbidden: Managers cannot delete accounts' })
+      }
+
       const id = req.params.id as string
       await AccountService.delete(id, req.user.orgId)
       

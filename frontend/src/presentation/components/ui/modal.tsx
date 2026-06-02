@@ -15,7 +15,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in duration-500 p-0 sm:p-4">
       <div 
-        className="relative w-full sm:max-w-2xl md:max-w-3xl bg-background border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl glass flex flex-col max-h-[95vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-500"
+        className="relative w-full sm:max-w-2xl md:max-w-3xl bg-background border-t sm:border border-white/10 rounded-t-xl sm:rounded-xl shadow-2xl glass flex flex-col max-h-[95vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-500"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto my-4 sm:hidden flex-shrink-0" />

@@ -46,8 +46,14 @@ export class TransactionController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
       const id = req.params.id as string
+
+      // Verify the transaction belongs to the user's assigned account if restricted
+      const existingTx = await TransactionService.getById(id, req.user.orgId)
+      if (req.user.accountId && existingTx.accountId !== req.user.accountId) {
+        return res.status(403).json({ error: 'Forbidden: You do not have access to this transaction' })
+      }
+
       const validatedData = updateSchema.parse(req.body)
-      
       const transaction = await TransactionService.update(id, req.user.orgId, validatedData, req.user.id)
       
       res.json(transaction)
@@ -68,8 +74,13 @@ export class TransactionController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
       const filters = querySchema.parse(req.query)
+
+      // Restrict search to user's assigned account
+      if (req.user.accountId) {
+        filters.accountId = req.user.accountId
+      }
+
       const transactions = await TransactionService.listByOrg(req.user.orgId, filters)
-      
       res.json(transactions)
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
@@ -88,6 +99,12 @@ export class TransactionController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
       const validatedData = createSchema.parse(req.body)
+
+      // Ensure the transaction is being created for the user's assigned account
+      if (req.user.accountId && validatedData.accountId !== req.user.accountId) {
+        return res.status(403).json({ error: 'Forbidden: You can only create transactions for your assigned account' })
+      }
+
       const transaction = await TransactionService.create({
         ...validatedData,
         orgId: req.user.orgId,
@@ -112,6 +129,11 @@ export class TransactionController {
       
       const id = req.params.id as string
       const transaction = await TransactionService.getById(id, req.user.orgId)
+
+      // Check if transaction belongs to user's assigned account
+      if (req.user.accountId && transaction.accountId !== req.user.accountId) {
+        return res.status(403).json({ error: 'Forbidden: You do not have access to this transaction' })
+      }
       
       res.json(transaction)
     } catch (error: unknown) {
@@ -128,8 +150,14 @@ export class TransactionController {
       if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
       
       const id = req.params.id as string
+      const transaction = await TransactionService.getById(id, req.user.orgId)
+
+      // Check if transaction belongs to user's assigned account
+      if (req.user.accountId && transaction.accountId !== req.user.accountId) {
+        return res.status(403).json({ error: 'Forbidden: You do not have access to this transaction' })
+      }
+
       await TransactionService.delete(id, req.user.orgId)
-      
       res.status(204).send()
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'

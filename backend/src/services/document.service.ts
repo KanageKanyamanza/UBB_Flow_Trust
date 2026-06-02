@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js'
 import { storageService } from './storage.service.js'
+import { scoreQueue } from './score-queue.service.js'
 
 export class DocumentService {
   static async createDocument(orgId: string, data: any, file: any) {
@@ -7,7 +8,7 @@ export class DocumentService {
 
     const fileUrl = await storageService.storeFile(file.buffer, file.originalname, file.mimetype)
 
-    return await prisma.document.create({
+    const document = await prisma.document.create({
       data: {
         type,
         name,
@@ -28,6 +29,11 @@ export class DocumentService {
         }
       }
     })
+
+    // Déclenche un recalcul asynchrone du score après upload
+    scoreQueue.enqueue(orgId)
+
+    return document
   }
 
   static async listDocuments(orgId: string, type?: string) {
@@ -56,7 +62,7 @@ export class DocumentService {
 
     const fileUrl = await storageService.storeFile(file.buffer, file.originalname, file.mimetype)
 
-    return await prisma.documentVersion.create({
+    const version = await prisma.documentVersion.create({
       data: {
         docId,
         fileUrl,
@@ -65,6 +71,11 @@ export class DocumentService {
         validUntil: validUntil ? new Date(validUntil) : null,
       }
     })
+
+    // Déclenche un recalcul du score après ajout d'une nouvelle version
+    scoreQueue.enqueue(orgId)
+
+    return version
   }
 
   static async deleteDocument(docId: string, orgId: string) {
@@ -114,11 +125,47 @@ export class DocumentService {
           where: { id: doc.id },
           data: { status: 'EXPIRED' }
         })
+
+        // Create an alert to notify that document expiration impacts the score
+        await prisma.alert.create({
+          data: {
+            orgId: doc.orgId,
+            severity: 'CRITICAL',
+            type: 'DOCUMENT_EXPIRED',
+            message: `Alerte : Le document "${doc.name}" (${doc.type.replace(/_/g, ' ')}) a expiré, ce qui diminue votre Trust Score. Veuillez uploader une nouvelle version.`,
+            isAck: false
+          }
+        })
+
+        // Déclenche un recalcul du score car l'expiration impacte les points Documents
+        scoreQueue.enqueue(doc.orgId)
+
         expiredCount++
       }
     }
 
     console.log(`[document-job]: Checked documents. Marked ${expiredCount} as EXPIRED.`)
     return expiredCount
+  }
+
+  static async getConsultationLogs(orgId: string) {
+    return await prisma.auditLog.findMany({
+      where: {
+        orgId,
+        action: {
+          in: [
+            'PARTNER_LIST_DOCUMENTS',
+            'PARTNER_DOWNLOAD_DOCUMENT',
+            'PARTNER_VIEW_PROFILE',
+            'PARTNER_VIEW_TRANSACTIONS',
+            'PARTNER_VIEW_TRUST_SCORE',
+            'PARTNER_VIEW_ACCOUNTS'
+          ]
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
   }
 }

@@ -1,4 +1,5 @@
 import prisma from '../config/prisma.js'
+import { scoreQueue } from './score-queue.service.js'
 
 export class ProfileService {
   static async getProfile(orgId: string) {
@@ -35,7 +36,7 @@ export class ProfileService {
       profileData.foundedDate = isNaN(date.getTime()) ? null : date
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const updatedProfile = await prisma.$transaction(async (tx) => {
       // Find current profile
       const currentProfile = await tx.smeProfile.findUnique({
         where: { orgId },
@@ -46,7 +47,7 @@ export class ProfileService {
       }
 
       // Update SmeProfile
-      const updatedProfile = await tx.smeProfile.update({
+      const updatedSmeProfile = await tx.smeProfile.update({
         where: { orgId },
         data: profileData,
       })
@@ -55,7 +56,7 @@ export class ProfileService {
       if (beneficialOwners && Array.isArray(beneficialOwners)) {
         // Delete old ones
         await tx.beneficialOwner.deleteMany({
-          where: { profileId: updatedProfile.id },
+          where: { profileId: updatedSmeProfile.id },
         })
 
         // Create new ones
@@ -69,7 +70,7 @@ export class ProfileService {
               }
               return {
                 ...rest,
-                profileId: updatedProfile.id,
+                profileId: updatedSmeProfile.id,
               }
             }),
           })
@@ -81,5 +82,10 @@ export class ProfileService {
         include: { beneficialOwners: true },
       })
     })
+
+    // Déclenche un recalcul asynchrone du score après mise à jour du profil/UBOs
+    scoreQueue.enqueue(orgId)
+
+    return updatedProfile
   }
 }

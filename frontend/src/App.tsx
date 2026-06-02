@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { TrendingUp, ShieldCheck, Zap } from 'lucide-react'
+import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check, Sparkles } from 'lucide-react'
 import { Button } from '@/presentation/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
 import { Input } from '@/presentation/components/ui/input'
@@ -17,64 +17,142 @@ import RecurringRulesPage from './presentation/pages/RecurringRulesPage'
 import ProfilePage from './presentation/pages/ProfilePage'
 import CompliancePage from './presentation/pages/CompliancePage'
 import DocumentsPage from './presentation/pages/DocumentsPage'
+import PartnerPortalPage from './presentation/pages/PartnerPortalPage'
+import TeamPage from './presentation/pages/TeamPage'
+import VerifiedSmePage from './presentation/pages/VerifiedSmePage'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 import MainLayout from './presentation/components/layout/MainLayout'
 
 function LandingPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[90vh] p-4 text-center">
-      <div className="animate-fade-in w-full max-w-4xl">
-        <h1 className="text-5xl font-bold tracking-tight mb-4">
-          UBB <span className="text-trust">Flow & Trust</span>
-        </h1>
-        <p className="text-muted-foreground text-xl max-w-2xl mb-12 mx-auto">
-          Transformez votre PME informelle en une entité crédible et finançable grâce à nos modules
-          de gestion de flux et de confiance.
-        </p>
+  const [email, setEmail] = React.useState('')
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[95vh] px-4 py-16 text-center relative overflow-hidden bg-background">
+      <div className="animate-fade-in w-full max-w-5xl relative z-10 space-y-8">
+        {/* Hero Title */}
+        <div className="space-y-4">
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-white/70">
+            UBB <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Flow & Trust</span>
+          </h1>
+          <p className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
+            Transformez votre PME informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
+          </p>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* UBB Flow Card */}
-          <Card className="glass text-left hover:scale-[1.02] glow-flow transition-all duration-300">
-            <CardHeader>
-              <div className="bg-flow/20 p-3 rounded-lg w-fit mb-2">
-                <TrendingUp className="text-flow w-8 h-8" />
+          <Card className="glass text-left border border-white/10 relative overflow-hidden">
+            <CardHeader className="pb-4 flex flex-row items-center gap-4">
+              <div className="bg-flow/10 border border-flow/20 p-3.5 rounded-2xl shrink-0">
+                <TrendingUp className="text-flow w-6 h-6" />
               </div>
-              <CardTitle className="text-2xl">UBB Flow</CardTitle>
+              <div className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight text-white">
+                  UBB Flow
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Intelligence de trésorerie & prévisions de flux</p>
+              </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Intelligence de trésorerie, prévisions à 90 jours et score de préparation
-                financière.
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Gardez un contrôle total sur vos finances grâce à la synchronisation de vos comptes et l'analyse prédictive de vos liquidités.
               </p>
+              <ul className="space-y-2.5 pt-2 border-t border-white/5">
+                {[
+                  "Prévision de trésorerie dynamique à 90 jours",
+                  "Calcul automatique du cash burn mensuel",
+                  "Alertes intelligentes de risques de découvert",
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-2.5 text-xs text-white/80">
+                    <Check size={14} className="text-flow shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
 
           {/* UBB Trust Card */}
-          <Card className="glass text-left hover:scale-[1.02] glow-trust transition-all duration-300">
-            <CardHeader>
-              <div className="bg-trust/20 p-3 rounded-lg w-fit mb-2">
-                <ShieldCheck className="text-trust w-8 h-8" />
+          <Card className="glass text-left border border-white/10 relative overflow-hidden">
+            <CardHeader className="pb-4 flex flex-row items-center gap-4">
+              <div className="bg-trust/10 border border-trust/20 p-3.5 rounded-2xl shrink-0">
+                <ShieldCheck className="text-trust w-6 h-6" />
               </div>
-              <CardTitle className="text-2xl">UBB Trust</CardTitle>
+              <div className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight text-white">
+                  UBB Trust
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Conformité, score & coffre-fort documentaire</p>
+              </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Coffre-fort documentaire, checklists de conformité et score de crédibilité.
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Rassurez vos investisseurs et banquiers en constituant un dossier de crédit certifié et en partageant des accès contrôlés.
               </p>
+              <ul className="space-y-2.5 pt-2 border-t border-white/5">
+                {[
+                  "Coffre-fort documentaire sécurisé (Data Room)",
+                  "Partages sécurisés temporaires pour tiers (BOLA)",
+                  "Calcul automatique du score de confiance",
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-2.5 text-xs text-white/80">
+                    <Check size={14} className="text-trust shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         </div>
 
-        <div className="max-w-md mx-auto space-y-4">
-          <Input placeholder="Votre email professionnel" type="email" />
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="trust" className="w-full gap-2" asChild>
-              <a href="/login">Connexion</a>
-            </Button>
-            <Button variant="flow" className="w-full gap-2" asChild>
-              <a href="/register">Essai gratuit</a>
-            </Button>
+        {/* Lead Capture form card */}
+        <div className="max-w-md mx-auto relative">
+          <div className="p-8 rounded-[2.25rem] relative bg-background/40 border border-white/10 space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-white">Prêt à propulser votre entreprise ?</h3>
+              <p className="text-xs text-muted-foreground">Créez votre compte en quelques instants et connectez vos flux.</p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Votre adresse email professionnelle" 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 bg-white/5 border-white/10 h-12 rounded-xl focus:border-trust transition-all text-sm font-medium"
+                />
+              </div>
+              
+              <Button 
+                variant="trust" 
+                className="w-full h-12 rounded-xl text-sm font-bold gap-2 shadow-none hover:scale-[1.01] active:scale-[0.99] transition-all" 
+                asChild
+              >
+                <a href={`/register?email=${encodeURIComponent(email)}`}>
+                  Démarrer l'essai gratuit
+                  <ArrowRight size={16} />
+                </a>
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Déjà inscrit ? <a href="/login" className="text-trust hover:underline font-bold">Se connecter</a>
+            </p>
           </div>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="pt-6 text-center text-xs text-muted-foreground flex flex-wrap justify-center items-center gap-6 opacity-60">
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck size={14} className="text-trust" /> Données cryptées de bout en bout
+          </span>
+          <span className="hidden sm:inline text-white/20">•</span>
+          <span className="flex items-center gap-1.5">
+            <Zap size={14} className="text-flow" /> Conformité DSP2 & Open Banking
+          </span>
         </div>
       </div>
     </div>
@@ -92,6 +170,12 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        {/* Partner Portal (Public access route with custom token verification) */}
+        <Route path="/partner/portal" element={<PartnerPortalPage />} />
+
+        {/* Public Verified SME profile page */}
+        <Route path="/p/:slug" element={<VerifiedSmePage />} />
+
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
@@ -104,6 +188,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/compliance" element={<CompliancePage />} />
             <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/team" element={<TeamPage />} />
           </Route>
         </Route>
 

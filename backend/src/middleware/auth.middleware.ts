@@ -10,6 +10,7 @@ export interface AuthRequest extends Request {
     email: string
     orgId: string
     role: string
+    accountId?: string | null
   }
 }
 
@@ -29,7 +30,7 @@ export const isAuthenticated = async (req: AuthRequest, res: Response, next: Nex
 
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true, orgId: true, role: true },
+      select: { id: true, email: true, orgId: true, role: true, accountId: true },
     })
 
     if (!user) {

@@ -36,9 +36,11 @@ model User {
   lastName     String?
   role         Role         @default(OWNER)
   orgId        String
+  accountId    String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   auditLogs    AuditLog[]
+  account      Account?     @relation(fields: [accountId], references: [id])
   organization Organization @relation(fields: [orgId], references: [id])
   refreshToken String?
 }
@@ -54,6 +56,8 @@ model Account {
   updatedAt    DateTime      @updatedAt
   organization Organization  @relation(fields: [orgId], references: [id])
   transactions Transaction[]
+  users        User[]
+  budgets      Budget[]
 }
 
 model Transaction {
@@ -265,6 +269,7 @@ enum Role {
   ADVISOR
   PARTNER_READONLY
   AUDITOR
+  AGENT
 }
 
 enum TxnDirection {
@@ -325,9 +330,11 @@ model Budget {
   amount       Decimal
   period       String       @default("MONTHLY")
   orgId        String
+  accountId    String?
+  account      Account?     @relation(fields: [accountId], references: [id])
   organization Organization @relation(fields: [orgId], references: [id])
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  @@unique([orgId, category, period])
+  @@unique([orgId, category, period, accountId])
 }

@@ -6,9 +6,20 @@ export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   prepareHeaders: (headers) => {
-    const token = localStorage.getItem('accessToken')
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`)
+    let partnerToken = localStorage.getItem('partnerToken')
+    let accessToken = localStorage.getItem('accessToken')
+    
+    if (partnerToken && partnerToken.startsWith('"') && partnerToken.endsWith('"')) {
+      partnerToken = partnerToken.slice(1, -1)
+    }
+    if (accessToken && accessToken.startsWith('"') && accessToken.endsWith('"')) {
+      accessToken = accessToken.slice(1, -1)
+    }
+    
+    if (partnerToken && (!accessToken || window.location.pathname.startsWith('/partner'))) {
+      headers.set('authorization', `Bearer ${partnerToken}`)
+    } else if (accessToken) {
+      headers.set('authorization', `Bearer ${accessToken}`)
     }
     return headers
   },
@@ -90,6 +101,6 @@ const baseQueryWithReauth = async (
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Account', 'Transaction', 'Budget', 'RecurringRule', 'Alerts', 'Profile', 'Document', 'Trust', 'ConsentGrant'] as const,
+  tagTypes: ['Account', 'Transaction', 'Budget', 'RecurringRule', 'Alerts', 'Profile', 'Document', 'Trust', 'ConsentGrant', 'Team', 'PublicProfileStatus'] as const,
   endpoints: () => ({}),
 })

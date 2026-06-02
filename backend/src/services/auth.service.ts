@@ -167,4 +167,111 @@ export class AuthService {
       throw new Error('Invalid refresh token')
     }
   }
+
+  static async listTeamMembers(orgId: string) {
+    return await prisma.user.findMany({
+      where: { orgId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        accountId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  static async createTeamMember(orgId: string, data: {
+    email: string
+    password?: string
+    firstName?: string
+    lastName?: string
+    role: string
+    accountId?: string | null
+  }) {
+    const existing = await prisma.user.findUnique({
+      where: { email: data.email },
+    })
+    if (existing) {
+      throw new Error('User with this email already exists')
+    }
+
+    const passwordStr = data.password || 'defaultPassword123'
+    const hashedPassword = await this.hashPassword(passwordStr)
+
+    return await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        firstName: data.firstName || null,
+        lastName: data.lastName || null,
+        role: data.role as any,
+        orgId,
+        accountId: data.accountId || null,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        accountId: true,
+      }
+    })
+  }
+
+  static async updateTeamMember(id: string, orgId: string, data: {
+    role?: string
+    accountId?: string | null
+    firstName?: string
+    lastName?: string
+  }) {
+    const member = await prisma.user.findFirst({
+      where: { id, orgId }
+    })
+    if (!member) {
+      throw new Error('User not found in your organization')
+    }
+
+    if (member.role === 'OWNER' && data.role && data.role !== 'OWNER') {
+      throw new Error('Cannot change role of the organization owner')
+    }
+
+    return await prisma.user.update({
+      where: { id },
+      data: {
+        ...(data.role && { role: data.role as any }),
+        accountId: data.accountId !== undefined ? data.accountId : undefined,
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        accountId: true,
+      }
+    })
+  }
+
+  static async deleteTeamMember(id: string, orgId: string) {
+    const member = await prisma.user.findFirst({
+      where: { id, orgId }
+    })
+    if (!member) {
+      throw new Error('User not found in your organization')
+    }
+    if (member.role === 'OWNER') {
+      throw new Error('Cannot delete the organization owner')
+    }
+
+    return await prisma.user.delete({
+      where: { id }
+    })
+  }
 }

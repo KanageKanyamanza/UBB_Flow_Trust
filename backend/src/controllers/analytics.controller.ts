@@ -19,7 +19,7 @@ export class AnalyticsController {
         end.setHours(23, 59, 59, 999)
       }
 
-      const summary = await AnalyticsService.getSummaryByCategory(orgId, start, end)
+      const summary = await AnalyticsService.getSummaryByCategory(orgId, start, end, req.user?.accountId || undefined)
       res.json(summary)
     } catch (error: any) {
       res.status(500).json({ error: error.message })
@@ -42,7 +42,7 @@ export class AnalyticsController {
       // Ensure end date includes the entire day
       end.setHours(23, 59, 59, 999)
 
-      const balances = await AnalyticsService.getDailyBalances(orgId, start, end)
+      const balances = await AnalyticsService.getDailyBalances(orgId, start, end, req.user?.accountId || undefined)
       res.json(balances)
     } catch (error: any) {
       res.status(500).json({ error: error.message })
@@ -56,7 +56,7 @@ export class AnalyticsController {
   static async getDashboardStats(req: AuthRequest, res: Response) {
     try {
       const orgId = req.user!.orgId
-      const stats = await AnalyticsService.getKpis(orgId)
+      const stats = await AnalyticsService.getKpis(orgId, req.user?.accountId || undefined)
       res.json(stats)
     } catch (error: any) {
       res.status(500).json({ error: error.message })
@@ -70,7 +70,7 @@ export class AnalyticsController {
   static async getForecast(req: AuthRequest, res: Response) {
     try {
       const orgId = req.user!.orgId
-      const forecast = await AnalyticsService.getForecast(orgId)
+      const forecast = await AnalyticsService.getForecast(orgId, req.user?.accountId || undefined)
       res.json(forecast)
     } catch (error: any) {
       res.status(500).json({ error: error.message })
@@ -84,7 +84,7 @@ export class AnalyticsController {
   static async getProjections(req: AuthRequest, res: Response) {
     try {
       const orgId = req.user!.orgId
-      const projections = await AnalyticsService.getProjections(orgId)
+      const projections = await AnalyticsService.getProjections(orgId, req.user?.accountId || undefined)
       res.json(projections)
     } catch (error: any) {
       res.status(500).json({ error: error.message })

@@ -20,14 +20,16 @@ const AccountsPage: React.FC = () => {
             <h1 className="text-3xl font-bold tracking-tight">Gestion des Comptes</h1>
             <p className="text-muted-foreground">Consultez et gérez vos comptes bancaires et portefeuilles digitaux.</p>
           </div>
-          <Button 
-            variant="flow" 
-            onClick={() => setIsModalOpen(true)}
-            className="gap-2 shadow-lg shadow-flow/20"
-          >
-            <Plus className="w-4 h-4" />
-            Nouveau Compte
-          </Button>
+          {user?.role === 'OWNER' && (
+            <Button 
+              variant="flow" 
+              onClick={() => setIsModalOpen(true)}
+              className="gap-2 shadow-lg shadow-flow/20"
+            >
+              <Plus className="w-4 h-4" />
+              Nouveau Compte
+            </Button>
+          )}
         </header>
 
         {isLoading ? (
@@ -47,12 +49,16 @@ const AccountsPage: React.FC = () => {
             <div className="space-y-1">
               <h3 className="text-xl font-medium">Aucun compte trouvé</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                Commencez par ajouter votre premier compte bancaire ou compte Mobile Money pour suivre vos flux.
+                {user?.role === 'OWNER' 
+                  ? 'Commencez par ajouter votre premier compte bancaire ou compte Mobile Money pour suivre vos flux.'
+                  : 'Contactez votre administrateur pour lier un compte.'}
               </p>
             </div>
-            <Button variant="secondary" className="mt-4" onClick={() => setIsModalOpen(true)}>
-              Ajouter un compte
-            </Button>
+            {user?.role === 'OWNER' && (
+              <Button variant="secondary" className="mt-4" onClick={() => setIsModalOpen(true)}>
+                Ajouter un compte
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -63,10 +69,12 @@ const AccountsPage: React.FC = () => {
         )}
 
         {/* Create Account Modal */}
-        <CreateAccountModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-        />
+        {user?.role === 'OWNER' && (
+          <CreateAccountModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+          />
+        )}
       </main>
     </div>
   )

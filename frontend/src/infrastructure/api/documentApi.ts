@@ -32,7 +32,20 @@ export const documentApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Document'],
     }),
+    getDocumentLogs: builder.query<any[], void>({
+      query: () => ({
+        url: '/documents/logs',
+      }),
+      providesTags: ['Document'],
+    }),
   }),
 })
 
-export const { useGetDocumentsQuery, useUploadDocumentMutation, useDeleteDocumentMutation, useAddVersionMutation } = documentApi
+export const {
+  useGetDocumentsQuery,
+  useUploadDocumentMutation,
+  useDeleteDocumentMutation,
+  useAddVersionMutation,
+  useGetDocumentLogsQuery,
+} = documentApi
+

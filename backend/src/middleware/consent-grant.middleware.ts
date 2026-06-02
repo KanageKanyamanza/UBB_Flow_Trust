@@ -19,13 +19,16 @@ export interface ConsentGrantRequest extends Request {
 export const hasValidConsent = async (req: ConsentGrantRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization
-    if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized: No consent token provided' })
+    let token = ''
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1] || ''
+    } else if (req.query.token && typeof req.query.token === 'string') {
+      token = req.query.token
     }
 
-    const token = authHeader.split(' ')[1]
     if (!token) {
-      return res.status(401).json({ error: 'Unauthorized: Invalid token format' })
+      return res.status(401).json({ error: 'Unauthorized: No consent token provided' })
     }
 
     const grant = await ConsentGrantService.verifyToken(token)
