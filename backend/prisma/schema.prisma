@@ -43,6 +43,9 @@ model User {
   account      Account?     @relation(fields: [accountId], references: [id])
   organization Organization @relation(fields: [orgId], references: [id])
   refreshToken String?
+
+  @@index([orgId])
+  @@index([accountId])
 }
 
 model Account {
@@ -58,6 +61,8 @@ model Account {
   transactions Transaction[]
   users        User[]
   budgets      Budget[]
+
+  @@index([orgId])
 }
 
 model Transaction {
@@ -77,6 +82,10 @@ model Transaction {
   evidenceFiles EvidenceFile[]
   account       Account        @relation(fields: [accountId], references: [id])
   organization  Organization   @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+  @@index([accountId])
+  @@index([occurredAt])
 }
 
 model RecurringRule {
@@ -160,6 +169,8 @@ model Document {
   checklistItems ChecklistItem[]
   organization   Organization      @relation(fields: [orgId], references: [id])
   versions       DocumentVersion[]
+
+  @@index([orgId])
 }
 
 model DocumentVersion {
@@ -206,6 +217,8 @@ model TrustScore {
   orgId        String
   createdAt    DateTime     @default(now())
   organization Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
 }
 
 model PublicProfile {
@@ -237,6 +250,8 @@ model Alert {
   orgId        String
   createdAt    DateTime      @default(now())
   organization Organization  @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
 }
 
 model AuditLog {
@@ -251,6 +266,9 @@ model AuditLog {
   createdAt    DateTime     @default(now())
   organization Organization @relation(fields: [orgId], references: [id])
   user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([orgId])
+  @@index([userId])
 }
 
 model EvidenceFile {

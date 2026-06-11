@@ -10,8 +10,14 @@ export class AlertService {
     console.log('[alert-job]: Starting threshold check for all organizations...')
     const organizations = await prisma.organization.findMany()
 
-    for (const org of organizations) {
-      await this.checkOrganizationThresholds(org.id)
+    const BATCH_SIZE = 10
+    for (let i = 0; i < organizations.length; i += BATCH_SIZE) {
+      const batch = organizations.slice(i, i + BATCH_SIZE)
+      await Promise.all(batch.map(org => 
+        this.checkOrganizationThresholds(org.id).catch(err => {
+          console.error(`[alert-job]: Error checking thresholds for org ${org.id}:`, err)
+        })
+      ))
     }
     console.log('[alert-job]: Threshold check completed.')
   }
