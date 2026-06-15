@@ -55,7 +55,7 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[90vh] p-4 animate-fade-in py-12">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in py-12">
       <Card className="glass w-full max-w-lg border-white/10 glow-flow">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Créer un compte</CardTitle>

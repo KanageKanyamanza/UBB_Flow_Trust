@@ -36,12 +36,13 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, isCollapse
   <Link to={path} onClick={onClick}>
     <motion.div
       className={cn(
-        "flex items-center gap-2 p-2 mb-1 transition-all duration-300 group relative",
+        "flex items-center gap-2 p-1.5 mb-0.5 transition-all duration-300 group relative",
+        isCollapsed ? "justify-center" : "",
         active 
           ? "bg-flow/20 text-flow shadow-lg shadow-flow/5" 
           : "text-muted-foreground hover:bg-white/5 hover:text-white"
       )}
-      whileHover={{ x: 4 }}
+      whileHover={isCollapsed ? { scale: 1.05 } : { x: 4 }}
       whileTap={{ scale: 0.98 }}
     >
       <div className={cn(
@@ -101,7 +102,7 @@ export const Sidebar: React.FC = () => {
     <div className="flex flex-col h-full">
       {/* Logo Section */}
       <div className={cn(
-        "flex items-center mb-12 transition-all duration-500",
+        "flex items-center mb-6 transition-all duration-500",
         isCollapsed ? "justify-center" : "px-2"
       )}>
         {/* <TrendingUp className="text-flow w-5 h-5 flex-shrink-0" /> */}
@@ -135,11 +136,11 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="py-3 px-2 border-t border-white/5 space-y-2">
+      <div className="pt-2 pb-6 px-2 border-t border-white/5 space-y-1.5 hidden md:block">
         {!isCollapsed && (
-          <div className="px-4 py-3 rounded-xl bg-white/5 space-y-1">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Connecté en tant que</p>
-            <p className="text-xs font-bold truncate">{user?.email}</p>
+          <div className="px-3 py-2 rounded-xl bg-white/5 space-y-0.5">
+            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">Connecté</p>
+            <p className="text-xs font-bold truncate leading-none">{user?.email}</p>
           </div>
         )}
         
@@ -157,7 +158,7 @@ export const Sidebar: React.FC = () => {
         {/* Collapse Toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex w-full items-center justify-center p-2 rounded-xl border border-white/5 hover:bg-white/5 transition-colors"
+          className="hidden md:flex w-full items-center justify-center p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-muted-foreground hover:text-white transition-all duration-300 shadow-md shadow-black/30"
         >
           {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
@@ -167,17 +168,40 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
-        <Button 
-          variant="glass" 
-          size="icon" 
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="rounded-full shadow-2xl"
-        >
-          <Menu />
-        </Button>
-      </div>
+      {/* Mobile Top Navbar */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 z-40">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="glass" 
+            size="icon" 
+            onClick={() => setIsMobileOpen(true)}
+            className="rounded-xl"
+          >
+            <Menu size={20} />
+          </Button>
+          <span className="text-base font-black italic tracking-tighter pt-0.5">
+            UBB <span className="text-trust font-bold">Flow</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 max-w-[60%]">
+          <div className="text-right hidden sm:block">
+            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">Connecté</p>
+            <p className="text-xs font-bold truncate max-w-[150px]">{user?.email}</p>
+          </div>
+          <p className="text-xs font-bold truncate max-w-[100px] sm:hidden">{user?.email?.split('@')[0]}</p>
+          
+          <Button
+            variant="glass"
+            size="icon"
+            onClick={logout}
+            className="text-destructive hover:bg-destructive/10 rounded-xl"
+            aria-label="Déconnexion"
+          >
+            <LogOut size={18} />
+          </Button>
+        </div>
+      </header>
 
       {/* Desktop Sidebar */}
       <motion.aside
@@ -204,7 +228,7 @@ export const Sidebar: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-72 bg-background border-r border-white/10 z-50 md:hidden"
+              className="fixed inset-y-0 left-0 w-72 bg-background border-r border-white/10 z-50 md:hidden overflow-y-auto"
             >
               {SidebarContent}
             </motion.aside>

@@ -76,7 +76,7 @@ const PartnerPortalPage: React.FC = () => {
   // Loading Screen
   if (profileLoading && !profileError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[90vh] text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-trust mb-4"></div>
         <p className="text-muted-foreground">Authentification et chargement de la Data Room...</p>
       </div>
@@ -87,7 +87,7 @@ const PartnerPortalPage: React.FC = () => {
   const isUnauthorized = profileError && ('status' in profileError && (profileError.status === 401 || profileError.status === 403))
   if (!partnerToken || isUnauthorized) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[90vh] p-4 text-center max-w-md mx-auto animate-fade-in">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center max-w-md mx-auto animate-fade-in">
         <AlertCircle className="w-16 h-16 text-destructive mb-6" />
         <h1 className="text-2xl font-bold mb-2">Accès Non Autorisé</h1>
         <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
@@ -104,7 +104,7 @@ const PartnerPortalPage: React.FC = () => {
   // Generic Error Screen
   if (profileError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[90vh] p-4 text-center max-w-md mx-auto animate-fade-in">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center max-w-md mx-auto animate-fade-in">
         <AlertCircle className="w-16 h-16 text-destructive mb-6" />
         <h1 className="text-2xl font-bold mb-2">Erreur de Connexion</h1>
         <p className="text-muted-foreground text-sm mb-8 leading-relaxed">

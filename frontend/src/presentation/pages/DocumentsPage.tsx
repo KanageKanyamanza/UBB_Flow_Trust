@@ -88,7 +88,7 @@ export default function DocumentsPage() {
   // Only owners can access this page
   if (!isOwner) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] md:h-screen text-center px-4 space-y-6 animate-fade-in">
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
@@ -480,7 +480,7 @@ export default function DocumentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)] md:h-screen w-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust"></div>
       </div>
     )

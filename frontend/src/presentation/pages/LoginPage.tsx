@@ -56,7 +56,7 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[90vh] p-4 animate-fade-in">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
       <div className="mb-8 flex items-center gap-2">
         <TrendingUp className="text-flow w-8 h-8" />
         <span className="text-2xl font-bold">UBB <span className="text-trust">Flow & Trust</span></span>
