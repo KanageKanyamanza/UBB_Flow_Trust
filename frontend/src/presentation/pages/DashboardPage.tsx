@@ -34,14 +34,25 @@ import { Plus, ChevronRight, Ban } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { cn } from '@/shared/utils/utils'
+import { SkeletonKpiCard, SkeletonChart } from '../components/ui/skeleton'
+import { useToast } from '../../application/context/ToastContext'
 
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth()
-  const { data: accounts, isLoading: isAccountsLoading } = useGetAccountsQuery()
-  const { data: stats, isLoading: isStatsLoading } = useGetDashboardStatsQuery()
+  const { error: toastError } = useToast()
+  const { data: accounts, isLoading: isAccountsLoading, isError: isAccountsError } = useGetAccountsQuery()
+  const { data: stats, isLoading: isStatsLoading, isError: isStatsError } = useGetDashboardStatsQuery()
   const { data: dailyBalances, isLoading: isDailyBalanceLoading } = useGetDailyBalancesQuery()
   const { data: categorySummary, isLoading: isCategoryLoading } = useGetCategorySummaryQuery()
   const { data: forecast, isLoading: isForecastLoading } = useGetCashFlowForecastQuery()
+
+  // Show error toasts on fetch failures
+  React.useEffect(() => {
+    if (isStatsError) toastError('Erreur de chargement', 'Impossible de charger les statistiques du tableau de bord.')
+  }, [isStatsError])
+  React.useEffect(() => {
+    if (isAccountsError) toastError('Erreur de chargement', 'Impossible de charger vos comptes.')
+  }, [isAccountsError])
 
   const recentAccounts = accounts?.slice(0, 3) || []
 
@@ -71,6 +82,11 @@ const DashboardPage: React.FC = () => {
         </header>
 
         {/* Global Stats Overview */}
+        {isStatsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => <SkeletonKpiCard key={i} />)}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Trésorerie Totale */}
           <Card className="glass relative overflow-hidden group hover:bg-white/5 border-white/5">
@@ -84,11 +100,7 @@ const DashboardPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
-              {isStatsLoading ? (
-                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
-              ) : (
-                <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.totalBalance || 0)} CFA</div>
-              )}
+              <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.totalBalance || 0)} CFA</div>
               <p className="text-xs text-muted-foreground mt-1">Disponibilités globales</p>
             </CardContent>
           </Card>
@@ -105,13 +117,9 @@ const DashboardPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
-              {isStatsLoading ? (
-                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
-              ) : (
-                <div className="text-2xl font-bold text-success">
-                  +{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.currentMonthIn || 0)} CFA
-                </div>
-              )}
+              <div className="text-2xl font-bold text-success">
+                +{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.currentMonthIn || 0)} CFA
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Recettes depuis le 1er {format(new Date(), 'MMMM', { locale: fr })}</p>
             </CardContent>
           </Card>
@@ -128,13 +136,9 @@ const DashboardPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
-              {isStatsLoading ? (
-                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
-              ) : (
-                <div className="text-2xl font-bold text-destructive">
-                  {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.monthlyBurnRate || 0)} CFA
-                </div>
-              )}
+              <div className="text-2xl font-bold text-destructive">
+                {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.monthlyBurnRate || 0)} CFA
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Moyenne des sorties</p>
             </CardContent>
           </Card>
@@ -154,22 +158,25 @@ const DashboardPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
-              {isStatsLoading ? (
-                <div className="h-8 w-32 bg-white/5 animate-pulse rounded" />
-              ) : (
-                <div className={cn(
-                  "text-2xl font-bold",
-                  stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-white"
-                )}>
-                  {stats?.runwayMonths === 99 ? '∞' : `${stats?.runwayMonths} mois`}
-                </div>
-              )}
+              <div className={cn(
+                "text-2xl font-bold",
+                stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-white"
+              )}>
+                {stats?.runwayMonths === 99 ? '∞' : `${stats?.runwayMonths} mois`}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Autonomie financière restante</p>
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Charts Section */}
+        {isDailyBalanceLoading && isCategoryLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <SkeletonChart height={250} />
+            <SkeletonChart height={250} />
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="glass border-white/5">
             <CardHeader>
@@ -197,6 +204,7 @@ const DashboardPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Forecast Section */}
         <Card className="glass border-white/5">
@@ -237,7 +245,7 @@ const DashboardPage: React.FC = () => {
           {isAccountsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
+                <SkeletonKpiCard key={i} />
               ))}
             </div>
           ) : accounts?.length === 0 ? (

@@ -1,4 +1,5 @@
 import prisma from '../config/prisma.js'
+import { RedisService } from './redis.service.js'
 
 export interface CreateAccountInput {
   name: string
@@ -17,7 +18,7 @@ export interface UpdateAccountInput {
 
 export class AccountService {
   static async create(data: CreateAccountInput) {
-    return await prisma.account.create({
+    const created = await prisma.account.create({
       data: {
         name: data.name,
         type: data.type,
@@ -26,6 +27,9 @@ export class AccountService {
         orgId: data.orgId,
       },
     })
+    await RedisService.invalidatePattern(`kpis:${data.orgId}:`)
+    await RedisService.invalidatePattern(`proj:${data.orgId}:`)
+    return created
   }
 
   static async listByOrg(orgId: string) {
@@ -51,18 +55,24 @@ export class AccountService {
     // Verify ownership first
     await this.getById(id, orgId)
 
-    return await prisma.account.update({
+    const updated = await prisma.account.update({
       where: { id },
       data,
     })
+    await RedisService.invalidatePattern(`kpis:${orgId}:`)
+    await RedisService.invalidatePattern(`proj:${orgId}:`)
+    return updated
   }
 
   static async delete(id: string, orgId: string) {
     // Verify ownership first
     await this.getById(id, orgId)
 
-    return await prisma.account.delete({
+    const deleted = await prisma.account.delete({
       where: { id },
     })
+    await RedisService.invalidatePattern(`kpis:${orgId}:`)
+    await RedisService.invalidatePattern(`proj:${orgId}:`)
+    return deleted
   }
 }

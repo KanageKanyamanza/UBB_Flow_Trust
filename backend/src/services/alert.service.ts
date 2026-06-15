@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js'
 import { AnalyticsService } from './analytics.service.js'
 import { AlertSeverity } from '@prisma/client'
+import { RedisService } from './redis.service.js'
 
 export class AlertService {
   /**
@@ -68,7 +69,7 @@ export class AlertService {
 
     if (lastAlert) return
 
-    return prisma.alert.create({
+    const created = await prisma.alert.create({
       data: {
         orgId,
         severity,
@@ -77,10 +78,16 @@ export class AlertService {
         isAck: false
       }
     })
+    await RedisService.del(`alerts:${orgId}:active`)
+    return created
   }
 
   static async getActiveAlerts(orgId: string) {
-    return prisma.alert.findMany({
+    const cacheKey = `alerts:${orgId}:active`
+    const cached = await RedisService.get<any[]>(cacheKey)
+    if (cached) return cached
+
+    const result = await prisma.alert.findMany({
       where: {
         orgId,
         isAck: false
@@ -89,10 +96,13 @@ export class AlertService {
         createdAt: 'desc'
       }
     })
+
+    await RedisService.set(cacheKey, result, 60) // Cache 60s
+    return result
   }
 
   static async acknowledgeAlert(alertId: string, orgId: string) {
-    return prisma.alert.updateMany({
+    const result = await prisma.alert.updateMany({
       where: {
         id: alertId,
         orgId
@@ -101,5 +111,8 @@ export class AlertService {
         isAck: true
       }
     })
+    // Invalide le cache des alertes
+    await RedisService.del(`alerts:${orgId}:active`)
+    return result
   }
 }

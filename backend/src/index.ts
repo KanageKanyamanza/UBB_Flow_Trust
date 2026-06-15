@@ -1,22 +1,50 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
-import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
 import path from 'path'
 
-dotenv.config()
+import { validateContentType, sanitizeBody } from './middleware/security.middleware.js'
+import authRoutes from './routes/auth.routes.js'
+import accountRoutes from './routes/account.routes.js'
+import transactionRoutes from './routes/transaction.routes.js'
+import uploadRoutes from './routes/upload.routes.js'
+import analyticsRoutes from './routes/analytics.routes.js'
+import budgetRoutes from './routes/budget.routes.js'
+import recurringRuleRoutes from './routes/recurring-rule.routes.js'
+import alertRoutes from './routes/alert.routes.js'
+import profileRoutes from './routes/profile.routes.js'
+import documentRoutes from './routes/document.routes.js'
+import trustRoutes from './routes/trust.routes.js'
+import complianceRoutes from './routes/compliance.routes.js'
+import consentGrantRoutes from './routes/consent-grant.routes.js'
+import partnerRoutes from './routes/partner.routes.js'
+import publicProfileRoutes from './routes/public-profile.routes.js'
+import exportRoutes from './routes/export.routes.js'
+import { scoreQueue } from './services/score-queue.service.js'
+import { CronService } from './services/cron.service.js'
 
 const app = express()
 const port = process.env.PORT || 5000
 
-// Configuration du rate-limiting
+// Rate limiting : Auth routes (anti brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.' }
+})
+
+// Rate limiting : Global API
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limite chaque IP à 100 requêtes par fenêtre de 15 minutes
-  standardHeaders: 'draft-7', // Retourne les informations de limite dans les headers `RateLimit`
-  legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
+  limit: 200,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes. Veuillez patienter.' }
 })
 
 const allowedOrigins = [
@@ -39,30 +67,52 @@ app.use(cors({
   },
   credentials: true
 }))
-app.use(helmet())
+
+// Helmet renforcé
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", ...allowedOrigins],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 an
+    includeSubDomains: true,
+    preload: true,
+  },
+  noSniff: true,
+  frameguard: { action: 'deny' },
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}))
+
+// Headers de sécurité additionnels
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+  next()
+})
+
 app.use(morgan('dev'))
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
+
+// Rate limiters
+app.use('/auth/login', authLimiter)
+app.use('/auth/register', authLimiter)
 app.use(limiter)
 
-// Routes
-import authRoutes from './routes/auth.routes.js'
-import accountRoutes from './routes/account.routes.js'
-import transactionRoutes from './routes/transaction.routes.js'
-import uploadRoutes from './routes/upload.routes.js'
-import analyticsRoutes from './routes/analytics.routes.js'
-import budgetRoutes from './routes/budget.routes.js'
-import recurringRuleRoutes from './routes/recurring-rule.routes.js'
-import alertRoutes from './routes/alert.routes.js'
-import profileRoutes from './routes/profile.routes.js'
-import documentRoutes from './routes/document.routes.js'
-import trustRoutes from './routes/trust.routes.js'
-import complianceRoutes from './routes/compliance.routes.js'
-import consentGrantRoutes from './routes/consent-grant.routes.js'
-import partnerRoutes from './routes/partner.routes.js'
-import publicProfileRoutes from './routes/public-profile.routes.js'
-import exportRoutes from './routes/export.routes.js'
-import { scoreQueue } from './services/score-queue.service.js'
+// Security middlewares
+app.use(validateContentType)
+app.use(sanitizeBody)
 
+// Routes
 app.use('/auth', authRoutes)
 app.use('/accounts', accountRoutes)
 app.use('/transactions', transactionRoutes)
@@ -97,9 +147,9 @@ app.get('/health', (req, res) => {
 })
 
 // Initialize Cron Jobs
-import { CronService } from './services/cron.service.js'
 CronService.init()
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`)
 })
+

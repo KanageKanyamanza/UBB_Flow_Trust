@@ -47,4 +47,24 @@ export class RedisService {
       // ignore
     }
   }
+
+  /**
+   * Invalide toutes les clés correspondant à un pattern (ex: 'txns:orgId123:')
+   * Utilise SCAN pour éviter de bloquer le serveur Redis.
+   */
+  static async invalidatePattern(pattern: string): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', `${pattern}*`, 'COUNT', 100);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+          await redisClient.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch (error) {
+      // ignore
+    }
+  }
 }

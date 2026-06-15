@@ -86,6 +86,9 @@ model Transaction {
   @@index([orgId])
   @@index([accountId])
   @@index([occurredAt])
+  @@index([orgId, occurredAt])
+  @@index([orgId, direction])
+  @@index([orgId, category])
 }
 
 model RecurringRule {
@@ -171,6 +174,7 @@ model Document {
   versions       DocumentVersion[]
 
   @@index([orgId])
+  @@index([orgId, status])
 }
 
 model DocumentVersion {
@@ -252,6 +256,7 @@ model Alert {
   organization Organization  @relation(fields: [orgId], references: [id])
 
   @@index([orgId])
+  @@index([orgId, isAck])
 }
 
 model AuditLog {
@@ -269,6 +274,7 @@ model AuditLog {
 
   @@index([orgId])
   @@index([userId])
+  @@index([orgId, createdAt])
 }
 
 model EvidenceFile {

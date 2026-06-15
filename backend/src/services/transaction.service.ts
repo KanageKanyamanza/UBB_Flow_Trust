@@ -2,6 +2,7 @@ import prisma from '../config/prisma.js'
 import { TxnDirection, TxnMethod, TxnCategory } from '@prisma/client'
 import { storageService } from './storage.service.js'
 import { scoreQueue } from './score-queue.service.js'
+import { RedisService } from './redis.service.js'
 
 export interface CreateTransactionInput {
   amount: number
@@ -40,7 +41,12 @@ export class TransactionService {
   } = {}) {
     const { accountId, category, direction, startDate, endDate } = filters
     
-    return await prisma.transaction.findMany({
+    // Cache key includes all filter params
+    const cacheKey = `txns:${orgId}:${accountId || 'all'}:${category || 'all'}:${direction || 'all'}:${startDate?.toISOString() || ''}:${endDate?.toISOString() || ''}`
+    const cached = await RedisService.get<any[]>(cacheKey)
+    if (cached) return cached
+
+    const result = await prisma.transaction.findMany({
       where: {
         orgId,
         ...(accountId && { accountId }),
@@ -64,6 +70,9 @@ export class TransactionService {
         evidenceFiles: true
       }
     })
+
+    await RedisService.set(cacheKey, result, 60) // Cache 60s
+    return result
   }
 
   /**
@@ -135,6 +144,11 @@ export class TransactionService {
     // Déclenche un recalcul du score après création d'une transaction (pilier Activité)
     scoreQueue.enqueue(data.orgId)
 
+    // Invalide toutes les clés de cache transactions, KPIs et projections pour cet org
+    await RedisService.invalidatePattern(`txns:${data.orgId}:`)
+    await RedisService.invalidatePattern(`kpis:${data.orgId}:`)
+    await RedisService.invalidatePattern(`proj:${data.orgId}:`)
+
     return created
   }
 
@@ -145,7 +159,7 @@ export class TransactionService {
     // 1. Get original transaction to calculate balance delta
     const transaction = await this.getById(id, orgId)
 
-    return await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx) => {
       // a. Reverse old impact
       const oldImpact = transaction.direction === 'IN' ? -transaction.amount.toNumber() : transaction.amount.toNumber()
       
@@ -159,7 +173,7 @@ export class TransactionService {
       })
 
       // b. Apply updates to the transaction
-      const updated = await tx.transaction.update({
+      const updatedTx = await tx.transaction.update({
         where: { id },
         data: {
           amount: data.amount,
@@ -188,10 +202,10 @@ export class TransactionService {
       }
 
       // c. Apply new impact
-      const newImpact = updated.direction === 'IN' ? updated.amount.toNumber() : -updated.amount.toNumber()
+      const newImpact = updatedTx.direction === 'IN' ? updatedTx.amount.toNumber() : -updatedTx.amount.toNumber()
 
       await tx.account.update({
-        where: { id: updated.accountId },
+        where: { id: updatedTx.accountId },
         data: {
           balance: {
             increment: newImpact
@@ -199,8 +213,15 @@ export class TransactionService {
         }
       })
 
-      return updated
+      return updatedTx
     })
+
+    // Invalide le cache transactions, KPIs et projections pour cet org
+    await RedisService.invalidatePattern(`txns:${orgId}:`)
+    await RedisService.invalidatePattern(`kpis:${orgId}:`)
+    await RedisService.invalidatePattern(`proj:${orgId}:`)
+
+    return updated
   }
 
   /**
@@ -246,9 +267,13 @@ export class TransactionService {
       })
 
       return deleted
-    }).then((deleted) => {
+    }).then(async (deleted) => {
       // Déclenche un recalcul du score après suppression (pilier Activité)
       scoreQueue.enqueue(orgId)
+      // Invalide le cache transactions, KPIs et projections pour cet org
+      await RedisService.invalidatePattern(`txns:${orgId}:`)
+      await RedisService.invalidatePattern(`kpis:${orgId}:`)
+      await RedisService.invalidatePattern(`proj:${orgId}:`)
       return deleted
     })
   }
