@@ -43,6 +43,7 @@ model User {
   account      Account?     @relation(fields: [accountId], references: [id])
   organization Organization @relation(fields: [orgId], references: [id])
   refreshToken String?
+  pushSubscriptions PushSubscription[]
 
   @@index([orgId])
   @@index([accountId])
@@ -346,6 +347,18 @@ enum AlertSeverity {
   INFO
   WARN
   CRITICAL
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Budget {

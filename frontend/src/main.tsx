@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Provider } from 'react-redux'
+import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import { store } from './application/store'
 import { AuthProvider } from './application/context/AuthContext'
@@ -13,14 +14,16 @@ registerSW()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <div className="dark min-h-screen bg-background text-foreground">
-        <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </AuthProvider>
-      </div>
-    </Provider>
+    <HelmetProvider>
+      <Provider store={store}>
+        <div className="dark min-h-screen bg-background text-foreground">
+          <AuthProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </AuthProvider>
+        </div>
+      </Provider>
+    </HelmetProvider>
   </React.StrictMode>,
 )

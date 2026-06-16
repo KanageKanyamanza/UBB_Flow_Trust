@@ -9,6 +9,7 @@ import { useGetComplianceQuery, useStartComplianceMutation, useGetGapQuery } fro
 import { cn } from '@/shared/utils/utils'
 import { useAuth } from '@/application/context/AuthContext'
 import { BASE_URL } from '@/infrastructure/api/apiSlice'
+import { Seo } from '@/presentation/components/seo/Seo'
 
 const STEPS = [
   { id: "personal", title: "Informations", icon: User, description: "Vos données" },
@@ -330,6 +331,7 @@ export default function CompliancePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
+      <Seo title="Conformité & Score de Confiance — UBBFlow" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Conformité & Trust</h1>

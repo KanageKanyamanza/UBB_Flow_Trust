@@ -151,3 +151,29 @@ async function networkWithCacheFallback(request) {
     return cached || new Response('Offline', { status: 503 })
   }
 }
+
+// ─── Web Push ────────────────────────────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  let data = {}
+  try {
+    data = event.data ? event.data.json() : {}
+  } catch {
+    data = { title: 'UBBFlow', body: event.data ? event.data.text() : '' }
+  }
+
+  const title = data.title || 'UBBFlow'
+  const options = {
+    body: data.body || '',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    data: { url: data.url || '/' }
+  }
+
+  event.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/'
+  event.waitUntil(self.clients.openWindow(url))
+})

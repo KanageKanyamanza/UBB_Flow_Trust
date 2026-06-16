@@ -23,8 +23,10 @@ import consentGrantRoutes from './routes/consent-grant.routes.js'
 import partnerRoutes from './routes/partner.routes.js'
 import publicProfileRoutes from './routes/public-profile.routes.js'
 import exportRoutes from './routes/export.routes.js'
+import pushRoutes from './routes/push.routes.js'
 import { scoreQueue } from './services/score-queue.service.js'
 import { CronService } from './services/cron.service.js'
+import { PushService } from './services/push.service.js'
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -130,6 +132,7 @@ app.use('/partner', partnerRoutes)
 app.use('/public', publicProfileRoutes)
 app.use('/api/export', exportRoutes)
 app.use('/export', exportRoutes)
+app.use('/push', pushRoutes)
 
 // Serve local static uploads if STORAGE_TYPE=local
 if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
@@ -148,6 +151,9 @@ app.get('/health', (req, res) => {
 
 // Initialize Cron Jobs
 CronService.init()
+
+// Configure Web Push (VAPID)
+PushService.configure()
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`)

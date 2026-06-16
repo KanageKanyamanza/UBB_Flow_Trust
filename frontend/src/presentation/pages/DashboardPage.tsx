@@ -36,6 +36,7 @@ import { fr } from 'date-fns/locale'
 import { cn } from '@/shared/utils/utils'
 import { SkeletonKpiCard, SkeletonChart } from '../components/ui/skeleton'
 import { useToast } from '../../application/context/ToastContext'
+import { Seo } from '../components/seo/Seo'
 
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth()
@@ -58,6 +59,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in pb-20">
+      <Seo title="Tableau de Bord — UBBFlow" noindex />
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">

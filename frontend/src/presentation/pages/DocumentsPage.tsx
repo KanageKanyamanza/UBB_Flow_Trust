@@ -9,6 +9,7 @@ import { BASE_URL } from '@/infrastructure/api/apiSlice'
 import { CreateConsentGrantModal } from '@/presentation/components/compliance/CreateConsentGrantModal'
 import { useGetConsentGrantsQuery, useRevokeConsentGrantMutation } from '@/infrastructure/api/consentGrantApi'
 import { useAuth } from '@/application/context/AuthContext'
+import { Seo } from '@/presentation/components/seo/Seo'
 
 export default function DocumentsPage() {
   const { user } = useAuth()
@@ -547,6 +548,7 @@ export default function DocumentsPage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
+      <Seo title="Data Room — Documents — UBBFlow" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Data Room</h1>

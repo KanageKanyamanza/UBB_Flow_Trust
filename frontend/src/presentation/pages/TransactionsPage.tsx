@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { Link, useNavigate } from 'react-router-dom'
 import { useListTransactionsQuery } from '@/infrastructure/api/transactionApi'
 import { format } from 'date-fns'
+import { Seo } from '../components/seo/Seo'
 
 const TransactionsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -43,6 +44,7 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <div className="container py-5 pb-24 animate-fade-in relative">
+      <Seo title="Flux de Trésorerie — UBBFlow" noindex />
       <div className="flex flex-col gap-4 mb-10">
         <header className="flex items-center justify-between">
           <div className="space-y-2">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert, Globe, Copy, ExternalLink, ShieldCheck } from 'lucide-react'
+import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert, Globe, Copy, ExternalLink, ShieldCheck, Bell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
@@ -12,6 +12,8 @@ import {
 } from '@/infrastructure/api/profileApi'
 import { useGetTrustScoreQuery } from '@/infrastructure/api/trustApi'
 import { useAuth } from '@/application/context/AuthContext'
+import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/infrastructure/pushNotifications'
+import { Seo } from '@/presentation/components/seo/Seo'
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -27,6 +29,32 @@ export default function ProfilePage() {
   const [publicSlug, setPublicSlug] = useState('')
   const [publicActive, setPublicActive] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Push Notifications State
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [isTogglingPush, setIsTogglingPush] = useState(false)
+
+  useEffect(() => {
+    isPushSubscribed().then(setPushEnabled)
+  }, [])
+
+  const handleTogglePush = async () => {
+    setIsTogglingPush(true)
+    try {
+      if (pushEnabled) {
+        await unsubscribeFromPush()
+        setPushEnabled(false)
+      } else {
+        const success = await subscribeToPush()
+        setPushEnabled(success)
+        if (!success) {
+          alert('Impossible d\'activer les notifications push. Vérifiez les permissions de votre navigateur.')
+        }
+      }
+    } finally {
+      setIsTogglingPush(false)
+    }
+  }
 
   const isPublicDirty = publicStatus
     ? (publicSlug !== (publicStatus.slug || '') || publicActive !== (publicStatus.isActive || false))
@@ -114,6 +142,7 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
+      <Seo title="Profil PME — UBBFlow" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profil PME</h1>
@@ -144,11 +173,17 @@ export default function ProfilePage() {
         >
           <FileText className="w-4 h-4" /> Architecture Documentaire
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('public')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'public' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
           <Globe className="w-4 h-4" /> Profil Public
+        </button>
+        <button
+          onClick={() => setActiveTab('notifications')}
+          className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'notifications' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <Bell className="w-4 h-4" /> Notifications
         </button>
       </div>
 
@@ -569,6 +604,40 @@ export default function ProfilePage() {
               </Card>
             </div>
           </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <Card className="glass border-white/10 max-w-3xl">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Bell className="w-5 h-5 text-trust" />
+                Notifications Push
+              </CardTitle>
+              <CardDescription>
+                Recevez des alertes en temps réel directement sur votre appareil, même lorsque l'application est fermée.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
+                <div className="space-y-1">
+                  <p className="font-bold text-sm text-white">Activer les notifications push</p>
+                  <p className="text-xs text-muted-foreground max-w-md">
+                    Soyez averti des nouvelles transactions, alertes de trésorerie et mises à jour de conformité.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isTogglingPush}
+                  onClick={handleTogglePush}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 ${pushEnabled ? 'bg-trust' : 'bg-white/10'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

@@ -21,6 +21,7 @@ import DocumentsPage from './presentation/pages/DocumentsPage'
 import PartnerPortalPage from './presentation/pages/PartnerPortalPage'
 import TeamPage from './presentation/pages/TeamPage'
 import VerifiedSmePage from './presentation/pages/VerifiedSmePage'
+import { Seo } from './presentation/components/seo/Seo'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 import MainLayout from './presentation/components/layout/MainLayout'
 import { PageTransition } from './presentation/components/layout/PageTransition'
@@ -30,6 +31,20 @@ function LandingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[95vh] px-4 py-16 text-center relative overflow-hidden bg-background">
+      <Seo
+        title="UBBFlow & Trust — Intelligence Financière pour PME Africaines"
+        description="Transformez votre PME informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers."
+        canonical="https://ubbflow.app/"
+        type="website"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'UBBFlow',
+          alternateName: 'UBB Flow & Trust',
+          description: 'Trésorerie intelligente et conformité pour PME africaines. Centralisez vos flux, anticipez vos finances et partagez des données certifiées.',
+          url: 'https://ubbflow.app/',
+        }}
+      />
       <div className="animate-fade-in w-full max-w-5xl relative z-10 space-y-8">
         {/* Hero Title */}
         <div className="space-y-4">

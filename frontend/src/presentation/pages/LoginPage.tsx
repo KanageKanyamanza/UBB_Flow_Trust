@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { useAuth } from '../../application/context/AuthContext'
+import { Seo } from '../components/seo/Seo'
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -57,6 +58,11 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
+      <Seo
+        title="Connexion — UBBFlow"
+        description="Connectez-vous à votre espace UBBFlow pour gérer votre trésorerie et votre score de confiance."
+        noindex
+      />
       <div className="mb-8 flex items-center gap-2">
         <TrendingUp className="text-flow w-8 h-8" />
         <span className="text-2xl font-bold">UBB <span className="text-trust">Flow & Trust</span></span>

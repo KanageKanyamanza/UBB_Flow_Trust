@@ -2,6 +2,13 @@ import prisma from '../config/prisma.js'
 import { AnalyticsService } from './analytics.service.js'
 import { AlertSeverity } from '@prisma/client'
 import { RedisService } from './redis.service.js'
+import { PushService } from './push.service.js'
+
+const SEVERITY_TITLES: Record<AlertSeverity, string> = {
+  INFO: 'Information',
+  WARN: 'Alerte de vigilance',
+  CRITICAL: 'Alerte critique'
+}
 
 export class AlertService {
   /**
@@ -79,6 +86,19 @@ export class AlertService {
       }
     })
     await RedisService.del(`alerts:${orgId}:active`)
+
+    // Fire-and-forget push notification: never let a push failure break alert creation
+    try {
+      PushService.sendToOrg(orgId, {
+        title: SEVERITY_TITLES[severity] ?? 'Nouvelle alerte',
+        body: message
+      }).catch(err => {
+        console.error(`[alert-job]: Failed to send push notification for org ${orgId}:`, err)
+      })
+    } catch (err) {
+      console.error(`[alert-job]: Failed to dispatch push notification for org ${orgId}:`, err)
+    }
+
     return created
   }
 

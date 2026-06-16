@@ -12,6 +12,7 @@ import {
   useDeleteTeamMemberMutation,
   TeamMember
 } from '../../infrastructure/api/teamApi'
+import { Seo } from '../components/seo/Seo'
 
 const TeamPage: React.FC = () => {
   const { user } = useAuth()
@@ -139,8 +140,9 @@ const TeamPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-background">
+      <Seo title="Gestion de l'Équipe — UBBFlow" noindex />
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
-        
+
         {/* Notifications Bar */}
         {notification && (
           <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl border backdrop-blur-md shadow-2xl transition-all animate-in slide-in-from-top duration-300 ${

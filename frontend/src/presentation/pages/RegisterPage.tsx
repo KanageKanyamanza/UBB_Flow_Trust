@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { useRegisterMutation } from '../../infrastructure/api/authApi'
+import { Seo } from '../components/seo/Seo'
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -56,6 +57,11 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in py-12">
+      <Seo
+        title="Créer un compte — UBBFlow"
+        description="Créez votre compte UBBFlow et propulsez la croissance de votre PME avec une trésorerie intelligente et un score de confiance certifié."
+        noindex
+      />
       <Card className="glass w-full max-w-lg border-white/10 glow-flow">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Créer un compte</CardTitle>
