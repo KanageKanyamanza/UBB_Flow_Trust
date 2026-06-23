@@ -1,47 +1,132 @@
-version: '3.8'
+version: '3.9'
 
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  ubbflow-net:
+    driver: bridge
+
+# ─── Volumes ─────────────────────────────────────────────────────────────────
+volumes:
+  postgres-data:
+  redis-data:
+  uploads-data:
+
+# ─── Services ────────────────────────────────────────────────────────────────
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: ubb_flow_trust_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: rolldu98
-      POSTGRES_DB: ubb_flow_trust
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
 
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ubbflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-ubb_flow_trust}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ubbflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ubb_flow_trust}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ubbflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - ubbflow-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (Express + Prisma) ───────────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ubb_flow_backend
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+      target: runner
+    container_name: ubbflow-backend
+    restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://postgres:rolldu98@postgres:5432/ubb_flow_trust?schema=public
-      - PORT=5000
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-ubb_flow_trust}?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ACCESS_TOKEN_EXPIRES_IN: ${ACCESS_TOKEN_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      S3_REGION: ${S3_REGION:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
+    volumes:
+      - uploads-data:/app/uploads
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ubbflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # ── Frontend (Vite Build + Nginx) ────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: ubb_flow_frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      target: runner
+    container_name: ubbflow-frontend
+    restart: unless-stopped
     depends_on:
       - backend
+    networks:
+      - ubbflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-volumes:
-  postgres_data:
+  # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ubbflow-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Uncomment for Let's Encrypt:
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
+      # - ./config/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - ubbflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t && wget -qO- http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert, Globe, Copy, ExternalLink, ShieldCheck } from 'lucide-react'
+import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert, Globe, Copy, ExternalLink, ShieldCheck, Bell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
@@ -12,6 +12,8 @@ import {
 } from '@/infrastructure/api/profileApi'
 import { useGetTrustScoreQuery } from '@/infrastructure/api/trustApi'
 import { useAuth } from '@/application/context/AuthContext'
+import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/infrastructure/pushNotifications'
+import { Seo } from '@/presentation/components/seo/Seo'
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -27,6 +29,32 @@ export default function ProfilePage() {
   const [publicSlug, setPublicSlug] = useState('')
   const [publicActive, setPublicActive] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Push Notifications State
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [isTogglingPush, setIsTogglingPush] = useState(false)
+
+  useEffect(() => {
+    isPushSubscribed().then(setPushEnabled)
+  }, [])
+
+  const handleTogglePush = async () => {
+    setIsTogglingPush(true)
+    try {
+      if (pushEnabled) {
+        await unsubscribeFromPush()
+        setPushEnabled(false)
+      } else {
+        const success = await subscribeToPush()
+        setPushEnabled(success)
+        if (!success) {
+          alert('Impossible d\'activer les notifications push. Vérifiez les permissions de votre navigateur.')
+        }
+      }
+    } finally {
+      setIsTogglingPush(false)
+    }
+  }
 
   const isPublicDirty = publicStatus
     ? (publicSlug !== (publicStatus.slug || '') || publicActive !== (publicStatus.isActive || false))
@@ -50,14 +78,14 @@ export default function ProfilePage() {
   // Only owners can access this page
   if (user?.role !== 'OWNER') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] md:h-screen text-center px-4 space-y-6 animate-fade-in">
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
         <div className="space-y-2">
           <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Seul le propriétaire principal de l'organisation peut configurer et modifier le profil de la PME.
+            Seul le propriétaire principal de l'organisation peut configurer et modifier le profil de la entreprise.
           </p>
         </div>
       </div>
@@ -66,7 +94,7 @@ export default function ProfilePage() {
 
   if (isLoading || !formData) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)] md:h-screen w-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust"></div>
       </div>
     )
@@ -114,9 +142,10 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
+      <Seo title="Profil entreprise — UBBFlow" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profil PME</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Profil entreprise</h1>
           <p className="text-muted-foreground">Gérez l'identité et la structure de votre entreprise pour renforcer votre crédibilité</p>
         </div>
         <Button onClick={handleSave} disabled={isUpdating || isSavingPublic} variant="trust" className="gap-2 shadow-lg shadow-trust/20 w-full md:w-auto justify-center">
@@ -144,11 +173,17 @@ export default function ProfilePage() {
         >
           <FileText className="w-4 h-4" /> Architecture Documentaire
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('public')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'public' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
           <Globe className="w-4 h-4" /> Profil Public
+        </button>
+        <button
+          onClick={() => setActiveTab('notifications')}
+          className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'notifications' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <Bell className="w-4 h-4" /> Notifications
         </button>
       </div>
 
@@ -167,7 +202,7 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nom Légal de l'Entité</label>
                   <Input 
-                    placeholder="Ex: Ma PME SARL"
+                    placeholder="Ex: Entreprise SARL"
                     value={formData.legalName} 
                     onChange={e => setFormData({...formData, legalName: e.target.value})}
                   />
@@ -424,7 +459,7 @@ export default function ProfilePage() {
                   Configuration du Profil Public
                 </CardTitle>
                 <CardDescription>
-                  Partagez de manière sécurisée votre identité PME et votre score de confiance avec vos partenaires, fournisseurs et institutions financières.
+                  Partagez de manière sécurisée votre identité entreprise et votre score de confiance avec vos partenaires, fournisseurs et institutions financières.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -547,7 +582,7 @@ export default function ProfilePage() {
                         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-flow/20 text-flow border border-flow/10 text-[9px] font-black uppercase tracking-wider mb-2">
                           <ShieldCheck className="w-3 h-3" /> SME Verified
                         </div>
-                        <h4 className="font-bold text-white text-base truncate max-w-[140px]">{formData.legalName || 'Votre PME'}</h4>
+                        <h4 className="font-bold text-white text-base truncate max-w-[140px]">{formData.legalName || 'Votre entreprise'}</h4>
                         <p className="text-[10px] text-muted-foreground">{formData.industry || 'Secteur d\'activité'}</p>
                       </div>
                       {trustData && (
@@ -569,6 +604,40 @@ export default function ProfilePage() {
               </Card>
             </div>
           </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <Card className="glass border-white/10 max-w-3xl">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Bell className="w-5 h-5 text-trust" />
+                Notifications Push
+              </CardTitle>
+              <CardDescription>
+                Recevez des alertes en temps réel directement sur votre appareil, même lorsque l'application est fermée.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
+                <div className="space-y-1">
+                  <p className="font-bold text-sm text-white">Activer les notifications push</p>
+                  <p className="text-xs text-muted-foreground max-w-md">
+                    Soyez averti des nouvelles transactions, alertes de trésorerie et mises à jour de conformité.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isTogglingPush}
+                  onClick={handleTogglePush}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 ${pushEnabled ? 'bg-trust' : 'bg-white/10'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

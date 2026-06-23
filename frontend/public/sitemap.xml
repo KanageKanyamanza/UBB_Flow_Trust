@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Static sitemap covering known public marketing/auth routes.
+  NOTE: Verified SME public profiles (/p/:slug) are dynamic and per-tenant —
+  they are NOT enumerated here. A follow-up task should add a server-generated
+  sitemap (e.g. a backend endpoint such as GET /sitemap-sme.xml that lists all
+  published/public SME slugs) and reference it below via an additional
+  <sitemap> entry in a sitemap index, or merge its <url> entries into this file
+  at build/deploy time.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ubbflow.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ubbflow.app/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://ubbflow.app/register</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

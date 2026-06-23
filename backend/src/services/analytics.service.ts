@@ -1,5 +1,5 @@
 import prisma from '../config/prisma.js'
-
+import { RedisService } from './redis.service.js'
 export class AnalyticsService {
   /**
    * Get transaction sums by category within a date range
@@ -106,6 +106,10 @@ export class AnalyticsService {
    * Get advanced KPIs (Total Balance, Cash Burn, Runway, Current Month Inflow)
    */
   static async getKpis(orgId: string, accountId?: string) {
+    const cacheKey = `kpis:${orgId}:${accountId || 'all'}`
+    const cached = await RedisService.get<any>(cacheKey)
+    if (cached) return cached
+
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
@@ -162,13 +166,16 @@ export class AnalyticsService {
     // 5. Runway (Months)
     const runwayMonths = monthlyBurnRate > 0 ? totalBalance / monthlyBurnRate : Infinity
 
-    return {
+    const result = {
       totalBalance,
       currentMonthIn,
       currentMonthOut,
       monthlyBurnRate,
       runwayMonths: runwayMonths === Infinity ? 99 : Math.round(runwayMonths * 10) / 10,
     }
+
+    await RedisService.set(cacheKey, result, 3600) // Cache for 1 hour
+    return result
   }
 
   /**
@@ -252,6 +259,10 @@ export class AnalyticsService {
    * Moteur de projection based on current balance and Recurring Rules
    */
   static async getProjections(orgId: string, accountId?: string) {
+    const cacheKey = `proj:${orgId}:${accountId || 'all'}`
+    const cached = await RedisService.get<any>(cacheKey)
+    if (cached) return cached
+
     const now = new Date()
     const thirtyDays = new Date(now)
     thirtyDays.setDate(now.getDate() + 30)
@@ -332,7 +343,7 @@ export class AnalyticsService {
       diff90 += netAmount * occurrences90
     })
 
-    return {
+    const result = {
       currentBalance,
       projections: {
         30: currentBalance + diff30,
@@ -345,5 +356,8 @@ export class AnalyticsService {
         90: diff90
       }
     }
+
+    await RedisService.set(cacheKey, result, 3600) // Cache for 1 hour
+    return result
   }
 }

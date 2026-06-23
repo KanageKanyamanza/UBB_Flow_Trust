@@ -43,6 +43,10 @@ model User {
   account      Account?     @relation(fields: [accountId], references: [id])
   organization Organization @relation(fields: [orgId], references: [id])
   refreshToken String?
+  pushSubscriptions PushSubscription[]
+
+  @@index([orgId])
+  @@index([accountId])
 }
 
 model Account {
@@ -58,6 +62,8 @@ model Account {
   transactions Transaction[]
   users        User[]
   budgets      Budget[]
+
+  @@index([orgId])
 }
 
 model Transaction {
@@ -77,6 +83,13 @@ model Transaction {
   evidenceFiles EvidenceFile[]
   account       Account        @relation(fields: [accountId], references: [id])
   organization  Organization   @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+  @@index([accountId])
+  @@index([occurredAt])
+  @@index([orgId, occurredAt])
+  @@index([orgId, direction])
+  @@index([orgId, category])
 }
 
 model RecurringRule {
@@ -160,6 +173,9 @@ model Document {
   checklistItems ChecklistItem[]
   organization   Organization      @relation(fields: [orgId], references: [id])
   versions       DocumentVersion[]
+
+  @@index([orgId])
+  @@index([orgId, status])
 }
 
 model DocumentVersion {
@@ -206,6 +222,8 @@ model TrustScore {
   orgId        String
   createdAt    DateTime     @default(now())
   organization Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
 }
 
 model PublicProfile {
@@ -237,6 +255,9 @@ model Alert {
   orgId        String
   createdAt    DateTime      @default(now())
   organization Organization  @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+  @@index([orgId, isAck])
 }
 
 model AuditLog {
@@ -251,6 +272,10 @@ model AuditLog {
   createdAt    DateTime     @default(now())
   organization Organization @relation(fields: [orgId], references: [id])
   user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([orgId, createdAt])
 }
 
 model EvidenceFile {
@@ -322,6 +347,18 @@ enum AlertSeverity {
   INFO
   WARN
   CRITICAL
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Budget {

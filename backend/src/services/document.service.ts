@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js'
 import { storageService } from './storage.service.js'
 import { scoreQueue } from './score-queue.service.js'
+import { RedisService } from './redis.service.js'
 
 export class DocumentService {
   static async createDocument(orgId: string, data: any, file: any) {
@@ -32,12 +33,18 @@ export class DocumentService {
 
     // Déclenche un recalcul asynchrone du score après upload
     scoreQueue.enqueue(orgId)
+    // Invalide le cache des documents pour cet org
+    await RedisService.invalidatePattern(`docs:${orgId}:`)
 
     return document
   }
 
   static async listDocuments(orgId: string, type?: string) {
-    return await prisma.document.findMany({
+    const cacheKey = `docs:${orgId}:${type || 'all'}`
+    const cached = await RedisService.get<any[]>(cacheKey)
+    if (cached) return cached
+
+    const result = await prisma.document.findMany({
       where: { 
         orgId,
         ...(type ? { type } : {})
@@ -50,6 +57,9 @@ export class DocumentService {
       },
       orderBy: { updatedAt: 'desc' }
     })
+
+    await RedisService.set(cacheKey, result, 120) // Cache 120s
+    return result
   }
 
   static async addVersion(docId: string, orgId: string, file: any, validUntil?: string) {
@@ -74,6 +84,8 @@ export class DocumentService {
 
     // Déclenche un recalcul du score après ajout d'une nouvelle version
     scoreQueue.enqueue(orgId)
+    // Invalide le cache des documents pour cet org
+    await RedisService.invalidatePattern(`docs:${orgId}:`)
 
     return version
   }
@@ -97,7 +109,10 @@ export class DocumentService {
 
     // Delete versions first then document (Prisma doesn't always handle cascade delete on all adapters)
     await prisma.documentVersion.deleteMany({ where: { docId } })
-    return await prisma.document.delete({ where: { id: docId } })
+    const deleted = await prisma.document.delete({ where: { id: docId } })
+    // Invalide le cache
+    await RedisService.invalidatePattern(`docs:${orgId}:`)
+    return deleted
   }
 
   static async checkExpirations() {
@@ -136,6 +151,10 @@ export class DocumentService {
             isAck: false
           }
         })
+
+        // Invalidate document and alerts cache
+        await RedisService.invalidatePattern(`docs:${doc.orgId}:`)
+        await RedisService.del(`alerts:${doc.orgId}:active`)
 
         // Déclenche un recalcul du score car l'expiration impacte les points Documents
         scoreQueue.enqueue(doc.orgId)

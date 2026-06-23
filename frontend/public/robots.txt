@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /p/
+
+Disallow: /login
+Disallow: /register
+Disallow: /dashboard
+Disallow: /accounts
+Disallow: /transactions
+Disallow: /transactions/new
+Disallow: /budget
+Disallow: /recurring-rules
+Disallow: /profile
+Disallow: /compliance
+Disallow: /documents
+Disallow: /team
+Disallow: /partner/portal
+
+Sitemap: https://ubbflow.app/sitemap.xml

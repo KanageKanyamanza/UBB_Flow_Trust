@@ -6,6 +6,7 @@ import { AccountCard } from '../components/accounts/AccountCard'
 import { CreateAccountModal } from '../components/accounts/CreateAccountModal'
 import { useGetAccountsQuery } from '../../infrastructure/api/accountApi'
 import { useAuth } from '../../application/context/AuthContext'
+import { Seo } from '../components/seo/Seo'
 
 const AccountsPage: React.FC = () => {
   const { user } = useAuth()
@@ -14,6 +15,7 @@ const AccountsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-background">
+      <Seo title="Gestion des Comptes — UBBFlow" noindex />
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">

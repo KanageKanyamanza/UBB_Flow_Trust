@@ -1,5 +1,6 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check, Sparkles } from 'lucide-react'
 import { Button } from '@/presentation/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
@@ -20,14 +21,30 @@ import DocumentsPage from './presentation/pages/DocumentsPage'
 import PartnerPortalPage from './presentation/pages/PartnerPortalPage'
 import TeamPage from './presentation/pages/TeamPage'
 import VerifiedSmePage from './presentation/pages/VerifiedSmePage'
+import { Seo } from './presentation/components/seo/Seo'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
 import MainLayout from './presentation/components/layout/MainLayout'
+import { PageTransition } from './presentation/components/layout/PageTransition'
 
 function LandingPage() {
   const [email, setEmail] = React.useState('')
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[95vh] px-4 py-16 text-center relative overflow-hidden bg-background">
+      <Seo
+        title="UBBFlow & Trust — Intelligence Financière pour entreprise Africaines"
+        description="Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers."
+        canonical="https://ubbflow.app/"
+        type="website"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'UBBFlow',
+          alternateName: 'UBB Flow & Trust',
+          description: 'Trésorerie intelligente et conformité pour entreprise africaines. Centralisez vos flux, anticipez vos finances et partagez des données certifiées.',
+          url: 'https://ubbflow.app/',
+        }}
+      />
       <div className="animate-fade-in w-full max-w-5xl relative z-10 space-y-8">
         {/* Hero Title */}
         <div className="space-y-4">
@@ -35,7 +52,7 @@ function LandingPage() {
             UBB <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Flow & Trust</span>
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
-            Transformez votre PME informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
+            Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
           </p>
         </div>
 
@@ -159,10 +176,12 @@ function LandingPage() {
   )
 }
 
-function App() {
+function AnimatedRoutes() {
+  const location = useLocation()
+
   return (
-    <BrowserRouter>
-      <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
         <Route element={<PublicRoute />}>
           <Route path="/" element={<LandingPage />} />
@@ -179,22 +198,30 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/budget" element={<BudgetPage />} />
-            <Route path="/recurring-rules" element={<RecurringRulesPage />} />
-            <Route path="/transactions/new" element={<NewTransactionPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/compliance" element={<CompliancePage />} />
-            <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/team" element={<TeamPage />} />
+            <Route path="/dashboard" element={<PageTransition><DashboardPage /></PageTransition>} />
+            <Route path="/accounts" element={<PageTransition><AccountsPage /></PageTransition>} />
+            <Route path="/transactions" element={<PageTransition><TransactionsPage /></PageTransition>} />
+            <Route path="/budget" element={<PageTransition><BudgetPage /></PageTransition>} />
+            <Route path="/recurring-rules" element={<PageTransition><RecurringRulesPage /></PageTransition>} />
+            <Route path="/transactions/new" element={<PageTransition><NewTransactionPage /></PageTransition>} />
+            <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
+            <Route path="/compliance" element={<PageTransition><CompliancePage /></PageTransition>} />
+            <Route path="/documents" element={<PageTransition><DocumentsPage /></PageTransition>} />
+            <Route path="/team" element={<PageTransition><TeamPage /></PageTransition>} />
           </Route>
         </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </AnimatePresence>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AnimatedRoutes />
     </BrowserRouter>
   )
 }

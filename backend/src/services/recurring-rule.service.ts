@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js'
 import { TxnDirection } from '@prisma/client'
+import { RedisService } from './redis.service.js'
 
 export interface CreateRecurringRuleInput {
   name: string
@@ -37,7 +38,7 @@ export class RecurringRuleService {
   }
 
   static async create(data: CreateRecurringRuleInput) {
-    return await prisma.recurringRule.create({
+    const created = await prisma.recurringRule.create({
       data: {
         name: data.name,
         amount: data.amount,
@@ -48,13 +49,15 @@ export class RecurringRuleService {
         orgId: data.orgId
       }
     })
+    await RedisService.invalidatePattern(`proj:${data.orgId}:`)
+    return created
   }
 
   static async update(id: string, orgId: string, data: UpdateRecurringRuleInput) {
     // ensure it exists
     await this.getById(id, orgId)
 
-    return await prisma.recurringRule.update({
+    const updated = await prisma.recurringRule.update({
       where: { id },
       data: {
         name: data.name,
@@ -65,14 +68,18 @@ export class RecurringRuleService {
         endDate: data.endDate
       }
     })
+    await RedisService.invalidatePattern(`proj:${orgId}:`)
+    return updated
   }
 
   static async delete(id: string, orgId: string) {
     // ensure it exists
     await this.getById(id, orgId)
 
-    return await prisma.recurringRule.delete({
+    const deleted = await prisma.recurringRule.delete({
       where: { id }
     })
+    await RedisService.invalidatePattern(`proj:${orgId}:`)
+    return deleted
   }
 }

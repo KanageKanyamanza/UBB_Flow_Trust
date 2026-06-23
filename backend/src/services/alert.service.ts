@@ -1,6 +1,14 @@
 import prisma from '../config/prisma.js'
 import { AnalyticsService } from './analytics.service.js'
 import { AlertSeverity } from '@prisma/client'
+import { RedisService } from './redis.service.js'
+import { PushService } from './push.service.js'
+
+const SEVERITY_TITLES: Record<AlertSeverity, string> = {
+  INFO: 'Information',
+  WARN: 'Alerte de vigilance',
+  CRITICAL: 'Alerte critique'
+}
 
 export class AlertService {
   /**
@@ -10,8 +18,14 @@ export class AlertService {
     console.log('[alert-job]: Starting threshold check for all organizations...')
     const organizations = await prisma.organization.findMany()
 
-    for (const org of organizations) {
-      await this.checkOrganizationThresholds(org.id)
+    const BATCH_SIZE = 10
+    for (let i = 0; i < organizations.length; i += BATCH_SIZE) {
+      const batch = organizations.slice(i, i + BATCH_SIZE)
+      await Promise.all(batch.map(org => 
+        this.checkOrganizationThresholds(org.id).catch(err => {
+          console.error(`[alert-job]: Error checking thresholds for org ${org.id}:`, err)
+        })
+      ))
     }
     console.log('[alert-job]: Threshold check completed.')
   }
@@ -62,7 +76,7 @@ export class AlertService {
 
     if (lastAlert) return
 
-    return prisma.alert.create({
+    const created = await prisma.alert.create({
       data: {
         orgId,
         severity,
@@ -71,10 +85,29 @@ export class AlertService {
         isAck: false
       }
     })
+    await RedisService.del(`alerts:${orgId}:active`)
+
+    // Fire-and-forget push notification: never let a push failure break alert creation
+    try {
+      PushService.sendToOrg(orgId, {
+        title: SEVERITY_TITLES[severity] ?? 'Nouvelle alerte',
+        body: message
+      }).catch(err => {
+        console.error(`[alert-job]: Failed to send push notification for org ${orgId}:`, err)
+      })
+    } catch (err) {
+      console.error(`[alert-job]: Failed to dispatch push notification for org ${orgId}:`, err)
+    }
+
+    return created
   }
 
   static async getActiveAlerts(orgId: string) {
-    return prisma.alert.findMany({
+    const cacheKey = `alerts:${orgId}:active`
+    const cached = await RedisService.get<any[]>(cacheKey)
+    if (cached) return cached
+
+    const result = await prisma.alert.findMany({
       where: {
         orgId,
         isAck: false
@@ -83,10 +116,13 @@ export class AlertService {
         createdAt: 'desc'
       }
     })
+
+    await RedisService.set(cacheKey, result, 60) // Cache 60s
+    return result
   }
 
   static async acknowledgeAlert(alertId: string, orgId: string) {
-    return prisma.alert.updateMany({
+    const result = await prisma.alert.updateMany({
       where: {
         id: alertId,
         orgId
@@ -95,5 +131,8 @@ export class AlertService {
         isAck: true
       }
     })
+    // Invalide le cache des alertes
+    await RedisService.del(`alerts:${orgId}:active`)
+    return result
   }
 }

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 import { useGetPublicProfileQuery } from '@/infrastructure/api/profileApi'
+import { Seo } from '@/presentation/components/seo/Seo'
 import {
   ShieldCheck,
   Building2,
@@ -21,29 +22,47 @@ export default function VerifiedSmePage() {
   const { slug } = useParams<{ slug: string }>()
   const { data: publicProfile, isLoading, error } = useGetPublicProfileQuery(slug || '')
 
+  const canonicalUrl = `https://ubbflow.app/p/${slug || ''}`
+
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust mb-4"></div>
-        <p className="text-sm text-muted-foreground animate-pulse">Chargement du profil sécurisé...</p>
-      </div>
+      <>
+        <Seo
+          title="Profil entreprise Certifié — UBBFlow"
+          description="Chargement du profil de confiance certifié UBB Flow & Trust."
+          canonical={canonicalUrl}
+          noindex
+        />
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust mb-4"></div>
+          <p className="text-sm text-muted-foreground animate-pulse">Chargement du profil sécurisé...</p>
+        </div>
+      </>
     )
   }
 
   if (error || !publicProfile) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground px-4 text-center">
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-full mb-6">
-          <AlertTriangle className="w-12 h-12 text-destructive" />
+      <>
+        <Seo
+          title="Profil Inaccessible — UBBFlow"
+          description="Ce profil public n'existe pas, ou a été configuré comme privé par l'organisation."
+          canonical={canonicalUrl}
+          noindex
+        />
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground px-4 text-center">
+          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-full mb-6">
+            <AlertTriangle className="w-12 h-12 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-black uppercase tracking-tight text-white mb-2">Profil Inaccessible</h1>
+          <p className="text-muted-foreground max-w-md mb-6">
+            Ce profil public n'existe pas, ou a été configuré comme privé par l'organisation.
+          </p>
+          <Button variant="outline" onClick={() => window.location.href = '/'}>
+            Retour à l'accueil
+          </Button>
         </div>
-        <h1 className="text-2xl font-black uppercase tracking-tight text-white mb-2">Profil Inaccessible</h1>
-        <p className="text-muted-foreground max-w-md mb-6">
-          Ce profil public n'existe pas, ou a été configuré comme privé par l'organisation.
-        </p>
-        <Button variant="outline" onClick={() => window.location.href = '/'}>
-          Retour à l'accueil
-        </Button>
-      </div>
+      </>
     )
   }
 
@@ -59,8 +78,37 @@ export default function VerifiedSmePage() {
     return 'text-rose-400 border-rose-400/20 bg-rose-500/10'
   }
 
+  const pageTitle = `${company.legalName || 'Profil entreprise'} — Profil Certifié UBBFlow`
+  const pageDescription = company.description
+    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette entreprise'} : score de confiance, conformité et informations légales vérifiées par UBBFlow.`
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: company.legalName || 'entreprise',
+    description: pageDescription,
+    url: canonicalUrl,
+    ...(company.website && { sameAs: [company.website.startsWith('http') ? company.website : `https://${company.website}`] }),
+    ...(company.address && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: company.address,
+        addressCountry: company.country || undefined,
+      },
+    }),
+    ...(company.foundedDate && { foundingDate: company.foundedDate }),
+    ...(company.industry && { knowsAbout: company.industry }),
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col justify-between">
+      <Seo
+        title={pageTitle}
+        description={pageDescription}
+        canonical={canonicalUrl}
+        type="profile"
+        jsonLd={jsonLd}
+      />
       {/* Decorative background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-gradient-to-b from-trust/10 to-transparent rounded-full blur-3xl pointer-events-none" />
       
@@ -91,7 +139,7 @@ export default function VerifiedSmePage() {
               SME Public Ledger
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
-              {company.legalName || 'Ma PME'}
+              {company.legalName || 'Entreprise'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {company.description || "Aucune description fournie par l'organisation."}

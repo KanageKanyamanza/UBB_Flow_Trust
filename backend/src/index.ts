@@ -1,50 +1,12 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
-import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
 import path from 'path'
 
-dotenv.config()
-
-const app = express()
-const port = process.env.PORT || 5000
-
-// Configuration du rate-limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limite chaque IP à 100 requêtes par fenêtre de 15 minutes
-  standardHeaders: 'draft-7', // Retourne les informations de limite dans les headers `RateLimit`
-  legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
-})
-
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'https://ubb-flow-trust-frontend.vercel.app',
-  'https://www.ubb-flow-trust-frontend.vercel.app'
-]
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true)
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
-      return callback(new Error(msg), false)
-    }
-    return callback(null, true)
-  },
-  credentials: true
-}))
-app.use(helmet())
-app.use(morgan('dev'))
-app.use(express.json())
-app.use(limiter)
-
-// Routes
+import { validateContentType, sanitizeBody } from './middleware/security.middleware.js'
 import authRoutes from './routes/auth.routes.js'
 import accountRoutes from './routes/account.routes.js'
 import transactionRoutes from './routes/transaction.routes.js'
@@ -61,8 +23,100 @@ import consentGrantRoutes from './routes/consent-grant.routes.js'
 import partnerRoutes from './routes/partner.routes.js'
 import publicProfileRoutes from './routes/public-profile.routes.js'
 import exportRoutes from './routes/export.routes.js'
+import pushRoutes from './routes/push.routes.js'
 import { scoreQueue } from './services/score-queue.service.js'
+import { CronService } from './services/cron.service.js'
+import { PushService } from './services/push.service.js'
 
+const app = express()
+const port = process.env.PORT || 5000
+
+// Rate limiting : Auth routes (anti brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.' }
+})
+
+// Rate limiting : Global API
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 200,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes. Veuillez patienter.' }
+})
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://ubb-flow-trust-frontend.vercel.app',
+  'https://www.ubb-flow-trust-frontend.vercel.app',
+  'https://www.trust-lane.app',
+  'https://trust-lane.app',
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.'
+      return callback(new Error(msg), false)
+    }
+    return callback(null, true)
+  },
+  credentials: true
+}))
+
+// Helmet renforcé
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", ...allowedOrigins],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 an
+    includeSubDomains: true,
+    preload: true,
+  },
+  noSniff: true,
+  frameguard: { action: 'deny' },
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}))
+
+// Headers de sécurité additionnels
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+  next()
+})
+
+app.use(morgan('dev'))
+app.use(express.json({ limit: '10mb' }))
+
+// Rate limiters
+app.use('/auth/login', authLimiter)
+app.use('/auth/register', authLimiter)
+app.use(limiter)
+
+// Security middlewares
+app.use(validateContentType)
+app.use(sanitizeBody)
+
+// Routes
 app.use('/auth', authRoutes)
 app.use('/accounts', accountRoutes)
 app.use('/transactions', transactionRoutes)
@@ -80,6 +134,7 @@ app.use('/partner', partnerRoutes)
 app.use('/public', publicProfileRoutes)
 app.use('/api/export', exportRoutes)
 app.use('/export', exportRoutes)
+app.use('/push', pushRoutes)
 
 // Serve local static uploads if STORAGE_TYPE=local
 if (process.env.STORAGE_TYPE === 'local' || !process.env.STORAGE_TYPE) {
@@ -97,9 +152,12 @@ app.get('/health', (req, res) => {
 })
 
 // Initialize Cron Jobs
-import { CronService } from './services/cron.service.js'
 CronService.init()
+
+// Configure Web Push (VAPID)
+PushService.configure()
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`)
 })
+

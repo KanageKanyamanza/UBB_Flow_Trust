@@ -193,7 +193,7 @@ export const CreateConsentGrantModal: React.FC<CreateConsentGrantModalProps> = (
               <div>
                 <h4 className={`font-bold text-sm mb-1 ${scope === 'profile:read' ? 'text-trust' : 'text-white'}`}>Vue Profil</h4>
                 <p className="text-xs leading-relaxed opacity-85">
-                  Permet uniquement de consulter les informations de base de la PME et l'identité des fondateurs (UBO).
+                  Permet uniquement de consulter les informations de base de la entreprise et l'identité des fondateurs (UBO).
                 </p>
               </div>
               <span className="text-[10px] uppercase font-black tracking-widest mt-4 opacity-50">profile:read</span>
@@ -210,7 +210,7 @@ export const CreateConsentGrantModal: React.FC<CreateConsentGrantModalProps> = (
               <div>
                 <h4 className={`font-bold text-sm mb-1 ${scope === '*' ? 'text-trust' : 'text-white'}`}>Vue Tout</h4>
                 <p className="text-xs leading-relaxed opacity-85">
-                  Accès total en lecture : Profil PME, UBOs, Comptes, Transactions, Checklists et documents de la Data Room.
+                  Accès total en lecture : Profil entreprise, UBOs, Comptes, Transactions, Checklists et documents de la Data Room.
                 </p>
               </div>
               <span className="text-[10px] uppercase font-black tracking-widest mt-4 opacity-50">Accès total (*)</span>

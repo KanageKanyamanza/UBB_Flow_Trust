@@ -9,6 +9,7 @@ import { useGetComplianceQuery, useStartComplianceMutation, useGetGapQuery } fro
 import { cn } from '@/shared/utils/utils'
 import { useAuth } from '@/application/context/AuthContext'
 import { BASE_URL } from '@/infrastructure/api/apiSlice'
+import { Seo } from '@/presentation/components/seo/Seo'
 
 const STEPS = [
   { id: "personal", title: "Informations", icon: User, description: "Vos données" },
@@ -97,7 +98,7 @@ export default function CompliancePage() {
   // Only owners can access this page
   if (user?.role !== 'OWNER') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] md:h-screen text-center px-4 space-y-6 animate-fade-in">
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
@@ -113,7 +114,7 @@ export default function CompliancePage() {
 
   if (trustLoading || docsLoading || complianceLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)] md:h-screen w-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust"></div>
       </div>
     )
@@ -330,6 +331,7 @@ export default function CompliancePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
+      <Seo title="Conformité & Score de Confiance — UBBFlow" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Conformité & Trust</h1>

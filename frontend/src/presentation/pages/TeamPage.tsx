@@ -12,6 +12,7 @@ import {
   useDeleteTeamMemberMutation,
   TeamMember
 } from '../../infrastructure/api/teamApi'
+import { Seo } from '../components/seo/Seo'
 
 const TeamPage: React.FC = () => {
   const { user } = useAuth()
@@ -47,7 +48,7 @@ const TeamPage: React.FC = () => {
   // Only owners can access this page
   if (user?.role !== 'OWNER') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 space-y-6 animate-fade-in">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] md:h-screen text-center px-4 space-y-6 animate-fade-in">
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
@@ -139,8 +140,9 @@ const TeamPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-background">
+      <Seo title="Gestion de l'Équipe — UBBFlow" noindex />
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
-        
+
         {/* Notifications Bar */}
         {notification && (
           <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl border backdrop-blur-md shadow-2xl transition-all animate-in slide-in-from-top duration-300 ${
