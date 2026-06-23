@@ -59,13 +59,13 @@ const LoginPage: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
       <Seo
-        title="Connexion — UBBFlow"
-        description="Connectez-vous à votre espace UBBFlow pour gérer votre trésorerie et votre score de confiance."
+        title="Connexion — Trust Lane"
+        description="Connectez-vous à votre espace Trust Lane pour gérer votre trésorerie et votre score de confiance."
         noindex
       />
       <div className="mb-8 flex items-center gap-2">
         <TrendingUp className="text-flow w-8 h-8" />
-        <span className="text-2xl font-bold">UBB <span className="text-trust">Flow & Trust</span></span>
+        <span className="text-2xl font-bold">Trust <span className="text-trust">Lane</span></span>
       </div>
 
       <Card className="glass w-full max-w-md border-white/10 glow-trust">
@@ -73,7 +73,7 @@ const LoginPage: React.FC = () => {
           <CardTitle className="text-2xl text-center">Connexion</CardTitle>
           <CardDescription className="text-center">
             {loginType === 'owner' 
-              ? 'Accédez à votre espace entreprise UBB Flow' 
+              ? 'Accédez à votre espace entreprise Trust Lane'
               : 'Consultez la Data Room d\'une entreprise partenaire'}
           </CardDescription>
         </CardHeader>

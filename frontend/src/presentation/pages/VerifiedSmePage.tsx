@@ -22,14 +22,14 @@ export default function VerifiedSmePage() {
   const { slug } = useParams<{ slug: string }>()
   const { data: publicProfile, isLoading, error } = useGetPublicProfileQuery(slug || '')
 
-  const canonicalUrl = `https://ubbflow.app/p/${slug || ''}`
+  const canonicalUrl = `https://trustlane.app/p/${slug || ''}`
 
   if (isLoading) {
     return (
       <>
         <Seo
-          title="Profil entreprise Certifié — UBBFlow"
-          description="Chargement du profil de confiance certifié UBB Flow & Trust."
+          title="Profil entreprise Certifié — Trust Lane"
+          description="Chargement du profil de confiance certifié Trust Lane."
           canonical={canonicalUrl}
           noindex
         />
@@ -45,7 +45,7 @@ export default function VerifiedSmePage() {
     return (
       <>
         <Seo
-          title="Profil Inaccessible — UBBFlow"
+          title="Profil Inaccessible — Trust Lane"
           description="Ce profil public n'existe pas, ou a été configuré comme privé par l'organisation."
           canonical={canonicalUrl}
           noindex
@@ -78,9 +78,9 @@ export default function VerifiedSmePage() {
     return 'text-rose-400 border-rose-400/20 bg-rose-500/10'
   }
 
-  const pageTitle = `${company.legalName || 'Profil entreprise'} — Profil Certifié UBBFlow`
+  const pageTitle = `${company.legalName || 'Profil entreprise'} — Profil Certifié Trust Lane`
   const pageDescription = company.description
-    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette entreprise'} : score de confiance, conformité et informations légales vérifiées par UBBFlow.`
+    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette entreprise'} : score de confiance, conformité et informations légales vérifiées par Trust Lane.`
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -120,11 +120,11 @@ export default function VerifiedSmePage() {
               U
             </div>
             <span className="font-black text-lg tracking-tight bg-gradient-to-r from-white via-white to-muted-foreground bg-clip-text text-transparent">
-              UBB <span className="text-flow font-bold">Flow</span>
+              Trust <span className="text-flow font-bold">Lane</span>
             </span>
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-black uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4" /> Certifié UBB
+            <ShieldCheck className="w-4 h-4" /> Certifié Trust Lane
           </div>
         </div>
       </header>
@@ -285,7 +285,7 @@ export default function VerifiedSmePage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Activity className="w-4.5 h-4.5 text-trust" />
-                  Score Pilier UBB
+                  Score Pilier Trust Lane
                 </CardTitle>
                 <CardDescription>Indice de santé financière & conformité</CardDescription>
               </CardHeader>
@@ -315,7 +315,7 @@ export default function VerifiedSmePage() {
       {/* Public Footer */}
       <footer className="border-t border-white/5 py-8 mt-12 bg-card/20">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} UBB Flow Trust. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} Trust Lane. Tous droits réservés.</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-flow" /> Cryptage Banque

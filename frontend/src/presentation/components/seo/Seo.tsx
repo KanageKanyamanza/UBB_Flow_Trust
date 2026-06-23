@@ -1,9 +1,9 @@
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
 
-const SITE_NAME = 'UBBFlow'
+const SITE_NAME = 'Trust Lane'
 const DEFAULT_IMAGE = '/og-image.png'
-const SITE_URL = 'https://ubbflow.app'
+const SITE_URL = 'https://trustlane.app'
 
 export interface SeoProps {
   /** Page-specific title. Will be rendered as-is (include the brand suffix yourself if desired). */

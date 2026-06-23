@@ -331,7 +331,7 @@ export default function CompliancePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
-      <Seo title="Conformité & Score de Confiance — UBBFlow" noindex />
+      <Seo title="Conformité & Score de Confiance — Trust Lane" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Conformité & Trust</h1>
@@ -451,7 +451,7 @@ export default function CompliancePage() {
                <CheckCircle2 className="w-5 h-5 text-trust" />
                Analyse de Conformité
             </CardTitle>
-            <CardDescription>Points d'amélioration identifiés par l'algorithme UBB Trust</CardDescription>
+            <CardDescription>Points d'amélioration identifiés par l'algorithme Trust Lane</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {reasons.map((reason: string) => (

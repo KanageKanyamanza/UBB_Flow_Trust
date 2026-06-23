@@ -59,7 +59,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in pb-20">
-      <Seo title="Tableau de Bord — UBBFlow" noindex />
+      <Seo title="Tableau de Bord — Trust Lane" noindex />
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
@@ -285,7 +285,7 @@ const DashboardPage: React.FC = () => {
               Renforcez votre Crédibilité
             </h3>
             <p className="text-muted-foreground max-w-xl">
-              Plus vous connectez de comptes et documentez vos transactions, plus votre Score UBB Trust s'améliore, débloquant des taux d'intérêt préférentiels auprès de nos partenaires.
+              Plus vous connectez de comptes et documentez vos transactions, plus votre Score Trust s'améliore, débloquant des taux d'intérêt préférentiels auprès de nos partenaires.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 relative z-10">
