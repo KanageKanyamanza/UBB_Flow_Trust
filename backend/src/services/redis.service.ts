@@ -2,7 +2,7 @@ import { Redis } from 'ioredis'
 
 const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: 1,
-  retryStrategy(times) {
+  retryStrategy(times: number) {
     if (times > 3) {
       console.warn('[redis]: Disabling retries, redis is down.');
       return null; // Stop retrying
@@ -11,7 +11,7 @@ const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379',
   }
 });
 
-redisClient.on('error', (err) => {
+redisClient.on('error', (_err: Error) => {
   // console.error('[redis]: Connection error', err.message);
 });
 
