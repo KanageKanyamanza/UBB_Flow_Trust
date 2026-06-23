@@ -2,7 +2,7 @@ version: '3.9'
 
 # ─── Networks ─────────────────────────────────────────────────────────────────
 networks:
-  ubbflow-net:
+  trust-lane-net:
     driver: bridge
 
 # ─── Volumes ─────────────────────────────────────────────────────────────────
@@ -17,18 +17,18 @@ services:
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: ubbflow-postgres
+    container_name: trust-lane-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-ubb_flow_trust}
+      POSTGRES_DB: ${POSTGRES_DB:-trust_lane}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - ubbflow-net
+      - trust-lane-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ubb_flow_trust}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-trust_lane}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,13 +37,13 @@ services:
   # ── Redis ───────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: ubbflow-redis
+    container_name: trust-lane-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis-data:/data
     networks:
-      - ubbflow-net
+      - trust-lane-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -56,12 +56,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: runner
-    container_name: ubbflow-backend
+    container_name: trust-lane-backend
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 5000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-ubb_flow_trust}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-trust_lane}?schema=public
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
@@ -81,7 +81,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - ubbflow-net
+      - trust-lane-net
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"]
       interval: 30s
@@ -95,12 +95,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: runner
-    container_name: ubbflow-frontend
+    container_name: trust-lane-frontend
     restart: unless-stopped
     depends_on:
       - backend
     networks:
-      - ubbflow-net
+      - trust-lane-net
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost/nginx-health || exit 1"]
       interval: 30s
@@ -110,7 +110,7 @@ services:
   # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
-    container_name: ubbflow-nginx
+    container_name: trust-lane-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -124,7 +124,7 @@ services:
       - backend
       - frontend
     networks:
-      - ubbflow-net
+      - trust-lane-net
     healthcheck:
       test: ["CMD-SHELL", "nginx -t && wget -qO- http://localhost/health || exit 1"]
       interval: 30s

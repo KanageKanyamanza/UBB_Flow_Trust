@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { Plus, Trash2, Edit3, ShieldAlert, Mail, User, Shield, Store, Calendar, Lock, AlertCircle, CheckCircle } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Modal } from '../components/ui/modal'
@@ -140,7 +140,7 @@ const TeamPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-background">
-      <Seo title="Gestion de l'Équipe — UBBFlow" noindex />
+      <Seo title="Gestion de l'Équipe — Trust Lane" noindex />
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
 
         {/* Notifications Bar */}

@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { TransactionList } from '../components/transactions/TransactionList'
 import { Plus, Download } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -44,7 +44,7 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <div className="container py-5 pb-24 animate-fade-in relative">
-      <Seo title="Flux de Trésorerie — UBBFlow" noindex />
+      <Seo title="Flux de Trésorerie — Trust Lane" noindex />
       <div className="flex flex-col gap-4 mb-10">
         <header className="flex items-center justify-between">
           <div className="space-y-2">

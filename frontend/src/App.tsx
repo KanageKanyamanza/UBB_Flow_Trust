@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check, Sparkles } from 'lucide-react'
+import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check } from 'lucide-react'
 import { Button } from '@/presentation/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
 import { Input } from '@/presentation/components/ui/input'
@@ -32,24 +32,24 @@ function LandingPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[95vh] px-4 py-16 text-center relative overflow-hidden bg-background">
       <Seo
-        title="UBBFlow & Trust — Intelligence Financière pour entreprise Africaines"
+        title="Trust Lane — Intelligence Financière pour entreprise Africaines"
         description="Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers."
-        canonical="https://ubbflow.app/"
+        canonical="https://trustlane.app/"
         type="website"
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
-          name: 'UBBFlow',
-          alternateName: 'UBB Flow & Trust',
+          name: 'Trust Lane',
+          alternateName: 'Trust Lane — Flow & Trust',
           description: 'Trésorerie intelligente et conformité pour entreprise africaines. Centralisez vos flux, anticipez vos finances et partagez des données certifiées.',
-          url: 'https://ubbflow.app/',
+          url: 'https://trustlane.app/',
         }}
       />
       <div className="animate-fade-in w-full max-w-5xl relative z-10 space-y-8">
         {/* Hero Title */}
         <div className="space-y-4">
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-white/70">
-            UBB <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Flow & Trust</span>
+            Trust <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Lane</span>
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
             Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
@@ -58,7 +58,7 @@ function LandingPage() {
 
         {/* Feature Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* UBB Flow Card */}
+          {/* Flow Card */}
           <Card className="glass text-left border border-white/10 relative overflow-hidden">
             <CardHeader className="pb-4 flex flex-row items-center gap-4">
               <div className="bg-flow/10 border border-flow/20 p-3.5 rounded-2xl shrink-0">
@@ -66,7 +66,7 @@ function LandingPage() {
               </div>
               <div className="space-y-1">
                 <CardTitle className="text-2xl font-bold tracking-tight text-white">
-                  UBB Flow
+                  Flow
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">Intelligence de trésorerie & prévisions de flux</p>
               </div>
@@ -90,7 +90,7 @@ function LandingPage() {
             </CardContent>
           </Card>
 
-          {/* UBB Trust Card */}
+          {/* Trust Card */}
           <Card className="glass text-left border border-white/10 relative overflow-hidden">
             <CardHeader className="pb-4 flex flex-row items-center gap-4">
               <div className="bg-trust/10 border border-trust/20 p-3.5 rounded-2xl shrink-0">
@@ -98,7 +98,7 @@ function LandingPage() {
               </div>
               <div className="space-y-1">
                 <CardTitle className="text-2xl font-bold tracking-tight text-white">
-                  UBB Trust
+                  Trust
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">Conformité, score & coffre-fort documentaire</p>
               </div>

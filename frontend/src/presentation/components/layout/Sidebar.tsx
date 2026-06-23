@@ -1,16 +1,13 @@
 import React, { useState } from 'react'
 import { 
-  LayoutDashboard, 
-  TrendingUp, 
-  Wallet, 
-  FileText, 
-  Settings, 
-  LogOut, 
-  ChevronLeft, 
+  LayoutDashboard,
+  TrendingUp,
+  Wallet,
+  LogOut,
+  ChevronLeft,
   ChevronRight,
   Menu,
   ShieldCheck,
-  Zap,
   PieChart,
   RefreshCw,
   Building2,
@@ -115,7 +112,7 @@ export const Sidebar: React.FC = () => {
               className="overflow-hidden pt-3"
             >
               <span className="text-xl font-black italic tracking-tighter whitespace-nowrap">
-                UBB <span className="text-trust">Trust & Flow</span>
+                Trust <span className="text-trust">Lane</span>
               </span>
             </motion.div>
           )}
@@ -180,7 +177,7 @@ export const Sidebar: React.FC = () => {
             <Menu size={20} />
           </Button>
           <span className="text-base font-black italic tracking-tighter pt-0.5">
-            UBB <span className="text-trust font-bold">Flow</span>
+            Trust <span className="text-trust font-bold">Lane</span>
           </span>
         </div>
 

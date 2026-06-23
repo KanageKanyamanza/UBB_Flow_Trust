@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { FileText, Download, Trash2, ExternalLink, Search, LayoutGrid, List, UploadCloud, Share2, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
@@ -548,7 +548,7 @@ export default function DocumentsPage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
-      <Seo title="Data Room — Documents — UBBFlow" noindex />
+      <Seo title="Data Room — Documents — Trust Lane" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Data Room</h1>

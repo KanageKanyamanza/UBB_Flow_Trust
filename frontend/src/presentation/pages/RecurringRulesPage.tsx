@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+﻿import React, { useState, useMemo } from 'react'
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -92,7 +92,7 @@ const RecurringRulesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in pb-20">
-      <Seo title="Règles Récurrentes — UBBFlow" noindex />
+      <Seo title="Règles Récurrentes — Trust Lane" noindex />
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
