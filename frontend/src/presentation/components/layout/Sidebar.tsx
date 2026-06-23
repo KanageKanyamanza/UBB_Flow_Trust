@@ -84,7 +84,7 @@ export const Sidebar: React.FC = () => {
   const navItems = [
     { icon: <LayoutDashboard size={22} />, label: 'Tableau de Bord', path: '/dashboard' },
     ...(user?.role === 'OWNER' ? [
-      { icon: <Building2 size={22} />, label: 'Profil PME', path: '/profile' },
+      { icon: <Building2 size={22} />, label: 'Profil entreprise', path: '/profile' },
       { icon: <ShieldCheck size={22} />, label: 'Conformité', path: '/compliance' },
       { icon: <FolderOpen size={22} />, label: 'Data Room', path: '/documents' },
     ] : []),

@@ -196,7 +196,7 @@ const PartnerPortalPage: React.FC = () => {
             <CardTitle className="text-lg flex items-center gap-2">
               <Building2 className="w-5 h-5 text-trust" /> Profil & Actionnaires bénéficiaires
             </CardTitle>
-            <CardDescription>Présentation générale de la PME émettrice</CardDescription>
+            <CardDescription>Présentation générale de la entreprise émettrice</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>

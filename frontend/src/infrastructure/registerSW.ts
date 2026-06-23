@@ -1,6 +1,6 @@
 /**
  * Service Worker Registration
- * Registers the SW in production and development.
+ * Registers the SW in production and develoentreprisent.
  * Logs update availability for easy debugging.
  */
 export function registerSW(): void {

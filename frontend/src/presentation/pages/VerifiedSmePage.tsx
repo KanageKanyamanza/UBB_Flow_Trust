@@ -28,7 +28,7 @@ export default function VerifiedSmePage() {
     return (
       <>
         <Seo
-          title="Profil PME Certifié — UBBFlow"
+          title="Profil entreprise Certifié — UBBFlow"
           description="Chargement du profil de confiance certifié UBB Flow & Trust."
           canonical={canonicalUrl}
           noindex
@@ -78,14 +78,14 @@ export default function VerifiedSmePage() {
     return 'text-rose-400 border-rose-400/20 bg-rose-500/10'
   }
 
-  const pageTitle = `${company.legalName || 'Profil PME'} — Profil Certifié UBBFlow`
+  const pageTitle = `${company.legalName || 'Profil entreprise'} — Profil Certifié UBBFlow`
   const pageDescription = company.description
-    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette PME'} : score de confiance, conformité et informations légales vérifiées par UBBFlow.`
+    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette entreprise'} : score de confiance, conformité et informations légales vérifiées par UBBFlow.`
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: company.legalName || 'PME',
+    name: company.legalName || 'entreprise',
     description: pageDescription,
     url: canonicalUrl,
     ...(company.website && { sameAs: [company.website.startsWith('http') ? company.website : `https://${company.website}`] }),
@@ -139,7 +139,7 @@ export default function VerifiedSmePage() {
               SME Public Ledger
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
-              {company.legalName || 'Ma PME'}
+              {company.legalName || 'Entreprise'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {company.description || "Aucune description fournie par l'organisation."}

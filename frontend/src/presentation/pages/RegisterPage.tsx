@@ -59,14 +59,14 @@ const RegisterPage: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in py-12">
       <Seo
         title="Créer un compte — UBBFlow"
-        description="Créez votre compte UBBFlow et propulsez la croissance de votre PME avec une trésorerie intelligente et un score de confiance certifié."
+        description="Créez votre compte UBBFlow et propulsez la croissance de votre entreprise avec une trésorerie intelligente et un score de confiance certifié."
         noindex
       />
       <Card className="glass w-full max-w-lg border-white/10 glow-flow">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Créer un compte</CardTitle>
           <CardDescription className="text-center">
-            Rejoignez UBB pour propulser la croissance de votre PME
+            Rejoignez UBB pour propulser la croissance de votre entreprise
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -104,7 +104,7 @@ const RegisterPage: React.FC = () => {
                   <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="company"
-                    placeholder="Ma PME Sarl" 
+                    placeholder="Entreprise Sarl" 
                     className="pl-10"
                     value={formData.company}
                     onChange={handleChange}

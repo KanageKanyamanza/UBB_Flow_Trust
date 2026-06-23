@@ -32,8 +32,8 @@ function LandingPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[95vh] px-4 py-16 text-center relative overflow-hidden bg-background">
       <Seo
-        title="UBBFlow & Trust — Intelligence Financière pour PME Africaines"
-        description="Transformez votre PME informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers."
+        title="UBBFlow & Trust — Intelligence Financière pour entreprise Africaines"
+        description="Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers."
         canonical="https://ubbflow.app/"
         type="website"
         jsonLd={{
@@ -41,7 +41,7 @@ function LandingPage() {
           '@type': 'Organization',
           name: 'UBBFlow',
           alternateName: 'UBB Flow & Trust',
-          description: 'Trésorerie intelligente et conformité pour PME africaines. Centralisez vos flux, anticipez vos finances et partagez des données certifiées.',
+          description: 'Trésorerie intelligente et conformité pour entreprise africaines. Centralisez vos flux, anticipez vos finances et partagez des données certifiées.',
           url: 'https://ubbflow.app/',
         }}
       />
@@ -52,7 +52,7 @@ function LandingPage() {
             UBB <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Flow & Trust</span>
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
-            Transformez votre PME informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
+            Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
           </p>
         </div>
 

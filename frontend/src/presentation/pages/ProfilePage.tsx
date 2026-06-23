@@ -85,7 +85,7 @@ export default function ProfilePage() {
         <div className="space-y-2">
           <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Seul le propriétaire principal de l'organisation peut configurer et modifier le profil de la PME.
+            Seul le propriétaire principal de l'organisation peut configurer et modifier le profil de la entreprise.
           </p>
         </div>
       </div>
@@ -142,10 +142,10 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
-      <Seo title="Profil PME — UBBFlow" noindex />
+      <Seo title="Profil entreprise — UBBFlow" noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profil PME</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Profil entreprise</h1>
           <p className="text-muted-foreground">Gérez l'identité et la structure de votre entreprise pour renforcer votre crédibilité</p>
         </div>
         <Button onClick={handleSave} disabled={isUpdating || isSavingPublic} variant="trust" className="gap-2 shadow-lg shadow-trust/20 w-full md:w-auto justify-center">
@@ -202,7 +202,7 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nom Légal de l'Entité</label>
                   <Input 
-                    placeholder="Ex: Ma PME SARL"
+                    placeholder="Ex: Entreprise SARL"
                     value={formData.legalName} 
                     onChange={e => setFormData({...formData, legalName: e.target.value})}
                   />
@@ -459,7 +459,7 @@ export default function ProfilePage() {
                   Configuration du Profil Public
                 </CardTitle>
                 <CardDescription>
-                  Partagez de manière sécurisée votre identité PME et votre score de confiance avec vos partenaires, fournisseurs et institutions financières.
+                  Partagez de manière sécurisée votre identité entreprise et votre score de confiance avec vos partenaires, fournisseurs et institutions financières.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -582,7 +582,7 @@ export default function ProfilePage() {
                         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-flow/20 text-flow border border-flow/10 text-[9px] font-black uppercase tracking-wider mb-2">
                           <ShieldCheck className="w-3 h-3" /> SME Verified
                         </div>
-                        <h4 className="font-bold text-white text-base truncate max-w-[140px]">{formData.legalName || 'Votre PME'}</h4>
+                        <h4 className="font-bold text-white text-base truncate max-w-[140px]">{formData.legalName || 'Votre entreprise'}</h4>
                         <p className="text-[10px] text-muted-foreground">{formData.industry || 'Secteur d\'activité'}</p>
                       </div>
                       {trustData && (
