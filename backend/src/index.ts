@@ -53,7 +53,9 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'https://ubb-flow-trust-frontend.vercel.app',
-  'https://www.ubb-flow-trust-frontend.vercel.app'
+  'https://www.ubb-flow-trust-frontend.vercel.app',
+  'https://www.trust-lane.app',
+  'https://trust-lane.app',
 ]
 
 app.use(cors({
