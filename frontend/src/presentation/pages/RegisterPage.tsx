@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { TrendingUp, Building2, User, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Building2, User, Mail, Lock, Loader2, AlertCircle, CheckCircle2, Globe } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Input } from '../components/ui/input'
@@ -8,17 +9,19 @@ import { useRegisterMutation } from '../../infrastructure/api/authApi'
 import { Seo } from '../components/seo/Seo'
 
 const RegisterPage: React.FC = () => {
+  const { t, i18n } = useTranslation()
+  const [searchParams] = useSearchParams()
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: searchParams.get('email') ?? '',
     password: '',
     confirmPassword: '',
     company: ''
   })
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorStatus, setErrorStatus] = useState<string | null>(null)
-  
+
   const [registerMutation] = useRegisterMutation()
   const navigate = useNavigate()
 
@@ -29,14 +32,13 @@ const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorStatus(null)
-    
+
     if (formData.password !== formData.confirmPassword) {
-      setErrorStatus('Les mots de passe ne correspondent pas.')
+      setErrorStatus(t('auth.register.passwordMismatch'))
       return
     }
 
     setIsSubmitting(true)
-
     try {
       await registerMutation({
         email: formData.email,
@@ -44,12 +46,10 @@ const RegisterPage: React.FC = () => {
         firstName: formData.name,
         organizationName: formData.company
       }).unwrap()
-      
-      // Auto-redirect to login after successful registration
-      navigate('/login', { state: { message: 'Inscription réussie ! Vous pouvez maintenant vous connecter.' } })
+      navigate('/login', { state: { message: t('auth.register.successMessage') } })
     } catch (err: any) {
       console.error('Registration error:', err)
-      setErrorStatus(err.data?.error || 'Échec de l\'inscription. Veuillez réessayer.')
+      setErrorStatus(err.data?.error || t('auth.register.errors.default'))
     } finally {
       setIsSubmitting(false)
     }
@@ -57,17 +57,23 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in py-12">
+      <button
+        onClick={() => i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr')}
+        className="fixed top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all text-xs font-bold uppercase tracking-widest"
+        title={i18n.language === 'fr' ? 'Switch to English' : 'Passer en Français'}
+      >
+        <Globe size={14} />
+        {i18n.language === 'fr' ? 'EN' : 'FR'}
+      </button>
       <Seo
-        title="Créer un compte — Trust Lane"
-        description="Créez votre compte Trust Lane et propulsez la croissance de votre entreprise avec une trésorerie intelligente et un score de confiance certifié."
+        title={`${t('auth.register.title')} — ${t('brand.name')}`}
+        description={t('auth.register.subtitle')}
         noindex
       />
       <Card className="glass w-full max-w-lg border-white/10 glow-flow">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Créer un compte</CardTitle>
-          <CardDescription className="text-center">
-            Rejoignez Trust Lane pour propulser la croissance de votre entreprise
-          </CardDescription>
+          <CardTitle className="text-2xl text-center">{t('auth.register.title')}</CardTitle>
+          <CardDescription className="text-center">{t('auth.register.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,17 +83,17 @@ const RegisterPage: React.FC = () => {
                 {errorStatus}
               </div>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none" htmlFor="name">
-                  Nom complet
+                  {t('auth.register.name')}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
+                  <Input
                     id="name"
-                    placeholder="Jean Dupont" 
+                    placeholder={t('auth.register.namePlaceholder')}
                     className="pl-10"
                     value={formData.name}
                     onChange={handleChange}
@@ -98,13 +104,13 @@ const RegisterPage: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none" htmlFor="company">
-                  Entreprise
+                  {t('auth.register.company')}
                 </label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
+                  <Input
                     id="company"
-                    placeholder="Nom officiel de l'entreprise"
+                    placeholder={t('auth.register.companyPlaceholder')}
                     className="pl-10"
                     value={formData.company}
                     onChange={handleChange}
@@ -116,14 +122,14 @@ const RegisterPage: React.FC = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none" htmlFor="email">
-                Email professionnel
+                {t('auth.register.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
+                <Input
                   id="email"
-                  type="email" 
-                  placeholder="nom@entreprise.com" 
+                  type="email"
+                  placeholder={t('auth.register.emailPlaceholder')}
                   className="pl-10"
                   value={formData.email}
                   onChange={handleChange}
@@ -135,14 +141,14 @@ const RegisterPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none" htmlFor="password">
-                  Mot de passe
+                  {t('auth.register.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
+                  <Input
                     id="password"
-                    type="password" 
-                    placeholder="••••••••" 
+                    type="password"
+                    placeholder="••••••••"
                     className="pl-10"
                     value={formData.password}
                     onChange={handleChange}
@@ -153,14 +159,14 @@ const RegisterPage: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none" htmlFor="confirmPassword">
-                  Confirmer
+                  {t('auth.register.confirmPassword')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
+                  <Input
                     id="confirmPassword"
-                    type="password" 
-                    placeholder="••••••••" 
+                    type="password"
+                    placeholder="••••••••"
                     className="pl-10"
                     value={formData.confirmPassword}
                     onChange={handleChange}
@@ -170,26 +176,21 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              variant="flow" 
+            <Button
+              type="submit"
+              variant="flow"
               className="w-full flex items-center justify-center gap-2 mt-4"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Création du compte...
-                </>
-              ) : (
-                'Démarrer mon essai gratuit'
-              )}
+                <><Loader2 className="h-4 w-4 animate-spin" />{t('auth.register.submitting')}</>
+              ) : t('auth.register.submit')}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground mt-4">
-              Déjà inscrit ?{' '}
+              {t('auth.register.alreadyMember')}{' '}
               <Link to="/login" className="text-flow hover:underline font-medium">
-                Se connecter
+                {t('auth.register.login')}
               </Link>
             </div>
           </form>
@@ -197,18 +198,12 @@ const RegisterPage: React.FC = () => {
       </Card>
 
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl px-4 text-xs opacity-60">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-flow" />
-          <span>Accès gratuit 14 jours</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-flow" />
-          <span>Aucune carte requise</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-flow" />
-          <span>Annulation à tout moment</span>
-        </div>
+        {(['badge1', 'badge2', 'badge3'] as const).map((key) => (
+          <div key={key} className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-flow" />
+            <span>{t(`auth.register.${key}`)}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
