@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, ChevronLeft, User, FileText, Camera, MapPin, UploadCloud, ArrowRight, ShieldAlert, TrendingUp, TrendingDown, Download } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { ShieldCheck, FileCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, Clock, User, FileText, Camera, MapPin, UploadCloud, ArrowRight, ShieldAlert, TrendingUp, TrendingDown, Download } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
@@ -11,17 +12,18 @@ import { useAuth } from '@/application/context/AuthContext'
 import { BASE_URL } from '@/infrastructure/api/apiSlice'
 import { Seo } from '@/presentation/components/seo/Seo'
 
-const STEPS = [
-  { id: "personal", title: "Informations", icon: User, description: "Vos données" },
-  { id: "document", title: "Identité", icon: FileText, description: "Passeport/CNI" },
-  { id: "selfie", title: "Selfie", icon: Camera, description: "Vérification" },
-  { id: "address", title: "Domicile", icon: MapPin, description: "Justificatif" },
-];
-
 export default function CompliancePage() {
+  const { t } = useTranslation()
+
+  const STEPS = [
+    { id: "personal", title: t('compliance.journey.steps.personal.title'), icon: User, description: t('compliance.journey.steps.personal.desc') },
+    { id: "document", title: t('compliance.journey.steps.document.title'), icon: FileText, description: t('compliance.journey.steps.document.desc') },
+    { id: "selfie", title: t('compliance.journey.steps.selfie.title'), icon: Camera, description: t('compliance.journey.steps.selfie.desc') },
+    { id: "address", title: t('compliance.journey.steps.address.title'), icon: MapPin, description: t('compliance.journey.steps.address.desc') },
+  ]
   const { user } = useAuth()
   const { data: trustData, isLoading: trustLoading } = useGetTrustScoreQuery()
-  const { data: documents, isLoading: docsLoading } = useGetDocumentsQuery()
+  const { isLoading: docsLoading } = useGetDocumentsQuery()
   const { data: complianceData, isLoading: complianceLoading } = useGetComplianceQuery()
   const { data: gapData } = useGetGapQuery({ market: 'LOCAL' })
   const [refreshScore, { isLoading: isRefreshing }] = useRefreshTrustScoreMutation()
@@ -56,7 +58,7 @@ export default function CompliancePage() {
       
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.error || 'Échec du téléchargement du dossier bancaire')
+        throw new Error(errData.error || t('compliance.errors.downloadFailed'))
       }
       
       const blob = await response.blob()
@@ -78,7 +80,7 @@ export default function CompliancePage() {
       link.remove()
       window.URL.revokeObjectURL(url)
     } catch (err: any) {
-      alert(err.message || 'Erreur lors de la génération du dossier')
+      alert(err.message || t('compliance.errors.generationFailed'))
     } finally {
       setIsDownloading(false)
     }
@@ -103,10 +105,8 @@ export default function CompliancePage() {
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Seul le propriétaire principal de l'organisation peut configurer et gérer le statut de conformité.
-          </p>
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">{t('compliance.accessRestricted')}</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">{t('compliance.accessRestrictedDesc')}</p>
         </div>
       </div>
     )
@@ -139,30 +139,30 @@ export default function CompliancePage() {
   const negativeFactors = []
 
   if (!reasons.includes('PROFIL_MANQUANT') && !reasons.includes('PROFIL_INCOMPLET')) {
-    positiveFactors.push({ text: 'Profil complété', pts: '+20 pts' })
+    positiveFactors.push({ text: t('compliance.factors.profileComplete'), pts: '+20 pts' })
   } else {
-    negativeFactors.push({ text: 'Profil incomplet/manquant', pts: '-20 pts' })
+    negativeFactors.push({ text: t('compliance.factors.profileIncomplete'), pts: '-20 pts' })
   }
 
   if (!reasons.includes('OFFICIERS_MANQUANTS')) {
-    positiveFactors.push({ text: 'UBOs déclarés', pts: '+20' })
+    positiveFactors.push({ text: t('compliance.factors.officersOk'), pts: '+20' })
   } else {
-    negativeFactors.push({ text: 'UBOs manquants', pts: '-20' })
+    negativeFactors.push({ text: t('compliance.factors.officersMissing'), pts: '-20' })
   }
 
   if (!reasons.includes('DOCUMENTS_MANQUANTS')) {
-    positiveFactors.push({ text: 'Statuts, RCCM & NUI validés', pts: '+40' })
+    positiveFactors.push({ text: t('compliance.factors.docsOk'), pts: '+40' })
   } else {
-    negativeFactors.push({ text: 'Pièces réglementaires non validées', pts: '-40' })
+    negativeFactors.push({ text: t('compliance.factors.docsMissing'), pts: '-40' })
   }
 
   if (!reasons.includes('ACTIVITE_FAIBLE') && !reasons.includes('AUCUNE_ACTIVITE')) {
-    positiveFactors.push({ text: 'Activité financière active', pts: '+20' })
+    positiveFactors.push({ text: t('compliance.factors.activityOk'), pts: '+20' })
   } else {
     if (reasons.includes('ACTIVITE_FAIBLE')) {
-      negativeFactors.push({ text: 'Activité transactionnelle faible', pts: '-10' })
+      negativeFactors.push({ text: t('compliance.factors.activityLow'), pts: '-10' })
     } else {
-      negativeFactors.push({ text: 'Aucune transaction enregistrée', pts: '-20' })
+      negativeFactors.push({ text: t('compliance.factors.activityNone'), pts: '-20' })
     }
   }
 
@@ -173,11 +173,11 @@ export default function CompliancePage() {
   }
 
   const STATUS_LABELS: Record<string, string> = {
-    MISSING: 'Manquant',
-    IN_REVIEW: 'En révision',
-    PASS: 'Validé',
-    FAIL: 'Rejeté',
-    NOT_APPLICABLE: 'Non applicable'
+    MISSING: t('compliance.status.MISSING'),
+    IN_REVIEW: t('compliance.status.IN_REVIEW'),
+    PASS: t('compliance.status.PASS'),
+    FAIL: t('compliance.status.FAIL'),
+    NOT_APPLICABLE: t('compliance.status.NOT_APPLICABLE')
   }
 
   const requirementToTypeMap: { [key: string]: string } = {
@@ -203,9 +203,9 @@ export default function CompliancePage() {
 
     try {
       await uploadDocument(formData).unwrap()
-      alert('Document uploadé avec succès')
+      alert(t('compliance.errors.uploadSuccess'))
     } catch (err: any) {
-      alert(`Erreur: ${err.data?.error || 'Échec de l\'upload'}`)
+      alert(`Erreur: ${err.data?.error || t('compliance.errors.uploadFailed')}`)
     }
   }
 
@@ -219,7 +219,7 @@ export default function CompliancePage() {
       await startCompliance({ market: 'LOCAL' }).unwrap()
       setJourneyCompleted(true)
     } catch (err) {
-      alert('Erreur lors de la soumission du dossier')
+      alert(t('compliance.errors.submitFailed'))
     }
   }
 
@@ -246,29 +246,29 @@ export default function CompliancePage() {
       case "personal":
         return (
           <div className="space-y-4 animate-fade-in">
-            <h3 className="text-lg font-bold">Informations Complémentaires</h3>
+            <h3 className="text-lg font-bold">{t('compliance.journey.personal.title')}</h3>
             <div>
-              <label className="block text-sm font-semibold mb-1">Profession / Activité</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-semibold mb-1">{t('compliance.journey.personal.profession')}</label>
+              <input
+                type="text"
                 value={personalInfo.profession}
                 onChange={(e) => setPersonalInfo({...personalInfo, profession: e.target.value})}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-trust outline-none"
-                placeholder="Ex: Ingénieur, Commerçant..."
+                placeholder={t('compliance.journey.personal.professionPlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Origine des fonds</label>
-              <select 
+              <label className="block text-sm font-semibold mb-1">{t('compliance.journey.personal.sourceOfFunds')}</label>
+              <select
                 value={personalInfo.sourceOfFunds}
                 onChange={(e) => setPersonalInfo({...personalInfo, sourceOfFunds: e.target.value})}
                 className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-trust outline-none"
               >
-                <option value="">Sélectionnez une origine</option>
-                <option value="salary">Salaire / Revenus</option>
-                <option value="business">Chiffre d'affaires</option>
-                <option value="savings">Épargne</option>
-                <option value="other">Autre</option>
+                <option value="">{t('compliance.journey.personal.sourceOfFundsPlaceholder')}</option>
+                <option value="salary">{t('compliance.journey.personal.salary')}</option>
+                <option value="business">{t('compliance.journey.personal.business')}</option>
+                <option value="savings">{t('compliance.journey.personal.savings')}</option>
+                <option value="other">{t('compliance.journey.personal.other')}</option>
               </select>
             </div>
           </div>
@@ -276,52 +276,52 @@ export default function CompliancePage() {
       case "document":
         return (
           <div className="space-y-4 animate-fade-in">
-            <h3 className="text-lg font-bold">Pièce d'Identité</h3>
+            <h3 className="text-lg font-bold">{t('compliance.journey.document.title')}</h3>
             <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
-              <input 
-                type="file" 
+              <input
+                type="file"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
                 accept="image/*,.pdf"
               />
               <UploadCloud className="w-8 h-8 text-trust mx-auto mb-2" />
-              <p className="font-semibold">{documentFile ? documentFile.name : "Télécharger votre pièce d'identité"}</p>
-              <p className="text-xs text-muted-foreground mt-1">Passeport, CNI ou Titre de séjour</p>
+              <p className="font-semibold">{documentFile ? documentFile.name : t('compliance.journey.document.upload')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('compliance.journey.document.hint')}</p>
             </div>
           </div>
         )
       case "selfie":
         return (
           <div className="space-y-4 animate-fade-in">
-             <h3 className="text-lg font-bold">Vérification Faciale</h3>
-             <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
-              <input 
-                type="file" 
+            <h3 className="text-lg font-bold">{t('compliance.journey.selfie.title')}</h3>
+            <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
+              <input
+                type="file"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 onChange={(e) => setSelfieFile(e.target.files?.[0] || null)}
                 accept="image/*"
                 capture="user"
               />
               <Camera className="w-8 h-8 text-trust mx-auto mb-2" />
-              <p className="font-semibold">{selfieFile ? selfieFile.name : "Prendre un selfie"}</p>
-              <p className="text-xs text-muted-foreground mt-1">Lieu bien éclairé, visage dégagé</p>
+              <p className="font-semibold">{selfieFile ? selfieFile.name : t('compliance.journey.selfie.upload')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('compliance.journey.selfie.hint')}</p>
             </div>
           </div>
         )
       case "address":
         return (
           <div className="space-y-4 animate-fade-in">
-            <h3 className="text-lg font-bold">Justificatif de Domicile</h3>
+            <h3 className="text-lg font-bold">{t('compliance.journey.address.title')}</h3>
             <div className="border-2 border-dashed border-trust/30 rounded-2xl p-6 text-center hover:bg-trust/5 transition-colors relative">
-              <input 
-                type="file" 
+              <input
+                type="file"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 onChange={(e) => setAddressFile(e.target.files?.[0] || null)}
                 accept="image/*,.pdf"
               />
               <UploadCloud className="w-8 h-8 text-trust mx-auto mb-2" />
-              <p className="font-semibold">{addressFile ? addressFile.name : "Télécharger le justificatif"}</p>
-              <p className="text-xs text-muted-foreground mt-1">Facture d'eau, d'électricité ou relevé bancaire (- 3 mois)</p>
+              <p className="font-semibold">{addressFile ? addressFile.name : t('compliance.journey.address.upload')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('compliance.journey.address.hint')}</p>
             </div>
           </div>
         )
@@ -331,11 +331,11 @@ export default function CompliancePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
-      <Seo title="Conformité & Score de Confiance — Trust Lane" noindex />
+      <Seo title={`${t('pages.compliance')} — ${t('brand.name')}`} noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Conformité & Trust</h1>
-          <p className="text-muted-foreground">Suivez votre éligibilité au financement et votre score de crédibilité</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('compliance.title')}</h1>
+          <p className="text-muted-foreground">{t('compliance.subtitle')}</p>
         </div>
         <div className="flex flex-col items-stretch sm:items-end gap-2 w-full md:w-auto">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -346,7 +346,7 @@ export default function CompliancePage() {
               className="gap-2 shadow-lg shadow-trust/20 w-full sm:w-auto"
             >
               <Download size={16} className={isDownloading ? 'animate-bounce' : ''} />
-              {isDownloading ? 'Génération du zip...' : 'Générer mon dossier bancaire'}
+              {isDownloading ? t('compliance.generating') : t('compliance.generatePack')}
             </Button>
             <Button 
               onClick={handleRefreshScore} 
@@ -355,13 +355,13 @@ export default function CompliancePage() {
               className="gap-2 border-trust/50 text-trust hover:bg-trust/10 w-full sm:w-auto"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Mise en file...' : 'Actualiser le score'}
+              {isRefreshing ? t('compliance.refreshing') : t('compliance.refreshScore')}
             </Button>
           </div>
           {refreshQueued && (
             <span className="text-[10px] font-black uppercase tracking-widest text-trust animate-fade-in flex items-center justify-center sm:justify-end gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-trust animate-pulse inline-block" />
-              Recalcul en cours en arrière-plan…
+              {t('compliance.recalculating')}
             </span>
           )}
         </div>
@@ -416,7 +416,7 @@ export default function CompliancePage() {
             <div>
               <h2 className="text-lg font-bold">Trust Score</h2>
               <p className="text-[10px] text-muted-foreground uppercase font-black tracking-wider mt-0.5">
-                Facteurs d'impact
+                {t('compliance.factorsImpact')}
               </p>
             </div>
 
@@ -449,9 +449,9 @@ export default function CompliancePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
                <CheckCircle2 className="w-5 h-5 text-trust" />
-               Analyse de Conformité
+               {t('compliance.analysis')}
             </CardTitle>
-            <CardDescription>Points d'amélioration identifiés par l'algorithme Trust Lane</CardDescription>
+            <CardDescription>{t('trust.improvementPoints')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {reasons.map((reason: string) => (
@@ -459,7 +459,7 @@ export default function CompliancePage() {
                 <AlertCircle className="w-6 h-6 text-yellow-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-sm tracking-tight">{reason.replace(/_/g, ' ')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Action requise pour augmenter votre score et rassurer vos partenaires financiers.</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('compliance.actionRequired')}</p>
                 </div>
               </div>
             ))}
@@ -468,7 +468,7 @@ export default function CompliancePage() {
                 <FileText className="w-6 h-6 text-yellow-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-sm tracking-tight">{req}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Document manquant pour le marché LOCAL.</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('compliance.missingDoc')}</p>
                 </div>
               </div>
             ))}
@@ -478,8 +478,8 @@ export default function CompliancePage() {
                   <CheckCircle2 size={40} />
                 </div>
                 <div>
-                  <p className="font-bold text-xl text-trust tracking-tight">Profil Exemplaire</p>
-                  <p className="text-sm text-trust/80 max-w-sm">Félicitations ! Votre profil est complet et prêt pour un audit par nos partenaires financiers.</p>
+                  <p className="font-bold text-xl text-trust tracking-tight">{t('compliance.exemplaryProfile')}</p>
+                  <p className="text-sm text-trust/80 max-w-sm">{t('compliance.exemplaryProfileDesc')}</p>
                 </div>
               </div>
             )}
@@ -491,9 +491,9 @@ export default function CompliancePage() {
         <CardHeader className="border-b border-white/5 bg-white/2">
           <CardTitle className="flex items-center gap-2">
             <FileCheck className="w-5 h-5 text-trust" />
-            Parcours de Conformité
+            {t('compliance.journey.title')}
           </CardTitle>
-          <CardDescription>Documents essentiels requis pour valider votre compte</CardDescription>
+          <CardDescription>{t('compliance.journey.desc')}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {!complianceData && !isJourneyActive ? (
@@ -502,13 +502,11 @@ export default function CompliancePage() {
                 <ShieldCheck size={48} />
               </div>
               <div>
-                <p className="font-bold text-xl mb-2">Vérification d'Identité (KYC)</p>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Afin de sécuriser votre compte et d'accéder à l'ensemble de nos services, nous devons vérifier votre identité.
-                </p>
+                <p className="font-bold text-xl mb-2">{t('compliance.journey.kycTitle')}</p>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">{t('compliance.journey.kycDesc')}</p>
               </div>
               <Button onClick={() => setIsJourneyActive(true)} className="bg-trust hover:bg-trust/80 text-white px-8 mt-4">
-                Démarrer le parcours
+                {t('compliance.journey.start')}
               </Button>
             </div>
           ) : isJourneyActive && !journeyCompleted ? (
@@ -554,7 +552,7 @@ export default function CompliancePage() {
               <div className="mt-8 flex justify-between items-center">
                 {currentStepIndex > 0 ? (
                   <Button variant="ghost" onClick={() => setCurrentStepIndex(p => p - 1)}>
-                    Retour
+                    {t('compliance.journey.back')}
                   </Button>
                 ) : <div />}
                 <Button 
@@ -562,7 +560,7 @@ export default function CompliancePage() {
                   disabled={!isStepValid() || isStarting}
                   className="bg-trust hover:bg-trust/90 text-white gap-2"
                 >
-                  {isStarting ? 'Traitement...' : currentStepIndex === STEPS.length - 1 ? 'Soumettre le dossier' : 'Continuer'}
+                  {isStarting ? t('compliance.journey.processing') : currentStepIndex === STEPS.length - 1 ? t('compliance.journey.submit') : t('compliance.journey.continue')}
                   {currentStepIndex !== STEPS.length - 1 && <ArrowRight className="w-4 h-4" />}
                 </Button>
               </div>
@@ -572,13 +570,10 @@ export default function CompliancePage() {
                <div className="p-4 bg-trust/20 rounded-full text-trust">
                  <CheckCircle2 size={48} />
                </div>
-               <h2 className="text-2xl font-bold">Dossier Soumis !</h2>
-               <p className="text-muted-foreground max-w-md">
-                 Vos documents ont été envoyés avec succès. Notre équipe de conformité va les vérifier.
-                 Vous serez notifié une fois votre compte validé.
-               </p>
+               <h2 className="text-2xl font-bold">{t('compliance.journey.successTitle')}</h2>
+               <p className="text-muted-foreground max-w-md">{t('compliance.journey.successDesc')}</p>
                <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">
-                 Retour au tableau de bord
+                 {t('compliance.journey.backToDashboard')}
                </Button>
             </div>
           ) : (
@@ -618,7 +613,7 @@ export default function CompliancePage() {
                             onClick={() => document.getElementById(`upload-${item.id}`)?.click()}
                             className="h-8 text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-white/10 px-3"
                           >
-                            {isUploading ? '...' : 'Uploader'}
+                            {isUploading ? '...' : t('compliance.journey.upload')}
                           </Button>
                         </div>
                       )}

@@ -1,5 +1,6 @@
 ﻿import React from 'react'
 import { FileText, Download, Trash2, ExternalLink, Search, LayoutGrid, List, UploadCloud, Share2, ShieldAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
@@ -12,6 +13,7 @@ import { useAuth } from '@/application/context/AuthContext'
 import { Seo } from '@/presentation/components/seo/Seo'
 
 export default function DocumentsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const isOwner = user?.role === 'OWNER'
 
@@ -33,7 +35,7 @@ export default function DocumentsPage() {
       
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.error || 'Échec du téléchargement du dossier bancaire')
+        throw new Error(errData.error || t('compliance.errors.downloadFailed'))
       }
       
       const blob = await response.blob()
@@ -55,7 +57,7 @@ export default function DocumentsPage() {
       link.remove()
       window.URL.revokeObjectURL(url)
     } catch (err: any) {
-      alert(err.message || 'Erreur lors de la génération du dossier')
+      alert(err.message || t('compliance.errors.generationFailed'))
     } finally {
       setIsDownloading(false)
     }
@@ -94,22 +96,20 @@ export default function DocumentsPage() {
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Seul le propriétaire principal de l'organisation peut accéder aux documents de la Data Room.
-          </p>
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">{t('documents.restrictedAccess')}</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">{t('documents.restrictedDesc')}</p>
         </div>
       </div>
     )
   }
 
   const handleRevokeShare = async (id: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir révoquer cet accès ? Le partenaire ne pourra plus accéder à vos données.')) {
+    if (window.confirm(t('documents.shares.revokeConfirm'))) {
       try {
         await revokeShare(id).unwrap()
-        alert('Accès révoqué avec succès')
+        alert(t('documents.shares.revokeSuccess'))
       } catch (err: any) {
-        alert(err?.data?.error || 'Erreur lors de la révocation')
+        alert(err?.data?.error || t('documents.shares.revokeError'))
       }
     }
   }
@@ -126,8 +126,8 @@ export default function DocumentsPage() {
     if (sharesError) {
       return (
         <div className="p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-destructive text-sm text-center">
-          <p className="font-bold">Erreur de chargement des partages</p>
-          <p className="text-xs mt-1">{(sharesError as any)?.data?.error || 'Impossible de récupérer les partages actifs'}</p>
+          <p className="font-bold">{t('documents.shares.loadError')}</p>
+          <p className="text-xs mt-1">{(sharesError as any)?.data?.error || t('documents.shares.loadErrorDesc')}</p>
         </div>
       )
     }
@@ -138,18 +138,16 @@ export default function DocumentsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/5 border border-white/10 p-6 rounded-2xl gap-4">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Partages actifs ({shares?.length || 0})</h2>
-            <p className="text-xs text-muted-foreground mt-1 max-w-xl">
-              Ces autorisations permettent à vos partenaires de consulter vos données financières et documentaires. Vous pouvez révoquer ces accès à tout moment.
-            </p>
+            <h2 className="text-xl font-bold tracking-tight">{t('documents.shares.title')} ({shares?.length || 0})</h2>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xl">{t('documents.shares.subtitle')}</p>
           </div>
-          <Button 
-            variant="trust" 
+          <Button
+            variant="trust"
             className="gap-2 shadow-lg shadow-trust/20 shrink-0"
             onClick={() => setIsShareModalOpen(true)}
           >
             <Share2 size={16} />
-            Autoriser un Partenaire
+            {t('documents.shares.authorizePartner')}
           </Button>
         </div>
 
@@ -158,12 +156,10 @@ export default function DocumentsPage() {
             <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
               <Share2 className="w-12 h-12 text-muted-foreground opacity-20" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Aucun accès partagé</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-              Vous n'avez pas encore configuré d'accès tiers. Générez un token sécurisé pour vos banquiers ou auditeurs.
-            </p>
+            <h3 className="text-xl font-bold mb-2">{t('documents.shares.empty')}</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto mb-8">{t('documents.shares.emptyDesc')}</p>
             <Button variant="trust" size="lg" className="rounded-full px-8" onClick={() => setIsShareModalOpen(true)}>
-              Générer mon premier accès
+              {t('documents.shares.generateFirst')}
             </Button>
           </div>
         ) : (
@@ -173,12 +169,12 @@ export default function DocumentsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                    <th className="px-6 py-4">Partenaire</th>
-                    <th className="px-6 py-4">But de l'accès</th>
-                    <th className="px-6 py-4">Périmètre</th>
-                    <th className="px-6 py-4">Créé le</th>
-                    <th className="px-6 py-4">Expiration</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4">{t('documents.shares.partner')}</th>
+                    <th className="px-6 py-4">{t('documents.shares.purpose')}</th>
+                    <th className="px-6 py-4">{t('documents.shares.scope')}</th>
+                    <th className="px-6 py-4">{t('documents.shares.createdAt')}</th>
+                    <th className="px-6 py-4">{t('documents.shares.expiration')}</th>
+                    <th className="px-6 py-4 text-right">{t('documents.shares.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -194,7 +190,7 @@ export default function DocumentsPage() {
                               ? 'bg-trust/10 text-trust border border-trust/20' 
                               : 'bg-white/10 text-white/85 border border-white/10'
                           }`}>
-                            {share.scope === '*' ? 'Accès Complet' : 'Vue Profil'}
+                            {share.scope === '*' ? t('documents.shares.fullAccess') : t('documents.shares.profileView')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-xs text-muted-foreground">
@@ -203,7 +199,7 @@ export default function DocumentsPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className={`text-xs font-semibold ${isExpired ? 'text-destructive' : 'text-green-500'}`}>
-                              {isExpired ? 'Expiré' : 'Actif'}
+                              {isExpired ? t('documents.shares.expired') : t('documents.shares.active')}
                             </span>
                             <span className="text-[10px] text-muted-foreground mt-0.5">
                               {new Date(share.expiresAt).toLocaleString()}
@@ -217,7 +213,7 @@ export default function DocumentsPage() {
                             onClick={() => handleRevokeShare(share.id)}
                             className="text-destructive hover:bg-destructive/10 h-8 font-black uppercase tracking-widest text-[9px] border border-destructive/10"
                           >
-                            Révoquer
+                            {t('documents.shares.revoke')}
                           </Button>
                         </td>
                       </tr>
@@ -243,17 +239,17 @@ export default function DocumentsPage() {
                           ? 'bg-trust/10 text-trust border border-trust/20' 
                           : 'bg-white/10 text-white/85 border border-white/10'
                       }`}>
-                        {share.scope === '*' ? 'Accès Complet' : 'Vue Profil'}
+                        {share.scope === '*' ? t('documents.shares.fullAccess') : t('documents.shares.profileView')}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
-                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Créé le</span>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">{t('documents.shares.createdAt')}</span>
                         <span className="font-semibold text-white/90">{new Date(share.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div>
-                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Expiration</span>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">{t('documents.shares.expiration')}</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className={`w-1.5 h-1.5 rounded-full ${isExpired ? 'bg-destructive' : 'bg-green-500'}`} />
                           <span className={`font-semibold ${isExpired ? 'text-destructive' : 'text-green-500'}`}>
@@ -268,7 +264,7 @@ export default function DocumentsPage() {
                       onClick={() => handleRevokeShare(share.id)}
                       className="w-full text-destructive hover:bg-destructive/10 border border-destructive/10 text-[10px] uppercase tracking-widest font-black h-9"
                     >
-                      Révoquer l'accès
+                      {t('documents.shares.revoke')}
                     </Button>
                   </div>
                 )
@@ -292,22 +288,16 @@ export default function DocumentsPage() {
     if (logsError) {
       return (
         <div className="p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-destructive text-sm text-center animate-fade-in">
-          <p className="font-bold">Erreur de chargement de l'historique d'accès</p>
-          <p className="text-xs mt-1">{(logsError as any)?.data?.error || 'Impossible de récupérer l\'historique d\'accès'}</p>
+          <p className="font-bold">{t('documents.logs.loadError')}</p>
+          <p className="text-xs mt-1">{(logsError as any)?.data?.error}</p>
         </div>
       )
     }
 
     const getActionLabel = (action: string) => {
-      switch (action) {
-        case 'PARTNER_DOWNLOAD_DOCUMENT': return 'Téléchargement'
-        case 'PARTNER_LIST_DOCUMENTS': return 'Data Room'
-        case 'PARTNER_VIEW_PROFILE': return 'Profil & UBOs'
-        case 'PARTNER_VIEW_TRANSACTIONS': return 'Transactions'
-        case 'PARTNER_VIEW_TRUST_SCORE': return 'Trust Score'
-        case 'PARTNER_VIEW_ACCOUNTS': return 'Comptes'
-        default: return action
-      }
+      const key = `documents.logs.actions.${action}`
+      const label = t(key)
+      return label !== key ? label : action
     }
 
     const getActionStyle = (action: string) => {
@@ -354,10 +344,8 @@ export default function DocumentsPage() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/5 border border-white/10 p-6 rounded-2xl gap-4">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Historique de consultation ({logs?.length || 0})</h2>
-            <p className="text-xs text-muted-foreground mt-1 max-w-xl">
-              Suivi et traçabilité des consultations et téléchargements de vos documents par des tiers (banquiers, auditeurs, partenaires).
-            </p>
+            <h2 className="text-xl font-bold tracking-tight">{t('documents.logs.title')} ({logs?.length || 0})</h2>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xl">{t('documents.logs.subtitle')}</p>
           </div>
         </div>
 
@@ -366,10 +354,8 @@ export default function DocumentsPage() {
             <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
               <FileText className="w-12 h-12 text-muted-foreground opacity-20" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Aucune consultation pour le moment</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto">
-              Vos documents partagés n'ont pas encore été consultés par vos partenaires.
-            </p>
+            <h3 className="text-xl font-bold mb-2">{t('documents.logs.empty')}</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">{t('documents.logs.emptyDesc')}</p>
           </div>
         ) : (
           <div className="glass border-white/10 rounded-xl overflow-hidden">
@@ -378,11 +364,11 @@ export default function DocumentsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                    <th className="px-6 py-4">Date & Heure</th>
-                    <th className="px-6 py-4">Partenaire</th>
-                    <th className="px-6 py-4">Action</th>
-                    <th className="px-6 py-4">Données consultées / Fichier</th>
-                    <th className="px-6 py-4">Motif / But</th>
+                    <th className="px-6 py-4">{t('documents.logs.datetime')}</th>
+                    <th className="px-6 py-4">{t('documents.logs.partner')}</th>
+                    <th className="px-6 py-4">{t('documents.logs.action')}</th>
+                    <th className="px-6 py-4">{t('documents.logs.dataAccessed')}</th>
+                    <th className="px-6 py-4">{t('documents.logs.accessPurpose')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -395,7 +381,7 @@ export default function DocumentsPage() {
                           {new Date(log.createdAt).toLocaleString('fr-FR')}
                         </td>
                         <td className="px-6 py-4 font-bold text-sm text-white">
-                          {data.partnerName || 'Partenaire inconnu'}
+                          {data.partnerName || t('documents.logs.unknownPartner')}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${getActionStyle(log.action)}`}>
@@ -415,7 +401,7 @@ export default function DocumentsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-xs text-muted-foreground max-w-xs truncate">
-                          {data.purpose || 'Non spécifié'}
+                          {data.purpose || t('documents.logs.unspecified')}
                         </td>
                       </tr>
                     )
@@ -432,7 +418,7 @@ export default function DocumentsPage() {
                   <div key={log.id} className="p-6 space-y-3 hover:bg-white/2 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-bold text-sm text-white">{data.partnerName || 'Partenaire inconnu'}</h4>
+                        <h4 className="font-bold text-sm text-white">{data.partnerName || t('documents.logs.unknownPartner')}</h4>
                         <span className="text-[10px] text-muted-foreground mt-0.5 block">
                           {new Date(log.createdAt).toLocaleString('fr-FR')}
                         </span>
@@ -444,14 +430,14 @@ export default function DocumentsPage() {
 
                     <div className="space-y-1.5 text-xs">
                       <div>
-                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">Données consultées</span>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">{t('documents.logs.dataAccessed')}</span>
                         <span className="font-semibold text-white/90">
                           {getResourceLabel(log.action, data)}
                         </span>
                       </div>
                       <div>
-                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">But de l'accès</span>
-                        <span className="text-muted-foreground">{data.purpose || 'Non spécifié'}</span>
+                        <span className="block text-muted-foreground text-[10px] uppercase font-black tracking-wider">{t('documents.logs.accessPurpose')}</span>
+                        <span className="text-muted-foreground">{data.purpose || t('documents.logs.unspecified')}</span>
                       </div>
                     </div>
                   </div>
@@ -548,11 +534,11 @@ export default function DocumentsPage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
-      <Seo title="Data Room — Documents — Trust Lane" noindex />
+      <Seo title={`${t('pages.documents')} — ${t('brand.name')}`} noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Data Room</h1>
-          <p className="text-muted-foreground">Votre coffre-fort numérique pour les audits et financements</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('documents.title')}</h1>
+          <p className="text-muted-foreground">{t('documents.subtitle')}</p>
         </div>
         {activeTab === 'dataroom' && (
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto animate-fade-in mt-2 md:mt-0">
@@ -586,16 +572,16 @@ export default function DocumentsPage() {
               />
             </div>
             <div className="relative">
-              <input 
-                type="file" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                title="Ajouter un document"
+              <input
+                type="file"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                title={t('documents.add')}
                 onChange={(e) => {
                   if (e.target.files?.[0]) handleFileSelect(e.target.files[0])
                 }}
               />
               <Button variant="trust" className="gap-2 shadow-lg shadow-trust/20 pointer-events-none">
-                Ajouter
+                {t('documents.add')}
               </Button>
             </div>
             <Button
@@ -605,7 +591,7 @@ export default function DocumentsPage() {
               className="gap-2 border-trust/50 text-trust hover:bg-trust/10 h-10 shrink-0"
             >
               <Download size={16} className={isDownloading ? 'animate-bounce' : ''} />
-              {isDownloading ? 'Génération...' : 'Dossier Bancaire'}
+              {isDownloading ? t('documents.generating') : t('documents.bankFolder')}
             </Button>
           </div>
         )}
@@ -613,39 +599,20 @@ export default function DocumentsPage() {
 
       {/* Onglets */}
       <div className="flex border-b border-white/10 gap-6 overflow-x-auto whitespace-nowrap scrollbar-none pb-px">
-        <button
-          onClick={() => setActiveTab('dataroom')}
-          className={`pb-3 text-sm font-bold transition-all relative ${
-            activeTab === 'dataroom' ? 'text-trust' : 'text-muted-foreground hover:text-white'
-          }`}
-        >
-          Coffre-fort Documentaire
-          {activeTab === 'dataroom' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('shares')}
-          className={`pb-3 text-sm font-bold transition-all relative ${
-            activeTab === 'shares' ? 'text-trust' : 'text-muted-foreground hover:text-white'
-          }`}
-        >
-          Partages & Accès Tiers
-          {activeTab === 'shares' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('logs')}
-          className={`pb-3 text-sm font-bold transition-all relative ${
-            activeTab === 'logs' ? 'text-trust' : 'text-muted-foreground hover:text-white'
-          }`}
-        >
-          Historique d'accès
-          {activeTab === 'logs' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
-          )}
-        </button>
+        {(['dataroom', 'shares', 'logs'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`pb-3 text-sm font-bold transition-all relative ${
+              activeTab === tab ? 'text-trust' : 'text-muted-foreground hover:text-white'
+            }`}
+          >
+            {t(`documents.tabs.${tab}`)}
+            {activeTab === tab && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-trust rounded-full" />
+            )}
+          </button>
+        ))}
       </div>
 
       {activeTab === 'dataroom' ? (
@@ -774,12 +741,10 @@ export default function DocumentsPage() {
                <div className="p-6 bg-white/5 rounded-full w-fit mx-auto mb-6">
                   <FileText className="w-12 h-12 text-muted-foreground opacity-20" />
                </div>
-               <h3 className="text-xl font-bold mb-2">Votre coffre-fort est vide</h3>
-               <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-                 Uploadez vos documents juridiques et financiers pour constituer votre Data Room et rassurer vos partenaires.
-               </p>
+               <h3 className="text-xl font-bold mb-2">{t('documents.empty')}</h3>
+               <p className="text-muted-foreground max-w-sm mx-auto mb-8">{t('documents.emptyDesc')}</p>
                <Button variant="trust" size="lg" className="rounded-full px-8" asChild>
-                 <a href="/compliance">Uploader mes premiers documents</a>
+                 <a href="/compliance">{t('documents.uploadFirst')}</a>
                </Button>
             </div>
           )}
@@ -787,7 +752,7 @@ export default function DocumentsPage() {
           <Modal isOpen={isModalOpen} onClose={() => {
             setIsModalOpen(false)
             setSelectedFile(null)
-          }} title="Ajouter un document">
+          }} title={t('documents.addDocTitle')}>
             <div className="space-y-6">
               <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4">
                 <div className="p-2 bg-trust/20 rounded-lg text-trust">
@@ -795,12 +760,12 @@ export default function DocumentsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{selectedFile?.name}</p>
-                  <p className="text-xs text-muted-foreground">Fichier sélectionné</p>
+                  <p className="text-xs text-muted-foreground">{t('documents.selectedFile')}</p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Type de document</label>
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('documents.docType')}</label>
                 <select 
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
@@ -813,7 +778,7 @@ export default function DocumentsPage() {
               </div>
 
               <Button onClick={confirmUpload} variant="trust" className="w-full h-12 text-base font-bold">
-                Uploader le document
+                {t('documents.uploadDoc')}
               </Button>
             </div>
           </Modal>

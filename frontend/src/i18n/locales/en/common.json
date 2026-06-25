@@ -82,7 +82,7 @@
       "name": "Full name",
       "namePlaceholder": "John Smith",
       "company": "Company",
-      "companyPlaceholder": "Official company name",
+      "companyPlaceholder": "Official name",
       "email": "Professional email",
       "emailPlaceholder": "name@company.com",
       "password": "Password",

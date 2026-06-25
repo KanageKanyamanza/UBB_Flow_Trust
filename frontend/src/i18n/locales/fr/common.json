@@ -82,7 +82,7 @@
       "name": "Nom complet",
       "namePlaceholder": "Jean Dupont",
       "company": "Entreprise",
-      "companyPlaceholder": "Nom officiel de l'entreprise",
+      "companyPlaceholder": "Nom officiel",
       "email": "Email professionnel",
       "emailPlaceholder": "nom@entreprise.com",
       "password": "Mot de passe",

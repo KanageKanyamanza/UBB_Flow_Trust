@@ -1,12 +1,8 @@
 import React from 'react'
-import { 
-  TrendingUp, 
-  ShieldCheck, 
-  LogOut, 
-  LayoutDashboard, 
-  FileText, 
-  PieChart, 
-  Info, 
+import { useTranslation } from 'react-i18next'
+import {
+  TrendingUp,
+  ShieldCheck,
   Upload,
   ArrowUpRight,
   ArrowDownRight,
@@ -39,6 +35,8 @@ import { useToast } from '../../application/context/ToastContext'
 import { Seo } from '../components/seo/Seo'
 
 const DashboardPage: React.FC = () => {
+  const { t, i18n } = useTranslation()
+  const dateFnsLocale = i18n.language === 'fr' ? fr : undefined
   const { user, logout } = useAuth()
   const { error: toastError } = useToast()
   const { data: accounts, isLoading: isAccountsLoading, isError: isAccountsError } = useGetAccountsQuery()
@@ -49,35 +47,35 @@ const DashboardPage: React.FC = () => {
 
   // Show error toasts on fetch failures
   React.useEffect(() => {
-    if (isStatsError) toastError('Erreur de chargement', 'Impossible de charger les statistiques du tableau de bord.')
+    if (isStatsError) toastError(t('common.error'), t('dashboard.errors.statsLoad'))
   }, [isStatsError])
   React.useEffect(() => {
-    if (isAccountsError) toastError('Erreur de chargement', 'Impossible de charger vos comptes.')
+    if (isAccountsError) toastError(t('common.error'), t('dashboard.errors.accountsLoad'))
   }, [isAccountsError])
 
   const recentAccounts = accounts?.slice(0, 3) || []
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in pb-20">
-      <Seo title="Tableau de Bord — Trust Lane" noindex />
+      <Seo title={`${t('pages.dashboard')} — ${t('brand.name')}`} noindex />
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-4 justify-between">
-              <h1 className="text-3xl font-bold tracking-tight">Tableau de Bord</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{t('pages.dashboard')}</h1>
               <Link to="/transactions/new">
                 <Button variant="flow" size="sm" className="h-8 rounded-full px-4 gap-2 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-flow/20">
                   <Plus size={14} />
-                  <span className="hidden md:block">Nouvelle Transaction</span>
+                  <span className="hidden md:block">{t('transactions.newTransaction')}</span>
                 </Button>
               </Link>
             </div>
-            <p className="text-muted-foreground">Bienvenue ! Voici l'état actuel de votre santé financière.</p>
+            <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-sm font-medium px-3 py-1 bg-white/5 border border-white/10 rounded-full flex items-center gap-2">
               <Calendar className="w-4 h-4 text-flow" />
-              {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+              {format(new Date(), 'EEEE d MMMM yyyy', { locale: dateFnsLocale })}
             </div>
             <NotificationBell />
           </div>
@@ -98,12 +96,12 @@ const DashboardPage: React.FC = () => {
             <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-flow" />
-                Trésorerie Totale
+                {t('dashboard.kpi.totalBalance')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
               <div className="text-2xl font-bold">{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.totalBalance || 0)} CFA</div>
-              <p className="text-xs text-muted-foreground mt-1">Disponibilités globales</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.kpi.totalBalanceDesc')}</p>
             </CardContent>
           </Card>
 
@@ -115,14 +113,14 @@ const DashboardPage: React.FC = () => {
             <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <ArrowUpRight className="w-4 h-4 text-success" />
-                Entrées du Mois
+                {t('dashboard.kpi.monthlyIn')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
               <div className="text-2xl font-bold text-success">
                 +{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.currentMonthIn || 0)} CFA
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Recettes depuis le 1er {format(new Date(), 'MMMM', { locale: fr })}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.kpi.monthlyInDesc', { month: format(new Date(), 'MMMM', { locale: dateFnsLocale }) })}</p>
             </CardContent>
           </Card>
 
@@ -134,14 +132,14 @@ const DashboardPage: React.FC = () => {
             <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <ArrowDownRight className="w-4 h-4 text-destructive" />
-                Cash Burn Mensuel
+                {t('dashboard.kpi.burnRate')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
               <div className="text-2xl font-bold text-destructive">
                 {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(stats?.monthlyBurnRate || 0)} CFA
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Moyenne des sorties</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.kpi.burnRateDesc')}</p>
             </CardContent>
           </Card>
 
@@ -156,7 +154,7 @@ const DashboardPage: React.FC = () => {
             <CardHeader className="p-4 sm:p-4 pb-1.5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <Calendar className={cn("w-4 h-4", stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-trust")} />
-                Runway Estimé
+                {t('dashboard.kpi.runway')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-4 pt-0">
@@ -164,9 +162,9 @@ const DashboardPage: React.FC = () => {
                 "text-2xl font-bold",
                 stats?.runwayMonths && stats.runwayMonths < 3 ? "text-destructive" : "text-white"
               )}>
-                {stats?.runwayMonths === 99 ? '∞' : `${stats?.runwayMonths} mois`}
+                {stats?.runwayMonths === 99 ? '∞' : t('dashboard.kpi.months', { count: stats?.runwayMonths })}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Autonomie financière restante</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.kpi.runwayDesc')}</p>
             </CardContent>
           </Card>
         </div>
@@ -184,9 +182,9 @@ const DashboardPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2 font-bold">
                 <TrendingUp className="w-5 h-5 text-flow" />
-                Évolution du Solde Journalier
+                {t('dashboard.charts.dailyBalance')}
               </CardTitle>
-              <CardDescription>Flux net (Entrées - Sorties) sur les 30 derniers jours</CardDescription>
+              <CardDescription>{t('dashboard.charts.dailyBalanceDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <DailyBalanceChart data={dailyBalances || []} isLoading={isDailyBalanceLoading} />
@@ -197,9 +195,9 @@ const DashboardPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2 font-bold">
                 <Layers className="w-5 h-5 text-flow" />
-                Répartition des Opérations
+                {t('dashboard.charts.categoryDistrib')}
               </CardTitle>
-              <CardDescription>Somme des transactions par catégorie métier</CardDescription>
+              <CardDescription>{t('dashboard.charts.categoryDistribDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <CategorySummaryChart data={categorySummary || []} isLoading={isCategoryLoading} />
@@ -214,13 +212,13 @@ const DashboardPage: React.FC = () => {
             <div className="space-y-1">
               <CardTitle className="text-xl flex items-center gap-2 font-bold">
                 <ShieldCheck className="w-5 h-5 text-trust" />
-                Prévision de Trésorerie
+                {t('dashboard.forecast.title')}
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Anticipation des flux basée sur vos moyennes historiques</CardDescription>
+              <CardDescription className="text-xs sm:text-sm">{t('dashboard.forecast.desc')}</CardDescription>
             </div>
             <div className="flex items-center gap-2 px-3 py-1 bg-destructive/10 border border-destructive/20 rounded-full w-fit">
               <Ban className="w-3 h-3 text-destructive" />
-              <span className="text-[10px] font-bold text-destructive uppercase tracking-wider whitespace-nowrap">Seuil de Vigilance</span>
+              <span className="text-[10px] font-bold text-destructive uppercase tracking-wider whitespace-nowrap">{t('dashboard.forecast.vigilance')}</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -237,10 +235,10 @@ const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold tracking-tight px-2 flex items-center gap-2">
               <Wallet size={20} className="text-flow" />
-              Vos Comptes Connectés
+              {t('dashboard.accounts.title')}
             </h2>
             <Link to="/accounts" className="text-sm whitespace-nowrap text-trust hover:underline flex items-center gap-1 font-medium bg-trust/5 px-3 py-1 rounded-full border border-trust/10 transition-colors">
-              Gérer les comptes <ChevronRight size={14} />
+              {t('dashboard.accounts.manage')} <ChevronRight size={14} />
             </Link>
           </div>
 
@@ -254,13 +252,11 @@ const DashboardPage: React.FC = () => {
             <div className="bg-muted/30 border border-white/5 rounded-2xl p-8 text-center flex flex-col items-center justify-center space-y-4">
               <Plus className="w-12 h-12 text-muted-foreground/30" />
               <div className="space-y-1">
-                <h3 className="text-lg font-medium">Aucun compte relié</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Commencez à suivre vos flux en ajoutant un compte bancaire ou mobile money.
-                </p>
+                <h3 className="text-lg font-medium">{t('dashboard.accounts.empty')}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">{t('dashboard.accounts.emptyDesc')}</p>
               </div>
               <Button variant="secondary" className="mt-2" asChild>
-                <Link to="/accounts">Ajouter un compte</Link>
+                <Link to="/accounts">{t('dashboard.accounts.add')}</Link>
               </Button>
             </div>
           ) : (
@@ -282,21 +278,21 @@ const DashboardPage: React.FC = () => {
               <div className="w-10 h-10 rounded-full bg-trust/20 border border-trust/30 flex items-center justify-center">
                 <ShieldCheck className="w-6 h-6 text-trust" />
               </div>
-              Renforcez votre Crédibilité
+              {t('trust.credibilityTitle')}
             </h3>
             <p className="text-muted-foreground max-w-xl">
-              Plus vous connectez de comptes et documentez vos transactions, plus votre Score Trust s'améliore, débloquant des taux d'intérêt préférentiels auprès de nos partenaires.
+              {t('trust.credibilityDesc')}
             </p>
           </div>
           <div className="flex flex-wrap gap-3 relative z-10">
             <Button className="bg-trust hover:bg-trust-hover shadow-lg shadow-trust/20 border-none" asChild>
               <Link to="/documents" className="gap-2">
                 <Upload size={16} />
-                Justificatifs
+                {t('dashboard.cta.documents')}
               </Link>
             </Button>
             <Button variant="outline" className="border-white/10 hover:bg-white/5" asChild>
-              <Link to="/transactions">Historique</Link>
+              <Link to="/transactions">{t('dashboard.cta.history')}</Link>
             </Button>
           </div>
         </div>
