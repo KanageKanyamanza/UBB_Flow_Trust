@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react'
 import { Plus, Trash2, Edit3, ShieldAlert, Mail, User, Shield, Store, Calendar, Lock, AlertCircle, CheckCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Modal } from '../components/ui/modal'
 import { Input } from '../components/ui/input'
@@ -15,6 +16,7 @@ import {
 import { Seo } from '../components/seo/Seo'
 
 const TeamPage: React.FC = () => {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { data: accounts } = useGetAccountsQuery()
   const { data: members, isLoading, error } = useGetTeamMembersQuery()
@@ -53,10 +55,8 @@ const TeamPage: React.FC = () => {
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Seul le propriétaire principal de l'organisation peut configurer et gérer l'équipe ou les gérants de boutiques.
-          </p>
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">{t('team.restrictedAccess')}</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">{t('team.restrictedDesc')}</p>
         </div>
       </div>
     )
@@ -88,7 +88,6 @@ const TeamPage: React.FC = () => {
     e.preventDefault()
     try {
       if (editingMember) {
-        // Edit flow
         const updateBody: any = {
           firstName: firstName || undefined,
           lastName: lastName || undefined,
@@ -96,11 +95,10 @@ const TeamPage: React.FC = () => {
           accountId: accountId === '' ? null : accountId,
         }
         await updateMember({ id: editingMember.id, body: updateBody }).unwrap()
-        showNotification('success', `Le collaborateur ${email} a été mis à jour avec succès.`)
+        showNotification('success', t('team.notify.updateSuccess', { email }))
       } else {
-        // Create flow
         if (!email) {
-          showNotification('error', 'L\'adresse email est obligatoire.')
+          showNotification('error', t('team.modal.emailRequired'))
           return
         }
         await createMember({
@@ -111,36 +109,36 @@ const TeamPage: React.FC = () => {
           role,
           accountId: accountId === '' ? null : accountId,
         }).unwrap()
-        showNotification('success', `Le collaborateur ${email} a été créé avec succès.`)
+        showNotification('success', t('team.notify.createSuccess', { email }))
       }
       setIsModalOpen(false)
     } catch (err: any) {
-      const errMsg = err?.data?.error || err?.message || 'Une erreur est survenue.'
+      const errMsg = err?.data?.error || err?.message || t('team.notify.genericError')
       showNotification('error', errMsg)
     }
   }
 
   const handleDelete = async (member: TeamMember) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir retirer ${member.email} de l'équipe ?`)) {
+    if (window.confirm(t('team.notify.deleteConfirm', { email: member.email }))) {
       try {
         await deleteMember(member.id).unwrap()
-        showNotification('success', `Le collaborateur ${member.email} a été retiré de l'équipe.`)
+        showNotification('success', t('team.notify.deleteSuccess', { email: member.email }))
       } catch (err: any) {
-        const errMsg = err?.data?.error || err?.message || 'Impossible de supprimer ce collaborateur.'
+        const errMsg = err?.data?.error || err?.message || t('team.notify.deleteError')
         showNotification('error', errMsg)
       }
     }
   }
 
   const getAccountName = (accId?: string | null) => {
-    if (!accId) return 'Toutes les boutiques'
+    if (!accId) return t('team.allShops')
     const account = accounts?.find(a => a.id === accId)
-    return account ? account.name : 'Boutique inconnue'
+    return account ? account.name : t('team.allShops')
   }
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-background">
-      <Seo title="Gestion de l'Équipe — Trust Lane" noindex />
+      <Seo title={`${t('pages.team')} — ${t('brand.name')}`} noindex />
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8">
 
         {/* Notifications Bar */}
@@ -157,16 +155,16 @@ const TeamPage: React.FC = () => {
 
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-white">Gestion de l'Équipe</h1>
-            <p className="text-muted-foreground">Affectez des gérants ou des agents à des boutiques spécifiques et définissez leurs droits d'accès.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">{t('team.title')}</h1>
+            <p className="text-muted-foreground">{t('team.subtitle')}</p>
           </div>
-          <Button 
-            variant="flow" 
+          <Button
+            variant="flow"
             onClick={handleOpenCreate}
             className="gap-2 shadow-lg shadow-flow/20"
           >
             <Plus className="w-4 h-4" />
-            Ajouter un Collaborateur
+            {t('team.addMember')}
           </Button>
         </header>
 
@@ -178,20 +176,18 @@ const TeamPage: React.FC = () => {
           </div>
         ) : error ? (
           <div className="text-center py-12 glass rounded-2xl border border-red-500/20">
-            <p className="text-red-400">Une erreur est survenue lors du chargement des collaborateurs.</p>
-            <Button variant="ghost" onClick={() => window.location.reload()} className="mt-4">Réessayer</Button>
+            <p className="text-red-400">{t('team.loadError')}</p>
+            <Button variant="ghost" onClick={() => window.location.reload()} className="mt-4">{t('team.retry')}</Button>
           </div>
         ) : members?.length === 0 ? (
           <div className="bg-muted/30 border border-white/5 rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4">
             <User className="w-16 h-16 text-muted-foreground/20" />
             <div className="space-y-1">
-              <h3 className="text-xl font-medium">Aucun collaborateur trouvé</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Commencez par inviter vos gérants de boutiques ou agents pour collaborer sur vos flux de trésorerie.
-              </p>
+              <h3 className="text-xl font-medium">{t('team.empty')}</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">{t('team.emptyDesc')}</p>
             </div>
             <Button variant="secondary" className="mt-4" onClick={handleOpenCreate}>
-              Ajouter un collaborateur
+              {t('team.addFirst')}
             </Button>
           </div>
         ) : (
@@ -200,11 +196,11 @@ const TeamPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/5 bg-white/5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    <th className="px-6 py-4">Collaborateur</th>
-                    <th className="px-6 py-4">Rôle</th>
-                    <th className="px-6 py-4">Boutique / Périmètre</th>
-                    <th className="px-6 py-4">Créé le</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4">{t('team.table.member')}</th>
+                    <th className="px-6 py-4">{t('team.table.role')}</th>
+                    <th className="px-6 py-4">{t('team.table.scope')}</th>
+                    <th className="px-6 py-4">{t('team.table.createdAt')}</th>
+                    <th className="px-6 py-4 text-right">{t('team.table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -217,9 +213,9 @@ const TeamPage: React.FC = () => {
                           </div>
                           <div>
                             <div className="font-semibold text-white">
-                              {member.firstName || member.lastName 
+                              {member.firstName || member.lastName
                                 ? `${member.firstName || ''} ${member.lastName || ''}`.trim()
-                                : 'Sans nom'}
+                                : t('team.noName')}
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center gap-1">
                               <Mail size={12} />
@@ -235,7 +231,7 @@ const TeamPage: React.FC = () => {
                             : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
                         }`}>
                           <Shield size={12} />
-                          {member.role === 'OWNER' ? 'Propriétaire' : 'Gérant / Agent'}
+                          {t(`team.roles.${member.role}`)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -285,33 +281,33 @@ const TeamPage: React.FC = () => {
         )}
 
         {/* Create/Edit Modal */}
-        <Modal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          title={editingMember ? "Modifier le Collaborateur" : "Ajouter un Collaborateur"}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingMember ? t('team.modal.edit') : t('team.modal.create')}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <User size={14} /> Prénom
+                  <User size={14} /> {t('team.modal.firstName')}
                 </label>
-                <Input 
-                  value={firstName} 
-                  onChange={(e) => setFirstName(e.target.value)} 
-                  placeholder="Ex: Jean" 
+                <Input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Ex: Jean"
                   className="bg-white/5 border-white/10 text-white rounded-xl focus:border-flow"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <User size={14} /> Nom
+                  <User size={14} /> {t('team.modal.lastName')}
                 </label>
-                <Input 
-                  value={lastName} 
-                  onChange={(e) => setLastName(e.target.value)} 
-                  placeholder="Ex: Dupont" 
+                <Input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Ex: Dupont"
                   className="bg-white/5 border-white/10 text-white rounded-xl focus:border-flow"
                 />
               </div>
@@ -319,27 +315,27 @@ const TeamPage: React.FC = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Mail size={14} /> Adresse Email
+                <Mail size={14} /> {t('team.modal.email')}
               </label>
-              <Input 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={!!editingMember}
-                placeholder="Ex: jean.dupont@entreprise.com" 
+                placeholder="Ex: jean.dupont@entreprise.com"
                 className="bg-white/5 border-white/10 text-white rounded-xl focus:border-flow disabled:opacity-50"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Lock size={14} /> Mot de Passe {editingMember && "(Optionnel - Remplir pour modifier)"}
+                <Lock size={14} /> {t('team.modal.password')} {editingMember && t('team.modal.passwordOptional')}
               </label>
-              <Input 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder={editingMember ? "Laisser vide pour ne pas changer" : "Mot de passe d'accès temporaire"} 
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={editingMember ? t('team.modal.passwordEditPlaceholder') : t('team.modal.passwordPlaceholder')}
                 className="bg-white/5 border-white/10 text-white rounded-xl focus:border-flow"
               />
             </div>
@@ -347,30 +343,30 @@ const TeamPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Shield size={14} /> Rôle
+                  <Shield size={14} /> {t('team.modal.role')}
                 </label>
-                <select 
-                  value={role} 
+                <select
+                  value={role}
                   onChange={(e) => setRole(e.target.value)}
                   disabled={editingMember?.role === 'OWNER'}
                   className="flex h-10 w-full rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-white focus:outline-none focus:border-flow disabled:opacity-50"
                 >
-                  <option value="AGENT" className="bg-neutral-900">Gérant / Agent (Accès restreint)</option>
-                  <option value="OWNER" className="bg-neutral-900">Propriétaire (Accès total)</option>
+                  <option value="AGENT" className="bg-neutral-900">{t('team.modal.agentRole')}</option>
+                  <option value="OWNER" className="bg-neutral-900">{t('team.modal.ownerRole')}</option>
                 </select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Store size={14} /> Boutique Assignée
+                  <Store size={14} /> {t('team.modal.assignedShop')}
                 </label>
-                <select 
-                  value={accountId} 
+                <select
+                  value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
                   disabled={role === 'OWNER'}
                   className="flex h-10 w-full rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-white focus:outline-none focus:border-flow disabled:opacity-50"
                 >
-                  <option value="" className="bg-neutral-900">Toutes les boutiques (Vue globale)</option>
+                  <option value="" className="bg-neutral-900">{t('team.modal.allShopsDefault')}</option>
                   {accounts?.map((acc) => (
                     <option key={acc.id} value={acc.id} className="bg-neutral-900">
                       {acc.name} ({acc.currency})
@@ -378,17 +374,17 @@ const TeamPage: React.FC = () => {
                   ))}
                 </select>
                 {role === 'OWNER' && (
-                  <p className="text-xs text-muted-foreground mt-1">Les propriétaires ont accès à toutes les boutiques par défaut.</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('team.modal.ownerShopNote')}</p>
                 )}
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5">
               <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-                Annuler
+                {t('team.modal.cancel')}
               </Button>
               <Button type="submit" variant="flow">
-                {editingMember ? "Mettre à jour" : "Ajouter le collaborateur"}
+                {editingMember ? t('team.modal.update') : t('team.modal.submit')}
               </Button>
             </div>
           </form>

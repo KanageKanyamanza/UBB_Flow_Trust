@@ -7,6 +7,7 @@ import { store } from './application/store'
 import { AuthProvider } from './application/context/AuthContext'
 import { ToastProvider } from './application/context/ToastContext'
 import { registerSW } from './infrastructure/registerSW'
+import './i18n/i18n'
 import './index.css'
 
 // Register Service Worker for offline caching

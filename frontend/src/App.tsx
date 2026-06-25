@@ -1,7 +1,8 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check } from 'lucide-react'
+import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check, Globe } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/presentation/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
 import { Input } from '@/presentation/components/ui/input'
@@ -27,21 +28,30 @@ import MainLayout from './presentation/components/layout/MainLayout'
 import { PageTransition } from './presentation/components/layout/PageTransition'
 
 function LandingPage() {
+  const { t, i18n } = useTranslation()
   const [email, setEmail] = React.useState('')
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[95vh] px-4 py-16 text-center relative overflow-hidden bg-background">
+      <button
+        onClick={() => i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr')}
+        className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all text-xs font-bold uppercase tracking-widest"
+        title={i18n.language === 'fr' ? 'Switch to English' : 'Passer en Français'}
+      >
+        <Globe size={14} />
+        {i18n.language === 'fr' ? 'EN' : 'FR'}
+      </button>
       <Seo
-        title="Trust Lane — Intelligence Financière pour entreprise Africaines"
-        description="Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers."
+        title={`${t('brand.name')} — ${t('brand.tagline')}`}
+        description={t('brand.description')}
         canonical="https://trustlane.app/"
         type="website"
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
-          name: 'Trust Lane',
+          name: t('brand.name'),
           alternateName: 'Trust Lane — Flow & Trust',
-          description: 'Trésorerie intelligente et conformité pour entreprise africaines. Centralisez vos flux, anticipez vos finances et partagez des données certifiées.',
+          description: t('brand.description'),
           url: 'https://trustlane.app/',
         }}
       />
@@ -52,7 +62,7 @@ function LandingPage() {
             Trust <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Lane</span>
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
-            Transformez votre entreprise informelle en une entité crédible et finançable. Centralisez votre trésorerie, anticipez vos flux et partagez des données certifiées avec vos partenaires financiers.
+            {t('brand.description')}
           </p>
         </div>
 
@@ -66,24 +76,20 @@ function LandingPage() {
               </div>
               <div className="space-y-1">
                 <CardTitle className="text-2xl font-bold tracking-tight text-white">
-                  Flow
+                  {t('landing.flow.title')}
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Intelligence de trésorerie & prévisions de flux</p>
+                <p className="text-xs text-muted-foreground">{t('landing.flow.subtitle')}</p>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Gardez un contrôle total sur vos finances grâce à la synchronisation de vos comptes et l'analyse prédictive de vos liquidités.
+                {t('landing.flow.description')}
               </p>
               <ul className="space-y-2.5 pt-2 border-t border-white/5">
-                {[
-                  "Prévision de trésorerie dynamique à 90 jours",
-                  "Calcul automatique du cash burn mensuel",
-                  "Alertes intelligentes de risques de découvert",
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-2.5 text-xs text-white/80">
+                {(['feature1', 'feature2', 'feature3'] as const).map((key) => (
+                  <li key={key} className="flex items-center gap-2.5 text-xs text-white/80">
                     <Check size={14} className="text-flow shrink-0" />
-                    <span>{item}</span>
+                    <span>{t(`landing.flow.${key}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -98,24 +104,20 @@ function LandingPage() {
               </div>
               <div className="space-y-1">
                 <CardTitle className="text-2xl font-bold tracking-tight text-white">
-                  Trust
+                  {t('landing.trust.title')}
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Conformité, score & coffre-fort documentaire</p>
+                <p className="text-xs text-muted-foreground">{t('landing.trust.subtitle')}</p>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Rassurez vos investisseurs et banquiers en constituant un dossier de crédit certifié et en partageant des accès contrôlés.
+                {t('landing.trust.description')}
               </p>
               <ul className="space-y-2.5 pt-2 border-t border-white/5">
-                {[
-                  "Coffre-fort documentaire sécurisé (Data Room)",
-                  "Partages sécurisés temporaires pour tiers (BOLA)",
-                  "Calcul automatique du score de confiance",
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-2.5 text-xs text-white/80">
+                {(['feature1', 'feature2', 'feature3'] as const).map((key) => (
+                  <li key={key} className="flex items-center gap-2.5 text-xs text-white/80">
                     <Check size={14} className="text-trust shrink-0" />
-                    <span>{item}</span>
+                    <span>{t(`landing.trust.${key}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -127,36 +129,37 @@ function LandingPage() {
         <div className="max-w-md mx-auto relative">
           <div className="p-8 rounded-[2.25rem] relative bg-background/40 border border-white/10 space-y-6">
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">Prêt à propulser votre entreprise ?</h3>
-              <p className="text-xs text-muted-foreground">Créez votre compte en quelques instants et connectez vos flux.</p>
+              <h3 className="text-lg font-bold text-white">{t('landing.cta.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('landing.cta.subtitle')}</p>
             </div>
-            
+
             <div className="space-y-3">
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Votre adresse email professionnelle" 
-                  type="email" 
+                <Input
+                  placeholder={t('landing.cta.emailPlaceholder')}
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-white/5 border-white/10 h-12 rounded-xl focus:border-trust transition-all text-sm font-medium"
                 />
               </div>
-              
-              <Button 
-                variant="trust" 
-                className="w-full h-12 rounded-xl text-sm font-bold gap-2 shadow-none hover:scale-[1.01] active:scale-[0.99] transition-all" 
+
+              <Button
+                variant="trust"
+                className="w-full h-12 rounded-xl text-sm font-bold gap-2 shadow-none hover:scale-[1.01] active:scale-[0.99] transition-all"
                 asChild
               >
                 <a href={`/register?email=${encodeURIComponent(email)}`}>
-                  Démarrer l'essai gratuit
+                  {t('landing.cta.startTrial')}
                   <ArrowRight size={16} />
                 </a>
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Déjà inscrit ? <a href="/login" className="text-trust hover:underline font-bold">Se connecter</a>
+              {t('landing.cta.alreadyMember')}{' '}
+              <a href="/login" className="text-trust hover:underline font-bold">{t('landing.cta.login')}</a>
             </p>
           </div>
         </div>
@@ -164,11 +167,11 @@ function LandingPage() {
         {/* Trust Badges */}
         <div className="pt-6 text-center text-xs text-muted-foreground flex flex-wrap justify-center items-center gap-6 opacity-60">
           <span className="flex items-center gap-1.5">
-            <ShieldCheck size={14} className="text-trust" /> Données cryptées de bout en bout
+            <ShieldCheck size={14} className="text-trust" /> {t('landing.badges.encrypted')}
           </span>
           <span className="hidden sm:inline text-white/20">•</span>
           <span className="flex items-center gap-1.5">
-            <Zap size={14} className="text-flow" /> Conformité DSP2 & Open Banking
+            <Zap size={14} className="text-flow" /> {t('landing.badges.dsp2')}
           </span>
         </div>
       </div>

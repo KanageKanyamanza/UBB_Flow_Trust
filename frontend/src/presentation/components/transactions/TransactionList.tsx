@@ -24,27 +24,30 @@ import { Input } from '@/presentation/components/ui/input'
 import { Modal } from '@/presentation/components/ui/modal'
 import { TransactionDetail } from './TransactionDetail'
 import { cn } from '@/shared/utils/utils'
-
-const CATEGORY_LABELS: Record<string, string> = {
-  SALES: 'Ventes',
-  COGS: 'Coûts de vente',
-  PAYROLL: 'Salaires',
-  RENT_UTILITIES: 'Loyer/Services',
-  TRANSPORT: 'Transport',
-  TAX: 'Impôts',
-  DEBT_SERVICE: 'Dette',
-  CAPEX: 'Investissements',
-  OWNER_DRAW: 'Prélèvements',
-  FEES: 'Frais',
-  MARKETING: 'Marketing',
-  OTHER: 'Autre'
-}
+import { useTranslation } from 'react-i18next'
 
 interface TransactionListProps {
   onAddClick?: () => void
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) => {
+  const { t, i18n } = useTranslation()
+
+  const CATEGORY_LABELS: Record<string, string> = useMemo(() => ({
+    SALES: t('transactions.categories.SALES'),
+    COGS: t('transactions.categories.COGS'),
+    PAYROLL: t('transactions.categories.PAYROLL'),
+    RENT_UTILITIES: t('transactions.categories.RENT_UTILITIES'),
+    TRANSPORT: t('transactions.categories.TRANSPORT'),
+    TAX: t('transactions.categories.TAX'),
+    DEBT_SERVICE: t('transactions.categories.DEBT_SERVICE'),
+    CAPEX: t('transactions.categories.CAPEX'),
+    OWNER_DRAW: t('transactions.categories.OWNER_DRAW'),
+    FEES: t('transactions.categories.FEES'),
+    MARKETING: t('transactions.categories.MARKETING'),
+    OTHER: t('transactions.categories.OTHER'),
+  }), [t])
+
   const [search, setSearch] = useState('')
   const [directionFilter, setDirectionFilter] = useState<TxnDirection | 'ALL'>('ALL')
   const [categoryFilter, setCategoryFilter] = useState<TxnCategory | 'ALL'>('ALL')
@@ -124,7 +127,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
 
   const formatDate = (dateString: string) => {
     const d = new Date(dateString)
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -132,7 +135,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
   }
 
   const formatAmount = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('fr-FR', {
+    return new Intl.NumberFormat(i18n.language === 'fr' ? 'fr-FR' : 'en-GB', {
       style: 'currency',
       currency: currency || 'XAF',
       maximumFractionDigits: 0,
@@ -152,7 +155,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
               search ? "text-primary" : "text-muted-foreground"
             )} />
             <Input
-              placeholder="Rechercher montant, tiers ou note..."
+              placeholder={t('transactions.searchPlaceholder')}
               className="pl-10 bg-muted/30 border-none rounded-2xl h-12 focus:ring-primary/20 ring-1 ring-white/5 group-hover:ring-white/10"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -189,10 +192,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
             >
               {/* Reset Button */}
               <div className="flex justify-between items-center">
-                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Filtres Avancés</h3>
-                 <Button 
-                   variant="ghost" 
-                   size="sm" 
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t('transactions.list.advancedFilters')}</h3>
+                 <Button
+                   variant="ghost"
+                   size="sm"
                    onClick={() => {
                      setDirectionFilter('ALL');
                      setCategoryFilter('ALL');
@@ -200,16 +203,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
                    }}
                    className="text-xs font-bold text-destructive hover:bg-destructive/10"
                  >
-                   Réinitialiser
+                   {t('transactions.list.reset')}
                  </Button>
               </div>
 
               {/* Type Grid */}
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'ALL', label: 'Toutes', color: 'bg-muted/30' },
-                  { id: TxnDirection.IN, label: 'Entrées', color: 'bg-flow/10 text-flow', active: 'bg-flow text-white' },
-                  { id: TxnDirection.OUT, label: 'Sorties', color: 'bg-destructive/10 text-destructive', active: 'bg-destructive text-white' }
+                  { id: 'ALL', label: t('transactions.list.all'), color: 'bg-muted/30' },
+                  { id: TxnDirection.IN, label: t('transactions.list.inflows'), color: 'bg-flow/10 text-flow', active: 'bg-flow text-white' },
+                  { id: TxnDirection.OUT, label: t('transactions.list.outflows'), color: 'bg-destructive/10 text-destructive', active: 'bg-destructive text-white' }
                 ].map((type) => (
                   <button
                     key={type.id}
@@ -227,7 +230,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
               {/* Date Filter */}
               <div className="space-y-2">
                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                   <Calendar size={14} /> PÉRIODE
+                   <Calendar size={14} /> {t('transactions.list.period').toUpperCase()}
                  </div>
                  <div className="grid grid-cols-2 gap-3">
                     <Input 
@@ -248,7 +251,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
               {/* Categories Pills */}
               <div className="space-y-2">
                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                   <LayoutGrid size={13} /> Catégories
+                   <LayoutGrid size={13} /> {t('transactions.list.categories')}
                  </div>
                  <div className="flex flex-wrap gap-2 pt-1">
                    {Object.values(TxnCategory).map(cat => (
@@ -275,7 +278,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
         <div className="flex items-center justify-between px-1">
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter flex items-center gap-2">
              <span className="text-white bg-white/10 px-1.5 py-0.5 rounded">{filteredTransactions.length}</span>
-             Résultats
+             {t('transactions.list.results')}
           </div>
           <div className="flex items-center gap-1">
              <Button 
@@ -284,7 +287,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
                className="h-7 text-[10px] font-extrabold uppercase px-2 hover:bg-white/5"
                onClick={() => setSortBy(sortBy === 'date' ? 'amount' : 'date')}
              >
-               {sortBy === 'date' ? 'Par Date' : 'Par Montant'}
+               {sortBy === 'date' ? t('transactions.list.byDate') : t('transactions.list.byAmount')}
              </Button>
              <Button 
                variant="ghost" 
@@ -304,7 +307,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
             <div className="h-1 w-full bg-flow/30" />
             <CardContent className="p-3">
                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Entrées</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('transactions.list.inflows')}</span>
                   <ArrowDownLeft className="text-flow w-3 h-3 group-hover:scale-125 transition-transform" />
                </div>
                <div className="text-sm font-black text-flow">{formatAmount(summary.in, 'XAF')}</div>
@@ -314,7 +317,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
             <div className="h-1 w-full bg-destructive/30" />
             <CardContent className="p-3">
                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Sorties</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('transactions.list.outflows')}</span>
                   <ArrowUpRight className="text-destructive w-3 h-3 group-hover:scale-125 transition-transform" />
                </div>
                <div className="text-sm font-black text-destructive">{formatAmount(summary.out, 'XAF')}</div>
@@ -335,8 +338,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
              <div className="p-4 bg-destructive/10 rounded-full text-destructive">
                 <X size={32} />
              </div>
-             <p className="font-bold text-muted-foreground uppercase tracking-widest text-xs">Une erreur s'est produite</p>
-             <Button variant="outline" onClick={() => refetch()}>Essayer à nouveau</Button>
+             <p className="font-bold text-muted-foreground uppercase tracking-widest text-xs">{t('transactions.list.errorTitle')}</p>
+             <Button variant="outline" onClick={() => refetch()}>{t('transactions.list.retry')}</Button>
           </div>
         ) : filteredTransactions.length === 0 ? (
           <div className="py-20 flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in-95">
@@ -344,9 +347,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
                 <Search size={40} />
              </div>
              <div className="space-y-1">
-               <p className="font-bold text-white text-lg">Aucun flux trouvé</p>
+               <p className="font-bold text-white text-lg">{t('transactions.list.emptyTitle')}</p>
                <p className="text-muted-foreground text-sm max-w-[240px]">
-                 Modifiez les filtres ou la recherche pour trouver des transactions.
+                 {t('transactions.list.emptyDesc')}
                </p>
              </div>
           </div>
@@ -440,7 +443,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ onAddClick }) 
         <Modal
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          title="Détail du Flux"
+          title={t('transactions.list.detailTitle')}
         >
           <TransactionDetail 
             transaction={selectedTransaction} 

@@ -1,23 +1,23 @@
 ﻿import React, { useState, useMemo } from 'react'
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
   RefreshCw,
   TrendingUp,
   TrendingDown,
   Trash2
 } from 'lucide-react'
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  isSameDay, 
-  addMonths, 
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
   subMonths,
   differenceInDays,
   isBefore,
@@ -25,6 +25,7 @@ import {
   startOfDay
 } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { cn } from '@/shared/utils/utils'
@@ -34,10 +35,12 @@ import { RecurringRuleModal } from '../components/recurring-rules/RecurringRuleM
 import { Seo } from '../components/seo/Seo'
 
 const RecurringRulesPage: React.FC = () => {
+  const { t, i18n } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { data: rules, isLoading } = useGetRecurringRulesQuery()
   const [deleteRule] = useDeleteRecurringRuleMutation()
+  const dateFnsLocale = i18n.language === 'fr' ? fr : undefined
 
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -92,19 +95,19 @@ const RecurringRulesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in pb-20">
-      <Seo title="Règles Récurrentes — Trust Lane" noindex />
+      <Seo title={`${t('pages.recurringRules')} — ${t('brand.name')}`} noindex />
       <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
               <RefreshCw className="text-flow" />
-              Récurrences
+              {t('recurringRules.title')}
             </h1>
-            <p className="text-muted-foreground">Gérez vos échéances et flux financiers automatisés.</p>
+            <p className="text-muted-foreground">{t('recurringRules.subtitle')}</p>
           </div>
           <Button className="gap-2 bg-flow text-white hover:bg-flow/90" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} />
-            Nouvelle Règle
+            {t('recurringRules.newRule')}
           </Button>
         </header>
 
@@ -114,9 +117,9 @@ const RecurringRulesPage: React.FC = () => {
             <CardHeader className="border-b border-white/5 bg-white/[0.02]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-xl font-bold capitalize">{format(currentDate, dateFormat, { locale: fr })}</h2>
+                  <h2 className="text-xl font-bold capitalize">{format(currentDate, dateFormat, { locale: dateFnsLocale })}</h2>
                   <Button variant="outline" size="sm" onClick={today} className="text-xs h-7 border-white/10">
-                    Aujourd'hui
+                    {t('recurringRules.today')}
                   </Button>
                 </div>
                 <div className="flex gap-1">
@@ -131,7 +134,7 @@ const RecurringRulesPage: React.FC = () => {
             </CardHeader>
             <CardContent className="p-0 flex-1">
               <div className="grid grid-cols-7 border-b border-white/5 bg-white/[0.01]">
-                {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
+                {(t('recurringRules.days', { returnObjects: true }) as string[]).map(day => (
                   <div key={day} className="py-2 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">
                     {day}
                   </div>
@@ -190,16 +193,16 @@ const RecurringRulesPage: React.FC = () => {
           {/* List View */}
           <Card className="glass border-white/5">
             <CardHeader className="border-b border-white/5 bg-white/[0.02]">
-              <CardTitle className="text-lg font-bold">Toutes les règles</CardTitle>
-              <CardDescription>Vos transactions récurrentes actives.</CardDescription>
+              <CardTitle className="text-lg font-bold">{t('recurringRules.allRules')}</CardTitle>
+              <CardDescription>{t('recurringRules.allRulesDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto">
                 {isLoading ? (
-                  <div className="p-6 text-center text-muted-foreground animate-pulse">Chargement...</div>
+                  <div className="p-6 text-center text-muted-foreground animate-pulse">{t('recurringRules.loading')}</div>
                 ) : !rules || rules.length === 0 ? (
                   <div className="p-6 text-center text-muted-foreground text-sm">
-                    Aucune règle récurrente configurée.
+                    {t('recurringRules.empty')}
                   </div>
                 ) : (
                   rules.map(rule => (
@@ -208,9 +211,7 @@ const RecurringRulesPage: React.FC = () => {
                         <div>
                           <p className="font-bold text-sm text-white/90">{rule.name}</p>
                           <p className="text-xs text-muted-foreground capitalize mt-0.5">
-                            {rule.frequency === 'DAILY' ? 'Quotidien' : 
-                             rule.frequency === 'WEEKLY' ? 'Hebdomadaire' : 
-                             rule.frequency === 'MONTHLY' ? 'Mensuel' : 'Annuel'}
+                            {t(`recurringRules.frequency.${rule.frequency}`)}
                           </p>
                         </div>
                         <div className="text-right">

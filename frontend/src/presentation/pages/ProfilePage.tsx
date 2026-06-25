@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Building2, Users, FileText, Save, Plus, Trash2, TrendingUp, ShieldAlert, Globe, Copy, ExternalLink, ShieldCheck, Bell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
@@ -16,6 +17,7 @@ import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/infras
 import { Seo } from '@/presentation/components/seo/Seo'
 
 export default function ProfilePage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('general')
@@ -48,7 +50,7 @@ export default function ProfilePage() {
         const success = await subscribeToPush()
         setPushEnabled(success)
         if (!success) {
-          alert('Impossible d\'activer les notifications push. Vérifiez les permissions de votre navigateur.')
+          alert(t('profile.notifications.errorEnable'))
         }
       }
     } finally {
@@ -83,10 +85,8 @@ export default function ProfilePage() {
           <ShieldAlert className="w-16 h-16 text-yellow-500" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-white">Accès Restreint</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Seul le propriétaire principal de l'organisation peut configurer et modifier le profil de la entreprise.
-          </p>
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white">{t('profile.restrictedAccess')}</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">{t('profile.restrictedDesc')}</p>
         </div>
       </div>
     )
@@ -104,17 +104,17 @@ export default function ProfilePage() {
     if (activeTab === 'public') {
       try {
         await setupPublicProfile({ slug: publicSlug, isActive: publicActive }).unwrap()
-        alert('Profil public mis à jour avec succès')
+        alert(t('common.save') + ' OK')
       } catch (err: any) {
-        alert(err?.data?.error || 'Erreur lors de la mise à jour du profil public')
+        alert(err?.data?.error || t('common.error'))
       }
       return
     }
     try {
       await updateProfile(formData).unwrap()
-      alert('Profil mis à jour avec succès')
+      alert(t('common.save') + ' OK')
     } catch (err) {
-      alert('Erreur lors de la mise à jour')
+      alert(t('common.error'))
     }
   }
 
@@ -142,48 +142,48 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in max-w-6xl mx-auto">
-      <Seo title="Profil entreprise — Trust Lane" noindex />
+      <Seo title={`${t('pages.profile')} — ${t('brand.name')}`} noindex />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profil entreprise</h1>
-          <p className="text-muted-foreground">Gérez l'identité et la structure de votre entreprise pour renforcer votre crédibilité</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('profile.title')}</h1>
+          <p className="text-muted-foreground">{t('profile.subtitle')}</p>
         </div>
         <Button onClick={handleSave} disabled={isUpdating || isSavingPublic} variant="trust" className="gap-2 shadow-lg shadow-trust/20 w-full md:w-auto justify-center">
           <Save className="w-4 h-4" />
-          Enregistrer les modifications
+          {t('profile.save')}
         </Button>
       </div>
 
       <div className="flex overflow-x-auto gap-2 border-b border-white/10 mb-6 scrollbar-none pb-px">
-        <button 
+        <button
           onClick={() => setActiveTab('general')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'general' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <Building2 className="w-4 h-4" /> Informations Générales
+          <Building2 className="w-4 h-4" /> {t('profile.tabs.general')}
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('officers')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'officers' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <Users className="w-4 h-4" /> Dirigeants & Bénéficiaires
+          <Users className="w-4 h-4" /> {t('profile.tabs.officers')}
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('docs')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'docs' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <FileText className="w-4 h-4" /> Architecture Documentaire
+          <FileText className="w-4 h-4" /> {t('profile.tabs.docs')}
         </button>
         <button
           onClick={() => setActiveTab('public')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'public' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <Globe className="w-4 h-4" /> Profil Public
+          <Globe className="w-4 h-4" /> {t('profile.tabs.public')}
         </button>
         <button
           onClick={() => setActiveTab('notifications')}
           className={`pb-3 px-6 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'notifications' ? 'border-b-2 border-trust text-trust font-bold' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <Bell className="w-4 h-4" /> Notifications
+          <Bell className="w-4 h-4" /> {t('profile.tabs.notifications')}
         </button>
       </div>
 
@@ -194,42 +194,42 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-trust" />
-                  Identité Légale
+                  {t('profile.general.legalIdentity')}
                 </CardTitle>
-                <CardDescription>Informations officielles enregistrées au greffe</CardDescription>
+                <CardDescription>{t('profile.general.legalIdentityDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nom Légal de l'Entité</label>
-                  <Input 
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.legalName')}</label>
+                  <Input
                     placeholder="Ex: Entreprise SARL"
-                    value={formData.legalName} 
+                    value={formData.legalName}
                     onChange={e => setFormData({...formData, legalName: e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Numéro de Registre (RCCM)</label>
-                    <Input 
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.rccm')}</label>
+                    <Input
                       placeholder="RCCM-..."
-                      value={formData.registrationNo || ''} 
+                      value={formData.registrationNo || ''}
                       onChange={e => setFormData({...formData, registrationNo: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Identifiant Fiscal (NUI)</label>
-                    <Input 
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.taxId')}</label>
+                    <Input
                       placeholder="M..."
-                      value={formData.taxId || ''} 
+                      value={formData.taxId || ''}
                       onChange={e => setFormData({...formData, taxId: e.target.value})}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Secteur d'activité</label>
-                  <Input 
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.industry')}</label>
+                  <Input
                     placeholder="Ex: Agrobusiness, Tech, Commerce..."
-                    value={formData.industry || ''} 
+                    value={formData.industry || ''}
                     onChange={e => setFormData({...formData, industry: e.target.value})}
                   />
                 </div>
@@ -240,43 +240,43 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2">
                   <FileText className="w-5 h-5 text-trust" />
-                  Contact & Localisation
+                  {t('profile.general.contact')}
                 </CardTitle>
-                <CardDescription>Où vous trouver et comment vous contacter</CardDescription>
+                <CardDescription>{t('profile.general.contactDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Siège Social (Adresse complète)</label>
-                  <Input 
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.address')}</label>
+                  <Input
                     placeholder="Quartier, Ville, Pays"
-                    value={formData.address || ''} 
+                    value={formData.address || ''}
                     onChange={e => setFormData({...formData, address: e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Email Professionnel</label>
-                    <Input 
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.email')}</label>
+                    <Input
                       type="email"
                       placeholder="contact@entreprise.com"
-                      value={formData.email || ''} 
+                      value={formData.email || ''}
                       onChange={e => setFormData({...formData, email: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Téléphone</label>
-                    <Input 
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.phone')}</label>
+                    <Input
                       placeholder="+237 ..."
-                      value={formData.phone || ''} 
+                      value={formData.phone || ''}
                       onChange={e => setFormData({...formData, phone: e.target.value})}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Site Web / Réseaux Sociaux</label>
-                  <Input 
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.general.website')}</label>
+                  <Input
                     placeholder="https://..."
-                    value={formData.website || ''} 
+                    value={formData.website || ''}
                     onChange={e => setFormData({...formData, website: e.target.value})}
                   />
                 </div>
@@ -291,12 +291,12 @@ export default function ProfilePage() {
               <div>
                 <CardTitle className="text-xl flex items-center gap-2">
                   <Users className="w-5 h-5 text-trust" />
-                  Dirigeants & Bénéficiaires Effectifs
+                  {t('profile.officers.title')}
                 </CardTitle>
-                <CardDescription>Personnes physiques détenant le contrôle ou la direction</CardDescription>
+                <CardDescription>{t('profile.officers.desc')}</CardDescription>
               </div>
               <Button onClick={addOfficer} variant="outline" size="sm" className="gap-2 border-trust/50 text-trust hover:bg-trust/10">
-                <Plus className="w-4 h-4" /> Ajouter un membre
+                <Plus className="w-4 h-4" /> {t('profile.officers.addMember')}
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -317,8 +317,8 @@ export default function ProfilePage() {
                           {bo.name ? bo.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : '??'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider">Dirigeant</p>
-                          <p className="font-bold text-sm truncate text-white">{bo.name || 'Nouveau membre'}</p>
+                          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider">{t('profile.officers.officer')}</p>
+                          <p className="font-bold text-sm truncate text-white">{bo.name || t('profile.officers.newMember')}</p>
                         </div>
                         <div className="bg-trust/10 text-trust font-mono font-bold text-xs px-2 py-0.5 rounded-full border border-trust/20 shrink-0">
                           {bo.ownershipPct || 0}%
@@ -329,8 +329,8 @@ export default function ProfilePage() {
                       <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Nom Complet</label>
-                            <Input 
+                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">{t('profile.officers.name')}</label>
+                            <Input
                               placeholder="Nom et Prénom"
                               value={bo.name} 
                               className="h-8 text-xs px-2"
@@ -338,8 +338,8 @@ export default function ProfilePage() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Rôle</label>
-                            <Input 
+                            <label className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">{t('profile.officers.role')}</label>
+                            <Input
                               placeholder="Ex: Gérant"
                               value={bo.role || ''} 
                               className="h-8 text-xs px-2"
@@ -388,7 +388,7 @@ export default function ProfilePage() {
               {(!formData.beneficialOwners || formData.beneficialOwners.length === 0) && (
                 <div className="text-center py-16 border-2 border-dashed border-white/10 rounded-2xl">
                   <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                  <p className="text-muted-foreground">Aucun dirigeant renseigné. Ajoutez-en un pour compléter votre profil.</p>
+                  <p className="text-muted-foreground">{t('profile.officers.empty')}</p>
                 </div>
               )}
             </CardContent>
@@ -400,17 +400,17 @@ export default function ProfilePage() {
             <CardHeader className="bg-trust/10">
               <CardTitle className="text-xl flex items-center gap-2">
                 <FileText className="w-5 h-5 text-trust" />
-                Architecture Documentaire
+                {t('profile.docs.title')}
               </CardTitle>
-              <CardDescription className="text-trust/80">Structurez votre "Data Room" pour faciliter les audits et financements</CardDescription>
+              <CardDescription className="text-trust/80">{t('profile.docs.desc')}</CardDescription>
             </CardHeader>
             <CardContent className="p-8">
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                    {[
-                     { title: 'Identité & Gouvernance', icon: <Building2 />, types: ['STATUTS', 'RCCM', 'NUI'] },
-                     { title: 'Finances & Fiscalité', icon: <TrendingUp />, types: ['ETATS_FINANCIERS', 'QUITANCE_IMPOTS'] },
-                     { title: 'Opérations & Contrats', icon: <Users />, types: ['BAIL', 'CONTRAT_TRAVAIL'] }
+                     { title: t('profile.docs.govIdentity'), icon: <Building2 />, types: ['STATUTS', 'RCCM', 'NUI'] },
+                     { title: t('profile.docs.finance'), icon: <TrendingUp />, types: ['ETATS_FINANCIERS', 'QUITANCE_IMPOTS'] },
+                     { title: t('profile.docs.operations'), icon: <Users />, types: ['BAIL', 'CONTRAT_TRAVAIL'] }
                    ].map(cat => (
                      <div key={cat.title} className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-4">
                         <div className="flex items-center gap-3">
@@ -420,11 +420,11 @@ export default function ProfilePage() {
                           <h3 className="font-bold">{cat.title}</h3>
                         </div>
                         <div className="space-y-2">
-                           {cat.types.map(t => (
-                             <div key={t} className="text-xs flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5">
-                                <span className="text-muted-foreground">{t}</span>
+                           {cat.types.map(docType => (
+                             <div key={docType} className="text-xs flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5">
+                                <span className="text-muted-foreground">{docType}</span>
                                 <Button variant="ghost" size="sm" className="h-6 text-[10px] text-trust hover:bg-trust/10 transition-colors" onClick={() => navigate('/documents')}>
-                                  Gérer
+                                  {t('profile.docs.manage')}
                                 </Button>
                              </div>
                            ))}
@@ -438,11 +438,11 @@ export default function ProfilePage() {
                      <FileText className="w-8 h-8 text-muted-foreground" />
                    </div>
                    <div>
-                     <p className="font-bold">Module de Gestion Avancée</p>
-                     <p className="text-sm text-muted-foreground">Accédez au tableau de bord de conformité pour uploader vos fichiers.</p>
+                     <p className="font-bold">{t('profile.docs.advanced')}</p>
+                     <p className="text-sm text-muted-foreground">{t('profile.docs.advancedDesc')}</p>
                    </div>
                    <Button variant="trust" size="sm" asChild>
-                     <a href="/compliance">Aller à la Conformité</a>
+                     <a href="/compliance">{t('profile.docs.goToCompliance')}</a>
                    </Button>
                 </div>
               </div>
@@ -456,19 +456,15 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2">
                   <Globe className="w-5 h-5 text-trust animate-pulse" />
-                  Configuration du Profil Public
+                  {t('profile.public.title')}
                 </CardTitle>
-                <CardDescription>
-                  Partagez de manière sécurisée votre identité entreprise et votre score de confiance avec vos partenaires, fournisseurs et institutions financières.
-                </CardDescription>
+                <CardDescription>{t('profile.public.desc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
                   <div className="space-y-1">
-                    <p className="font-bold text-sm text-white">Activer le profil public</p>
-                    <p className="text-xs text-muted-foreground max-w-md">
-                      Une fois activé, n'importe qui disposant du lien pourra consulter vos informations de base et votre Trust Score.
-                    </p>
+                    <p className="font-bold text-sm text-white">{t('profile.public.activate')}</p>
+                    <p className="text-xs text-muted-foreground max-w-md">{t('profile.public.activateDesc')}</p>
                   </div>
                   <button
                     type="button"
@@ -482,7 +478,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Lien Public Personnalisé (Slug)</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('profile.public.slug')}</label>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-xl px-3 focus-within:border-trust transition-all">
                       <span className="text-muted-foreground text-xs select-none pr-1">{window.location.origin}/p/</span>
@@ -495,9 +491,7 @@ export default function ProfilePage() {
                       />
                     </div>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Seuls les caractères alphanumériques minuscules, tirets (-) et underscores (_) sont autorisés.
-                  </p>
+                  <p className="text-[10px] text-muted-foreground">{t('profile.public.slugHint')}</p>
                 </div>
 
                 {publicActive && publicSlug && (
@@ -506,7 +500,7 @@ export default function ProfilePage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-yellow-500">
                           <ShieldAlert className="w-4.5 h-4.5" />
-                          <span className="text-xs font-bold uppercase tracking-wider">Modifications non enregistrées</span>
+                          <span className="text-xs font-bold uppercase tracking-wider">{t('profile.public.unsaved')}</span>
                         </div>
                         <Button
                           variant="trust"
@@ -516,19 +510,17 @@ export default function ProfilePage() {
                           className="h-8 text-xs gap-1.5"
                         >
                           <Save className="w-3.5 h-3.5" />
-                          Enregistrer
+                          {t('common.save')}
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Vous avez modifié vos paramètres de profil public. Veuillez enregistrer pour les appliquer.
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t('profile.public.unsavedDesc')}</p>
                     </div>
                   ) : (
                     <div className="p-4 bg-trust/10 border border-trust/20 rounded-2xl space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-trust">
                           <ShieldCheck className="w-4 h-4" />
-                          <span className="text-xs font-bold uppercase tracking-wider">Votre profil est en ligne</span>
+                          <span className="text-xs font-bold uppercase tracking-wider">{t('profile.public.online')}</span>
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -542,7 +534,7 @@ export default function ProfilePage() {
                             className="h-8 text-xs text-trust hover:bg-trust/10 gap-1.5"
                           >
                             <Copy className="w-3.5 h-3.5" />
-                            {copied ? 'Copié !' : 'Copier'}
+                            {copied ? t('profile.public.copied') : t('profile.public.copy')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -552,7 +544,7 @@ export default function ProfilePage() {
                           >
                             <a href={`/p/${publicSlug}`} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="w-3.5 h-3.5" />
-                              Voir
+                              {t('profile.public.view')}
                             </a>
                           </Button>
                         </div>
@@ -570,7 +562,7 @@ export default function ProfilePage() {
               <Card className="glass border-white/10 overflow-hidden">
                 <CardHeader className="bg-white/5 border-b border-white/10 py-4">
                   <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    Aperçu de la Carte
+                    {t('profile.public.previewCard')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
@@ -598,7 +590,7 @@ export default function ProfilePage() {
                   </div>
                   
                   <div className="text-[10px] text-muted-foreground leading-relaxed">
-                    Cet aperçu montre comment vos partenaires verront votre carte simplifiée sur leur tableau de bord ou portail.
+                    {t('profile.public.previewDesc')}
                   </div>
                 </CardContent>
               </Card>
@@ -611,19 +603,16 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
                 <Bell className="w-5 h-5 text-trust" />
-                Notifications Push
+                {t('profile.notifications.title')}
               </CardTitle>
-              <CardDescription>
-                Recevez des alertes en temps réel directement sur votre appareil, même lorsque l'application est fermée.
+              <CardDescription>{t('profile.notifications.desc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
                 <div className="space-y-1">
-                  <p className="font-bold text-sm text-white">Activer les notifications push</p>
-                  <p className="text-xs text-muted-foreground max-w-md">
-                    Soyez averti des nouvelles transactions, alertes de trésorerie et mises à jour de conformité.
-                  </p>
+                  <p className="font-bold text-sm text-white">{t('profile.notifications.enable')}</p>
+                  <p className="text-xs text-muted-foreground max-w-md">{t('profile.notifications.enableDesc')}</p>
                 </div>
                 <button
                   type="button"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { 
   Plus, 
   Minus, 
@@ -34,6 +34,7 @@ import { useGetAccountsQuery } from '@/infrastructure/api/accountApi'
 import { useCreateTransactionMutation } from '@/infrastructure/api/transactionApi'
 import { useUploadImageMutation } from '@/infrastructure/api/uploadApi'
 import { cn } from '@/shared/utils/utils'
+import { useTranslation } from 'react-i18next'
 
 const CATEGORY_ICONS: Record<TxnCategory, React.ReactNode> = {
   [TxnCategory.SALES]: <ShoppingBag />,
@@ -50,21 +51,6 @@ const CATEGORY_ICONS: Record<TxnCategory, React.ReactNode> = {
   [TxnCategory.OTHER]: <MoreHorizontal />,
 }
 
-const CATEGORY_LABELS: Record<TxnCategory, string> = {
-  [TxnCategory.SALES]: 'Ventes',
-  [TxnCategory.COGS]: 'Achats / Stock',
-  [TxnCategory.PAYROLL]: 'Salaires',
-  [TxnCategory.RENT_UTILITIES]: 'Loyer / Charges',
-  [TxnCategory.TRANSPORT]: 'Transport',
-  [TxnCategory.TAX]: 'Impôts / Taxes',
-  [TxnCategory.DEBT_SERVICE]: 'Crédit',
-  [TxnCategory.CAPEX]: 'Investissement',
-  [TxnCategory.OWNER_DRAW]: 'Retrait Perso',
-  [TxnCategory.FEES]: 'Frais / Banques',
-  [TxnCategory.MARKETING]: 'Marketing',
-  [TxnCategory.OTHER]: 'Autre',
-}
-
 const QUICK_AMOUNTS = [1000, 5000, 10000, 50000]
 
 interface TransactionFormProps {
@@ -73,6 +59,23 @@ interface TransactionFormProps {
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onCancel }) => {
+  const { t } = useTranslation()
+
+  const CATEGORY_LABELS: Record<TxnCategory, string> = useMemo(() => ({
+    [TxnCategory.SALES]: t('transactions.categories.SALES'),
+    [TxnCategory.COGS]: t('transactions.categories.COGS'),
+    [TxnCategory.PAYROLL]: t('transactions.categories.PAYROLL'),
+    [TxnCategory.RENT_UTILITIES]: t('transactions.categories.RENT_UTILITIES'),
+    [TxnCategory.TRANSPORT]: t('transactions.categories.TRANSPORT'),
+    [TxnCategory.TAX]: t('transactions.categories.TAX'),
+    [TxnCategory.DEBT_SERVICE]: t('transactions.categories.DEBT_SERVICE'),
+    [TxnCategory.CAPEX]: t('transactions.categories.CAPEX'),
+    [TxnCategory.OWNER_DRAW]: t('transactions.categories.OWNER_DRAW'),
+    [TxnCategory.FEES]: t('transactions.categories.FEES'),
+    [TxnCategory.MARKETING]: t('transactions.categories.MARKETING'),
+    [TxnCategory.OTHER]: t('transactions.categories.OTHER'),
+  }), [t])
+
   const { data: accounts, isLoading: isLoadingAccounts } = useGetAccountsQuery()
   const [createTransaction, { isLoading: isCreating }] = useCreateTransactionMutation()
   const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation()
@@ -162,7 +165,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
           )}
         >
           <Plus className="w-5 h-5 flex-shrink-0" />
-          ENTRÉE
+          {t('transactions.form.inflow')}
         </button>
         <button
           type="button"
@@ -175,7 +178,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
           )}
         >
           <Minus className="w-5 h-5 flex-shrink-0" />
-          SORTIE
+          {t('transactions.form.outflow')}
         </button>
       </div>
 
@@ -218,14 +221,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
             onClick={() => setFormData({ ...formData, amount: 0 })}
             className="px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-[10px] font-black text-destructive"
           >
-            RESET
+            {t('transactions.form.reset')}
           </button>
         </div>
       </div>
 
       {/* Account Selection - Horizontal Scrollable cards */}
       <div className="space-y-3">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Source / Destination</label>
+        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">{t('transactions.form.sourceDestination')}</label>
         <div className="flex flex-wrap gap-3 px-1">
           {isLoadingAccounts ? (
             <div className="flex gap-3 w-full">
@@ -260,7 +263,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
                   className="w-full h-full min-w-[140px] p-4 rounded-2xl border border-dashed border-white/10 text-muted-foreground hover:bg-white/5 hover:border-white/20 transition-all flex flex-col items-center justify-center gap-1"
                 >
                   <Plus size={20} />
-                  <span className="text-[10px] font-black uppercase">Nouveau Compte</span>
+                  <span className="text-[10px] font-black uppercase">{t('transactions.form.newAccount')}</span>
                 </button>
               </Link>
             </>
@@ -270,7 +273,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
 
       {/* Category Grid - 3 Columns for larger touch areas */}
       <div className="space-y-3">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Catégorie d'opération</label>
+        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">{t('transactions.form.categoryLabel')}</label>
         <div className="flex flex-wrap gap-2 px-1">
           {Object.entries(TxnCategory).map(([key, value]) => (
             <button
@@ -309,7 +312,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
            className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground py-2 hover:text-white transition-colors"
          >
            {showOptions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-           {showOptions ? 'Moins d\'options' : 'Plus d\'options (Date, Méthode, Notes)'}
+           {showOptions ? t('transactions.form.lessOptions') : t('transactions.form.moreOptions')}
          </button>
          
          <AnimatePresence>
@@ -322,7 +325,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
              >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Date</label>
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">{t('transactions.form.date')}</label>
                     <Input
                       type="date"
                       className="h-12 text-sm bg-muted/10 border-white/5 rounded-xl font-bold"
@@ -331,7 +334,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Méthode</label>
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">{t('transactions.form.method')}</label>
                     <select
                       className="w-full h-12 px-4 bg-muted/10 border border-white/5 rounded-xl text-sm text-foreground font-bold focus:ring-2 focus:ring-primary/50 appearance-none"
                       value={formData.method}
@@ -344,13 +347,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
                   </div>
                 </div>
                 <Input
-                  placeholder="Notes ou détails supplémentaires..."
+                  placeholder={t('transactions.form.notesPlaceholder')}
                   className="bg-muted/10 border-white/5 h-12 rounded-xl text-sm italic"
                   value={formData.notes || ''}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
                 <Input
-                   placeholder="Tiers / Bénéficiaire"
+                   placeholder={t('transactions.form.counterpartyPlaceholder')}
                    className="bg-muted/10 border-white/5 h-12 rounded-xl text-sm font-bold"
                    value={formData.counterparty || ''}
                    onChange={(e) => setFormData({ ...formData, counterparty: e.target.value })}
@@ -361,8 +364,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
                   <ImageUpload 
                     onFileSelect={setReceiptFile}
                     value={receiptFile}
-                    label="Justificatif (Reçu/Facture)"
-                    description="Glissez votre reçu ici"
+                    label={t('transactions.form.receiptLabel')}
+                    description={t('transactions.form.receiptDesc')}
                     className="bg-white/5"
                   />
                 </div>
@@ -387,14 +390,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
                >
                  <Plus size={20} />
                </motion.div>
-               <span>{isUploading ? 'ENVOI...' : 'TRAITEMENT...'}</span>
+               <span>{isUploading ? t('transactions.form.uploading') : t('transactions.form.processing')}</span>
             </div>
           ) : (
             <>
               <div className="bg-white/20 p-1.5 rounded-lg group-hover:scale-110 transition-transform hidden sm:block">
                 <Check className="w-5 h-5" strokeWidth={3} />
               </div>
-              <span className="whitespace-nowrap">VALIDER LA TRANSACTION</span>
+              <span className="whitespace-nowrap">{t('transactions.form.submit')}</span>
             </>
           )}
         </Button>
@@ -403,24 +406,24 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
       <Modal 
         isOpen={isOverdraftModalOpen} 
         onClose={() => setIsOverdraftModalOpen(false)} 
-        title="Alerte de Découvert"
+        title={t('transactions.form.overdraftTitle')}
       >
         <div className="space-y-4">
           <p className="text-white/80">
-            ⚠️ Attention : Le solde du compte sélectionné ({overdraftAccount ? Number(overdraftAccount.balance).toLocaleString() : ''} XAF) est insuffisant pour cette dépense.
+            {t('transactions.form.overdraftDesc', { balance: overdraftAccount ? Number(overdraftAccount.balance).toLocaleString() : '' })}
           </p>
           <p className="text-white/80">
-            La transaction va créer un découvert (solde négatif). Voulez-vous continuer ?
+            {t('transactions.form.overdraftConfirm')}
           </p>
           <div className="flex gap-3 justify-end pt-4">
             <Button type="button" variant="ghost" onClick={() => setIsOverdraftModalOpen(false)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button type="button" variant="destructive" onClick={async () => {
               setIsOverdraftModalOpen(false)
               await performSubmit()
             }}>
-              Continuer
+              {t('transactions.form.continue')}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useGetPublicProfileQuery } from '@/infrastructure/api/profileApi'
 import { Seo } from '@/presentation/components/seo/Seo'
 import {
@@ -19,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/pre
 import { Button } from '@/presentation/components/ui/button'
 
 export default function VerifiedSmePage() {
+  const { t, i18n } = useTranslation()
   const { slug } = useParams<{ slug: string }>()
   const { data: publicProfile, isLoading, error } = useGetPublicProfileQuery(slug || '')
 
@@ -28,14 +30,14 @@ export default function VerifiedSmePage() {
     return (
       <>
         <Seo
-          title="Profil entreprise Certifié — Trust Lane"
-          description="Chargement du profil de confiance certifié Trust Lane."
+          title={`${t('trust.certifiedProfile')} — ${t('brand.name')}`}
+          description={t('trust.loadingProfile')}
           canonical={canonicalUrl}
           noindex
         />
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-trust mb-4"></div>
-          <p className="text-sm text-muted-foreground animate-pulse">Chargement du profil sécurisé...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">{t('verifiedSme.loading')}</p>
         </div>
       </>
     )
@@ -45,8 +47,8 @@ export default function VerifiedSmePage() {
     return (
       <>
         <Seo
-          title="Profil Inaccessible — Trust Lane"
-          description="Ce profil public n'existe pas, ou a été configuré comme privé par l'organisation."
+          title={`${t('trust.profileNotFound')} — ${t('brand.name')}`}
+          description={t('trust.profileNotFoundDesc')}
           canonical={canonicalUrl}
           noindex
         />
@@ -54,12 +56,10 @@ export default function VerifiedSmePage() {
           <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-full mb-6">
             <AlertTriangle className="w-12 h-12 text-destructive" />
           </div>
-          <h1 className="text-2xl font-black uppercase tracking-tight text-white mb-2">Profil Inaccessible</h1>
-          <p className="text-muted-foreground max-w-md mb-6">
-            Ce profil public n'existe pas, ou a été configuré comme privé par l'organisation.
-          </p>
+          <h1 className="text-2xl font-black uppercase tracking-tight text-white mb-2">{t('trust.profileNotFound')}</h1>
+          <p className="text-muted-foreground max-w-md mb-6">{t('trust.profileNotFoundDesc')}</p>
           <Button variant="outline" onClick={() => window.location.href = '/'}>
-            Retour à l'accueil
+            {t('trust.backHome')}
           </Button>
         </div>
       </>
@@ -78,9 +78,9 @@ export default function VerifiedSmePage() {
     return 'text-rose-400 border-rose-400/20 bg-rose-500/10'
   }
 
-  const pageTitle = `${company.legalName || 'Profil entreprise'} — Profil Certifié Trust Lane`
+  const pageTitle = `${company.legalName || 'Profil entreprise'} — ${t('trust.certifiedProfile')}`
   const pageDescription = company.description
-    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette entreprise'} : score de confiance, conformité et informations légales vérifiées par Trust Lane.`
+    || `Découvrez le profil de confiance certifié de ${company.legalName || 'cette entreprise'} : score de confiance, conformité et informations légales vérifiées par ${t('brand.name')}.`
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -102,6 +102,14 @@ export default function VerifiedSmePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col justify-between">
+      <button
+        onClick={() => i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr')}
+        className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all text-xs font-bold uppercase tracking-widest"
+        title={i18n.language === 'fr' ? 'Switch to English' : 'Passer en Français'}
+      >
+        <Globe size={14} />
+        {i18n.language === 'fr' ? 'EN' : 'FR'}
+      </button>
       <Seo
         title={pageTitle}
         description={pageDescription}
@@ -124,7 +132,7 @@ export default function VerifiedSmePage() {
             </span>
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-black uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4" /> Certifié Trust Lane
+            <ShieldCheck className="w-4 h-4" /> {t('trust.certified')}
           </div>
         </div>
       </header>
@@ -142,7 +150,7 @@ export default function VerifiedSmePage() {
               {company.legalName || 'Entreprise'}
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {company.description || "Aucune description fournie par l'organisation."}
+              {company.description || t('verifiedSme.noDesc')}
             </p>
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2">
               <span className="flex items-center gap-1.5">
@@ -150,13 +158,13 @@ export default function VerifiedSmePage() {
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-flow" /> {company.industry || 'Secteur Non Défini'}
+                <Building2 className="w-3.5 h-3.5 text-flow" /> {company.industry || t('verifiedSme.noIndustry')}
               </span>
               {company.foundedDate && (
                 <>
                   <span>•</span>
                   <span className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-yellow-500" /> Fondé en {new Date(company.foundedDate).getFullYear()}
+                    <Calendar className="w-3.5 h-3.5 text-yellow-500" /> {t('verifiedSme.founded', { year: new Date(company.foundedDate).getFullYear() })}
                   </span>
                 </>
               )}
@@ -173,7 +181,7 @@ export default function VerifiedSmePage() {
                 <span className="text-muted-foreground text-sm">/100</span>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Généré le {trust ? new Date(trust.calculatedAt).toLocaleDateString() : 'N/A'}
+                {trust ? t('verifiedSme.generatedOn', { date: new Date(trust.calculatedAt).toLocaleDateString() }) : 'N/A'}
               </p>
             </div>
             <div className={`w-16 h-16 rounded-2xl border flex flex-col items-center justify-center shrink-0 shadow-lg ${getScoreColor(score)}`}>
@@ -191,25 +199,25 @@ export default function VerifiedSmePage() {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-trust" />
-                Fiche d'Identité Légale
+                {t('verifiedSme.legalCard')}
               </CardTitle>
-              <CardDescription>Informations d'enregistrement officiel</CardDescription>
+              <CardDescription>{t('verifiedSme.legalCardDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-1.5 p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Siège Social</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('verifiedSme.headOffice')}</span>
                   <p className="text-sm font-bold text-white flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-trust shrink-0" />
-                    {company.address || 'Non spécifiée'}
+                    {company.address || t('verifiedSme.notSpecified')}
                   </p>
                 </div>
 
                 <div className="space-y-1.5 p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Taille de l'entreprise</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('verifiedSme.companySize')}</span>
                   <p className="text-sm font-bold text-white flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-flow shrink-0" />
-                    {company.employeeCount ? `${company.employeeCount} employés` : 'Non renseignée'}
+                    {company.employeeCount ? t('verifiedSme.employees', { count: company.employeeCount }) : t('verifiedSme.noEmployees')}
                   </p>
                 </div>
               </div>
@@ -217,8 +225,8 @@ export default function VerifiedSmePage() {
               {/* Beneficial Owners / Leadership */}
               <div className="space-y-4 pt-4 border-t border-white/5">
                 <div>
-                  <h3 className="font-bold text-base text-white">Dirigeants & Bénéficiaires Effectifs</h3>
-                  <p className="text-xs text-muted-foreground">Structure de gouvernance validée et vérifiée</p>
+                  <h3 className="font-bold text-base text-white">{t('verifiedSme.officers')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('verifiedSme.officersDesc')}</p>
                 </div>
 
                 {company.beneficialOwners && company.beneficialOwners.length > 0 ? (
@@ -231,7 +239,7 @@ export default function VerifiedSmePage() {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-white">{owner.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{owner.role || 'Associé'}</p>
+                            <p className="text-[10px] text-muted-foreground">{owner.role || t('verifiedSme.associate')}</p>
                           </div>
                         </div>
                         <div className="bg-trust/10 text-trust border border-trust/10 font-bold font-mono text-[10px] px-2 py-0.5 rounded-full">
@@ -241,7 +249,7 @@ export default function VerifiedSmePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground italic">Aucune information sur les dirigeants déclarée.</p>
+                  <p className="text-xs text-muted-foreground italic">{t('verifiedSme.noOfficers')}</p>
                 )}
               </div>
             </CardContent>
@@ -253,9 +261,9 @@ export default function VerifiedSmePage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Globe className="w-4.5 h-4.5 text-flow" />
-                  Contact Public
+                  {t('verifiedSme.contactTitle')}
                 </CardTitle>
-                <CardDescription>Canaux de contact autorisés</CardDescription>
+                <CardDescription>{t('verifiedSme.contactDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {company.website && (
@@ -271,11 +279,11 @@ export default function VerifiedSmePage() {
                 )}
                 <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-xs text-muted-foreground">
                   <Mail className="w-4 h-4 text-trust shrink-0" />
-                  <span className="truncate text-white font-medium">Email d'entreprise crypté</span>
+                  <span className="truncate text-white font-medium">{t('verifiedSme.emailEncrypted')}</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-xs text-muted-foreground">
                   <Phone className="w-4 h-4 text-yellow-500 shrink-0" />
-                  <span className="truncate text-white font-medium">Téléphone vérifié</span>
+                  <span className="truncate text-white font-medium">{t('verifiedSme.phoneVerified')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -285,18 +293,16 @@ export default function VerifiedSmePage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Activity className="w-4.5 h-4.5 text-trust" />
-                  Score Pilier Trust Lane
+                  {t('trust.score')}
                 </CardTitle>
-                <CardDescription>Indice de santé financière & conformité</CardDescription>
+                <CardDescription>{t('trust.scoreDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-xs text-muted-foreground">
-                <p>
-                  Ce score certifie la transparence opérationnelle et l'historique transactionnel de l'entreprise via notre protocole open banking sécurisé.
-                </p>
+                <p>{t('verifiedSme.scoreDesc')}</p>
                 <div className="pt-2">
                   <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white mb-1">
-                    <span>Niveau de Fiabilité</span>
-                    <span className="text-trust">{score >= 80 ? 'Optimal' : score >= 60 ? 'Satisfaisant' : 'Moyen'}</span>
+                    <span>{t('verifiedSme.reliability')}</span>
+                    <span className="text-trust">{score >= 80 ? t('verifiedSme.reliabilityOptimal') : score >= 60 ? t('verifiedSme.reliabilitySatisfactory') : t('verifiedSme.reliabilityAverage')}</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
                     <div
@@ -315,13 +321,13 @@ export default function VerifiedSmePage() {
       {/* Public Footer */}
       <footer className="border-t border-white/5 py-8 mt-12 bg-card/20">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} Trust Lane. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} {t('brand.name')}. {t('common.allRightsReserved')}</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-flow" /> Cryptage Banque
+              <ShieldCheck className="w-3.5 h-3.5 text-flow" /> {t('trust.bankEncryption')}
             </span>
             <span className="flex items-center gap-1">
-              <FileText className="w-3.5 h-3.5 text-trust" /> Registre Public SME
+              <FileText className="w-3.5 h-3.5 text-trust" /> {t('trust.publicRegistry')}
             </span>
           </div>
         </div>
