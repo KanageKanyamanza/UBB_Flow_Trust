@@ -1,6 +1,5 @@
 import type { Response } from 'express'
 import { z } from 'zod'
-import type { Prisma } from '@prisma/client'
 import prisma from '../../config/prisma.js'
 import type { AdminRequest } from '../../middleware/admin.middleware.js'
 
@@ -12,7 +11,8 @@ export class AdminOrgsController {
     const search = req.query.search ? String(req.query.search) : undefined
     const suspendedParam = req.query.suspended as string | undefined
 
-    const where: Prisma.OrganizationWhereInput = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {}
     if (search) where.name = { contains: search, mode: 'insensitive' }
     if (suspendedParam !== undefined) where.isSuspended = suspendedParam === 'true'
 
@@ -35,11 +35,10 @@ export class AdminOrgsController {
       prisma.organization.count({ where }),
     ])
 
-    const data = rows.map(({ trustScores, users, ...org }) => ({
-      ...org,
-      trustScore: trustScores[0] ?? null,
-      owner: users[0] ?? null,
-    }))
+    const data = rows.map((row: any) => {
+      const { trustScores, users, ...org } = row
+      return { ...org, trustScore: trustScores[0] ?? null, owner: users[0] ?? null }
+    })
 
     res.json({ data, total, page, pageSize: PAGE_SIZE })
   }
@@ -53,9 +52,7 @@ export class AdminOrgsController {
           select: { id: true, email: true, firstName: true, lastName: true, role: true, isBlocked: true, createdAt: true },
           orderBy: { createdAt: 'asc' },
         },
-        accounts: {
-          select: { id: true, name: true, type: true, currency: true, balance: true },
-        },
+        accounts: { select: { id: true, name: true, type: true, currency: true, balance: true } },
         documents: {
           select: { id: true, name: true, type: true, status: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
@@ -100,12 +97,7 @@ export class AdminOrgsController {
     try {
       await prisma.organization.delete({ where: { id } })
       await prisma.auditLog.create({
-        data: {
-          action: 'ORG_DELETED',
-          entityType: 'Organization',
-          entityId: id,
-          adminId: req.admin!.id,
-        },
+        data: { action: 'ORG_DELETED', entityType: 'Organization', entityId: id, adminId: req.admin!.id },
       })
       res.status(204).send()
     } catch {

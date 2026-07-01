@@ -28,6 +28,9 @@ import adminAuthRoutes from './routes/admin/admin-auth.routes.js'
 import adminOrgsRoutes from './routes/admin/admin-orgs.routes.js'
 import adminUsersRoutes from './routes/admin/admin-users.routes.js'
 import adminAdminsRoutes from './routes/admin/admin-admins.routes.js'
+import adminDocumentsRoutes from './routes/admin/admin-documents.routes.js'
+import adminTrustRoutes from './routes/admin/admin-trust.routes.js'
+import adminComplianceRoutes from './routes/admin/admin-compliance.routes.js'
 import { scoreQueue } from './services/score-queue.service.js'
 import { CronService } from './services/cron.service.js'
 import { PushService } from './services/push.service.js'
@@ -133,6 +136,9 @@ app.use('/api/admin/auth', adminAuthRoutes)
 app.use('/api/admin/organizations', adminOrgsRoutes)
 app.use('/api/admin/users', adminUsersRoutes)
 app.use('/api/admin/admins', adminAdminsRoutes)
+app.use('/api/admin/documents', adminDocumentsRoutes)
+app.use('/api/admin/trust-scores', adminTrustRoutes)
+app.use('/api/admin/compliance', adminComplianceRoutes)
 
 // Routes
 app.use('/auth', authRoutes)

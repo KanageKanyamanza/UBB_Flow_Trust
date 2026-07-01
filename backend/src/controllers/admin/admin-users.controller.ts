@@ -1,7 +1,6 @@
 import type { Response } from 'express'
 import { z } from 'zod'
 import argon2 from 'argon2'
-import type { Prisma, Role } from '@prisma/client'
 import prisma from '../../config/prisma.js'
 import type { AdminRequest } from '../../middleware/admin.middleware.js'
 
@@ -19,9 +18,10 @@ export class AdminUsersController {
     const role = req.query.role ? String(req.query.role) : undefined
     const orgId = req.query.orgId ? String(req.query.orgId) : undefined
 
-    const where: Prisma.UserWhereInput = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {}
     if (orgId) where.orgId = orgId
-    if (role) where.role = role as Role
+    if (role) where.role = role
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
@@ -50,7 +50,10 @@ export class AdminUsersController {
       prisma.user.count({ where }),
     ])
 
-    const data = rows.map(({ organization, ...u }) => ({ ...u, org: organization }))
+    const data = rows.map((row: any) => {
+      const { organization, ...u } = row
+      return { ...u, org: organization }
+    })
     res.json({ data, total, page, pageSize: PAGE_SIZE })
   }
 
@@ -83,8 +86,9 @@ export class AdminUsersController {
       const oldUser = await prisma.user.findUnique({ where: { id }, select: { role: true, isBlocked: true } })
       if (!oldUser) return res.status(404).json({ error: 'User not found' })
 
-      const updateData: Prisma.UserUpdateInput = {}
-      if (parsed.role !== undefined) updateData.role = parsed.role as Role
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: any = {}
+      if (parsed.role !== undefined) updateData.role = parsed.role
       if (parsed.isBlocked !== undefined) updateData.isBlocked = parsed.isBlocked
 
       const updated = await prisma.user.update({
@@ -98,8 +102,8 @@ export class AdminUsersController {
           action: 'USER_UPDATED',
           entityType: 'User',
           entityId: id,
-          oldData: oldUser as Prisma.InputJsonValue,
-          newData: parsed as Prisma.InputJsonValue,
+          oldData: oldUser as any,
+          newData: parsed as any,
           adminId: req.admin!.id,
         },
       })
@@ -122,12 +126,7 @@ export class AdminUsersController {
 
     await prisma.user.update({ where: { id }, data: { password: hashed } })
     await prisma.auditLog.create({
-      data: {
-        action: 'USER_PASSWORD_RESET',
-        entityType: 'User',
-        entityId: id,
-        adminId: req.admin!.id,
-      },
+      data: { action: 'USER_PASSWORD_RESET', entityType: 'User', entityId: id, adminId: req.admin!.id },
     })
 
     res.json({ tempPassword })
@@ -138,12 +137,7 @@ export class AdminUsersController {
     try {
       await prisma.user.delete({ where: { id } })
       await prisma.auditLog.create({
-        data: {
-          action: 'USER_DELETED',
-          entityType: 'User',
-          entityId: id,
-          adminId: req.admin!.id,
-        },
+        data: { action: 'USER_DELETED', entityType: 'User', entityId: id, adminId: req.admin!.id },
       })
       res.status(204).send()
     } catch {
