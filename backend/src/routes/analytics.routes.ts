@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { AnalyticsController } from '../controllers/analytics.controller.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 // Apply auth middleware to all analytics routes
 router.use(isAuthenticated)

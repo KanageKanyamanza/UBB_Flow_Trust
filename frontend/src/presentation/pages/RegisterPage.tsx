@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Building2, User, Mail, Lock, Loader2, AlertCircle, CheckCircle2, Globe } from 'lucide-react'
+import { Building2, User, Mail, Lock, Loader2, AlertCircle, CheckCircle2, Globe, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
@@ -21,6 +21,8 @@ const RegisterPage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorStatus, setErrorStatus] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const [registerMutation] = useRegisterMutation()
   const navigate = useNavigate()
@@ -70,6 +72,10 @@ const RegisterPage: React.FC = () => {
         description={t('auth.register.subtitle')}
         noindex
       />
+      <div className="mb-8">
+        <img src="/logo.png" alt="TrustLane" className="h-14 w-auto rounded-2xl" />
+      </div>
+
       <Card className="glass w-full max-w-lg border-white/10 glow-flow">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">{t('auth.register.title')}</CardTitle>
@@ -147,13 +153,16 @@ const RegisterPage: React.FC = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     value={formData.password}
                     onChange={handleChange}
                     required
                   />
+                  <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-3 text-muted-foreground hover:text-white transition-colors">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
@@ -165,13 +174,16 @@ const RegisterPage: React.FC = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirm ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
                   />
+                  <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-3 text-muted-foreground hover:text-white transition-colors">
+                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
             </div>

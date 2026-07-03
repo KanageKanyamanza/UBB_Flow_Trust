@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { AccountController } from '../controllers/account.controller.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 // All account routes require authentication
 router.use(isAuthenticated)

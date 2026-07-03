@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { AdminAuthController } from '../../controllers/admin/admin-auth.controller.js'
 import { isAdminAuthenticated } from '../../middleware/admin.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 router.post('/login', AdminAuthController.login)
 router.post('/refresh', AdminAuthController.refresh)

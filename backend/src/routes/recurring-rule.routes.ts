@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { RecurringRuleController } from '../controllers/recurring-rule.controller.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 router.use(isAuthenticated)
 

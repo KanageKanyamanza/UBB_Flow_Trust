@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { TrendingUp, ShieldCheck, Mail, Lock, Loader2, AlertCircle, CheckCircle2, Key, Globe } from 'lucide-react'
+import { ShieldCheck, Mail, Lock, Loader2, AlertCircle, CheckCircle2, Key, Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
@@ -69,9 +69,8 @@ const LoginPage: React.FC = () => {
         description={t('auth.login.ownerSubtitle')}
         noindex
       />
-      <div className="mb-8 flex items-center gap-2">
-        <TrendingUp className="text-flow w-8 h-8" />
-        <span className="text-2xl font-bold">Trust <span className="text-trust">Lane</span></span>
+      <div className="mb-8">
+        <img src="/logo.png" alt="TrustLane" className="h-14 w-auto rounded-2xl" />
       </div>
 
       <Card className="glass w-full max-w-md border-white/10 glow-trust">

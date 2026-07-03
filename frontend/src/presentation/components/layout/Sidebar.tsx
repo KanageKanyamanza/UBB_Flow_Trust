@@ -104,20 +104,20 @@ export const Sidebar: React.FC = () => {
       {/* Logo Section */}
       <div className={cn(
         "flex items-center mb-6 transition-all duration-500",
-        isCollapsed ? "justify-center" : "px-2"
+        isCollapsed ? "justify-center pt-3" : "px-2 pt-3"
       )}>
         <AnimatePresence>
-          {!isCollapsed && (
+          {!isCollapsed ? (
             <motion.div
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              className="overflow-hidden pt-3"
+              className="overflow-hidden"
             >
-              <span className="text-xl font-black italic tracking-tighter whitespace-nowrap">
-                Trust <span className="text-trust">Lane</span>
-              </span>
+              <img src="/logo.png" alt="TrustLane" className="h-8 w-auto rounded-xl" />
             </motion.div>
+          ) : (
+            <img src="/logo.png" alt="TrustLane" className="h-7 w-7 object-contain rounded-lg" />
           )}
         </AnimatePresence>
       </div>
@@ -196,9 +196,7 @@ export const Sidebar: React.FC = () => {
           >
             <Menu size={20} />
           </Button>
-          <span className="text-base font-black italic tracking-tighter pt-0.5">
-            Trust <span className="text-trust font-bold">Lane</span>
-          </span>
+          <img src="/logo.png" alt="TrustLane" className="h-7 w-auto" />
         </div>
 
         <div className="flex items-center gap-3 max-w-[60%]">

@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { AdminTrustController } from '../../controllers/admin/admin-trust.controller.js'
 import { isAdminAuthenticated, requireSuperAdmin } from '../../middleware/admin.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 router.use(isAdminAuthenticated)
 

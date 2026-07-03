@@ -8,7 +8,7 @@ import {
 import prisma from '../config/prisma.js'
 import type { ConsentGrantRequest } from '../middleware/consent-grant.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 // Tous les appels partenaires doivent être vérifiés via le token de consentement
 router.use(hasValidConsent)

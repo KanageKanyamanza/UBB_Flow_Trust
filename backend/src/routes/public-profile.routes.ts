@@ -2,7 +2,7 @@ import { Router } from 'express'
 import prisma from '../config/prisma.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 /**
  * GET /public/:slug
