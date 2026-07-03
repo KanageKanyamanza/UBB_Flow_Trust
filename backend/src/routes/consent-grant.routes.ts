@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { ConsentGrantController } from '../controllers/consent-grant.controller.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 // Toutes les routes de gestion du consentement nécessitent d'être connecté
 router.use(isAuthenticated)

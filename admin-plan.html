@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UBBFlow — Plan Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Force les couleurs à l'impression / export PDF */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    /* ── COVER PAGE ── */
+    .cover {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0ea5e9 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 40px;
+      page-break-after: always;
+    }
+
+    .cover .logo {
+      font-size: 13px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #7dd3fc;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .cover h1 {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .cover h1 span { color: #38bdf8; }
+
+    .cover .subtitle {
+      font-size: 20px;
+      color: #cbd5e1;
+      max-width: 600px;
+      margin-bottom: 50px;
+    }
+
+    .cover-meta {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .cover-meta-item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 20px 28px;
+      text-align: center;
+    }
+
+    .cover-meta-item .val {
+      font-size: 32px;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .cover-meta-item .lbl {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .cover-footer {
+      position: absolute;
+      bottom: 30px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    /* ── CONTENT ── */
+    .content { max-width: 900px; margin: 0 auto; padding: 60px 40px; }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: 60px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .section-num {
+      background: #0ea5e9;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .cards-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    .card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+
+    .card p { font-size: 13px; color: #64748b; }
+
+    .card.blue { border-left: 4px solid #0ea5e9; }
+    .card.green { border-left: 4px solid #22c55e; }
+    .card.orange { border-left: 4px solid #f59e0b; }
+    .card.red { border-left: 4px solid #ef4444; }
+    .card.purple { border-left: 4px solid #8b5cf6; }
+
+    /* ── DAY BLOCKS ── */
+    .day-block {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 22px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .day-badge {
+      background: #0f172a;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .day-badge.phase1 { background: #0ea5e9; }
+    .day-badge.phase2 { background: #8b5cf6; }
+    .day-badge.phase3 { background: #22c55e; }
+    .day-badge.phase4 { background: #f59e0b; }
+    .day-badge.phase5 { background: #ef4444; }
+    .day-badge.phase6 { background: #06b6d4; }
+
+    .day-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+    .day-hours { margin-left: auto; font-size: 13px; color: #64748b; font-weight: 600; white-space: nowrap; }
+
+    .day-body { padding: 18px 22px; }
+
+    .task-list { list-style: none; }
+
+    .task-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .task-list li:last-child { border-bottom: none; }
+
+    .task-list li::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #0ea5e9;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .task-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    /* ── TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    thead th {
+      background: #0f172a;
+      color: white;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr { border-bottom: 1px solid #f1f5f9; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+
+    tbody td { padding: 12px 16px; color: #374151; vertical-align: middle; }
+    tbody td:first-child,
+    tbody td:last-child { white-space: nowrap; width: 1%; }
+
+    td.method {
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    td.method .get { color: #22c55e; }
+    td.method .post { color: #0ea5e9; }
+    td.method .patch { color: #f59e0b; }
+    td.method .delete { color: #ef4444; }
+    td.method .put { color: #8b5cf6; }
+
+    td code {
+      font-family: monospace;
+      font-size: 12px;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-orange { background: #fef3c7; color: #b45309; }
+    .badge-red { background: #fee2e2; color: #b91c1c; }
+    .badge-purple { background: #f3e8ff; color: #7c3aed; }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+
+    /* ── SUMMARY BOX ── */
+    .summary-box {
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      color: white;
+      border-radius: 16px;
+      padding: 36px;
+      margin-top: 40px;
+    }
+
+    .summary-box h3 { font-size: 20px; margin-bottom: 24px; color: #38bdf8; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+    .summary-item { text-align: center; }
+    .summary-item .num { font-size: 36px; font-weight: 800; color: #38bdf8; }
+    .summary-item .lbl { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+    /* ── ALERT BOX ── */
+    .alert {
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .alert-info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+    .alert-warn { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+    .alert-success { background: #dcfce7; color: #14532d; border-left: 4px solid #22c55e; }
+
+    .alert-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* ── TIMELINE ── */
+    .timeline { position: relative; padding-left: 30px; }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e2e8f0;
+    }
+
+    .timeline-item { position: relative; margin-bottom: 24px; }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #0ea5e9;
+      border: 2px solid white;
+      box-shadow: 0 0 0 2px #0ea5e9;
+    }
+
+    .timeline-item h4 { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .timeline-item p { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+    /* ── CRUD TABLE ── */
+    .crud-section { margin-bottom: 32px; }
+
+    .crud-section h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 12px;
+      padding: 8px 14px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      border-left: 4px solid #0ea5e9;
+    }
+
+    /* ── PAGE BREAK ── */
+    @media print {
+      @page { margin: 14mm 12mm; }
+
+      .page-break { page-break-before: always; }
+      .cover { page-break-after: always; }
+      body { background: white; font-size: 12px; }
+      .content { padding: 0; max-width: 100%; }
+      .page-header { display: none; }
+
+      /* Tableaux : colonnes fixes pour éviter le wrapping */
+      table { table-layout: fixed; width: 100%; font-size: 11px; }
+      thead th:nth-child(1) { width: 7%; }
+      thead th:nth-child(2) { width: 28%; }
+      thead th:nth-child(3) { width: 18%; }
+      thead th:nth-child(4) { width: 47%; }
+      tbody td { white-space: normal; word-break: break-word; padding: 8px 10px; }
+      td.method { white-space: nowrap; }
+      td code { font-size: 10px; word-break: break-all; }
+
+      /* Réduire les espacements pour le print */
+      .section { margin-bottom: 30px; }
+      .crud-section { margin-bottom: 20px; }
+      .day-block { margin-bottom: 12px; }
+      .cards, .cards-3 { display: block; }
+      .card { margin-bottom: 10px; }
+      .summary-grid { grid-template-columns: repeat(4, 1fr); }
+
+
+      /* Empêcher les coupures à l'intérieur des blocs */
+      .day-block,
+      .crud-section,
+      .card,
+      .alert,
+      .timeline-item,
+      .summary-box,
+      tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      /* Ne jamais couper juste après un titre de section ou un h4 */
+      .section-header,
+      .crud-section h4,
+      h3 {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      /* Ne jamais couper juste avant un tableau */
+      table {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      /* Garder le titre de module collé à son tableau */
+      .crud-section h4 + table {
+        page-break-before: avoid;
+        break-before: avoid;
+      }
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .page-header .brand { font-weight: 800; font-size: 16px; color: #0f172a; }
+    .page-header .brand span { color: #0ea5e9; }
+    .page-header .date { font-size: 12px; color: #94a3b8; }
+
+    /* ── TECH STACK PILL ── */
+    .tech-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+    .tech-pill {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #374151;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    h2.page-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .page-desc { font-size: 15px; color: #64748b; margin-bottom: 40px; }
+
+    /* ── DIVIDER ── */
+    .divider { height: 1px; background: #e2e8f0; margin: 40px 0; }
+
+    .text-sm { font-size: 13px; color: #64748b; }
+    .text-xs { font-size: 11px; color: #94a3b8; }
+    .mt-2 { margin-top: 8px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .font-bold { font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ COVER PAGE ══════════ -->
+<div class="cover">
+  <div class="logo">UBBFlow · TrustLane Platform</div>
+  <h1>Plan de développement<br /><span>Admin Panel</span></h1>
+  <p class="subtitle">CRUD complet, tests, déploiement — estimation détaillée par journée</p>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="val">17</div>
+      <div class="lbl">Jours de développement</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="val">136h</div>
+      <div class="lbl">Heures estimées</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="val">6</div>
+      <div class="lbl">Phases</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="val">10+</div>
+      <div class="lbl">Modules CRUD</div>
+    </div>
+  </div>
+
+  <div class="cover-footer">Document généré le 29 juin 2026 · Confidentiel</div>
+</div>
+
+<!-- ══════════ STICKY HEADER ══════════ -->
+<div class="page-header">
+  <div class="brand">UBB<span>Flow</span> Admin Panel</div>
+  <div class="date">Plan technique — Juin 2026</div>
+</div>
+
+<div class="content">
+
+  <!-- ══════════ SECTION 1 : CONTEXTE ══════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">Contexte & Architecture</div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">ℹ</div>
+      <div>Le panel admin utilise le <strong>même backend Express.js</strong> existant — pas de backend séparé. Des routes <code>/api/admin/*</code> seront ajoutées, protégées par un middleware dédié avec un JWT admin distinct. Le dossier <code>/admin/</code> sera un nouveau workspace React/Vite à la racine du projet.</div>
+    </div>
+
+    <div class="cards mt-4">
+      <div class="card blue">
+        <div class="card-title">Backend (existant, étendu)</div>
+        <p>Express.js · TypeScript · Prisma · PostgreSQL · Redis<br/>Ajout de routes <code>/api/admin/*</code> + modèle <code>Admin</code> + middleware <code>isAdminAuthenticated</code></p>
+      </div>
+      <div class="card purple">
+        <div class="card-title">Admin Panel (nouveau dossier)</div>
+        <p>React 18 · Vite · TypeScript · TailwindCSS · Redux Toolkit + RTK Query · React Router v6 · Recharts</p>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+        <div class="card-title mb-2">Structure finale du projet</div>
+        <pre style="font-size:13px;color:#374151;line-height:1.8;background:#f8fafc;padding:16px;border-radius:8px;overflow:auto;">
+d:\UBB\UBBFlow\
+├── backend/          ← INCHANGÉ (+ ajout routes /api/admin/*)
+├── frontend/         ← INCHANGÉ (app SME)
+└── admin/            ← NOUVEAU (panel admin React/Vite)
+    ├── package.json
+    ├── vite.config.ts
+    └── src/
+        ├── api/      ← RTK Query slices (un par module)
+        ├── pages/    ← 11 pages admin
+        ├── components/layout/
+        └── store/</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SECTION 2 : MODULES CRUD ══════════ -->
+  <div class="section page-break">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Modules CRUD complets</div>
+    </div>
+
+    <!-- AUTH ADMIN -->
+    <div class="crud-section">
+      <h4>Module 1 — Authentification Admin</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/auth/login</code></td>
+            <td>Connexion admin</td>
+            <td>Rate limit 3 tentatives / 15 min · JWT signé ADMIN_JWT_SECRET</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/auth/refresh</code></td>
+            <td>Refresh token admin</td>
+            <td>Refresh token 7 jours · Rotation automatique</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/auth/me</code></td>
+            <td>Profil admin courant</td>
+            <td>Retourne firstName, lastName, isSuperAdmin</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/auth/logout</code></td>
+            <td>Déconnexion</td>
+            <td>Invalide le refresh token en DB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ORGANISATIONS -->
+    <div class="crud-section">
+      <h4>Module 2 — Organisations</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/organizations</code></td>
+            <td>Lister toutes les orgs</td>
+            <td>Pagination · Filtres : statut, pays, date · Tri : trust score, date création</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/organizations/:id</code></td>
+            <td>Détail d'une org</td>
+            <td>Inclut : users, comptes, trust score, documents, dernières transactions</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="patch">PATCH</span></td>
+            <td><code>/api/admin/organizations/:id/suspend</code></td>
+            <td>Suspendre / réactiver</td>
+            <td>Ajoute champ <code>isSuspended</code> sur Organization · Log AuditLog</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="delete">DELETE</span></td>
+            <td><code>/api/admin/organizations/:id</code></td>
+            <td>Supprimer org</td>
+            <td>Soft delete + cascade · SuperAdmin requis</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/organizations/:id/audit-logs</code></td>
+            <td>Logs d'une org</td>
+            <td>Historique complet des actions de l'org</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- USERS -->
+    <div class="crud-section">
+      <h4>Module 3 — Utilisateurs</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/users</code></td>
+            <td>Tous les users (cross-orgs)</td>
+            <td>Pagination · Filtres : rôle, orgId · Recherche email/nom</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/users/:id</code></td>
+            <td>Détail user</td>
+            <td>Inclut org, rôle, dernière connexion</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="patch">PATCH</span></td>
+            <td><code>/api/admin/users/:id</code></td>
+            <td>Modifier user</td>
+            <td>Changer rôle, bloquer compte</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/users/:id/reset-password</code></td>
+            <td>Réinitialiser mdp</td>
+            <td>Envoie email ou retourne lien temporaire</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="delete">DELETE</span></td>
+            <td><code>/api/admin/users/:id</code></td>
+            <td>Supprimer user</td>
+            <td>Soft delete · SuperAdmin requis</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="crud-section">
+      <h4>Module 4 — Révision Documents</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/documents</code></td>
+            <td>File de révision</td>
+            <td>Filtres : status (SUBMITTED, VERIFIED, REJECTED) · Tri : date upload</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/documents/:id</code></td>
+            <td>Détail document</td>
+            <td>Inclut versions, org, historique statuts</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="patch">PATCH</span></td>
+            <td><code>/api/admin/documents/:id/verify</code></td>
+            <td>Vérifier document</td>
+            <td>Status → VERIFIED · Log AuditLog · Recalcul trust score</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="patch">PATCH</span></td>
+            <td><code>/api/admin/documents/:id/reject</code></td>
+            <td>Rejeter document</td>
+            <td>Status → REJECTED · Corps : motif de rejet · Notification push</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/documents/:id/download</code></td>
+            <td>Télécharger fichier</td>
+            <td>Stream depuis S3/local</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TRUST SCORES -->
+    <div class="crud-section">
+      <h4>Module 5 — Trust Scores</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/trust-scores</code></td>
+            <td>Tous les trust scores</td>
+            <td>Avec org info · Filtres : score range, date</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/trust-scores/:orgId/history</code></td>
+            <td>Historique scores org</td>
+            <td>Tous les TrustScore de l'org triés par date</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/trust-scores/:orgId/override</code></td>
+            <td>Override manuel du score</td>
+            <td>Corps : newScore, reason · Log AuditLog obligatoire · SuperAdmin requis</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/trust-scores/:orgId/recalculate</code></td>
+            <td>Forcer recalcul</td>
+            <td>Lance le score-queue service</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- COMPLIANCE -->
+    <div class="crud-section">
+      <h4>Module 6 — Compliance / Templates</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/compliance/templates</code></td>
+            <td>Lister les templates</td>
+            <td>LOCAL + EU</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/compliance/templates/:id</code></td>
+            <td>Détail template</td>
+            <td>Liste des requirements</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="patch">PATCH</span></td>
+            <td><code>/api/admin/compliance/templates/:id</code></td>
+            <td>Modifier requirements</td>
+            <td>Ajouter / supprimer des items</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/compliance/checklists</code></td>
+            <td>Toutes les checklists</td>
+            <td>Statut par org · Filtres : market, status</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/compliance/stats</code></td>
+            <td>Stats conformité globale</td>
+            <td>% PASS / FAIL / IN_REVIEW par market</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="crud-section">
+      <h4>Module 7 — Analytics Global</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/analytics/overview</code></td>
+            <td>KPIs globaux</td>
+            <td>Nb orgs, users, documents, trust score moyen</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/analytics/registrations</code></td>
+            <td>Nouvelles orgs / mois</td>
+            <td>Données pour graphique courbe</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/analytics/documents-by-status</code></td>
+            <td>Documents par statut</td>
+            <td>Données pour graphique camembert</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/analytics/trust-distribution</code></td>
+            <td>Distribution des scores</td>
+            <td>Histogram 0-20, 20-40, 40-60, 60-80, 80-100</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- AUDIT LOGS -->
+    <div class="crud-section">
+      <h4>Module 8 — Audit Logs</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/audit-logs</code></td>
+            <td>Tous les logs système</td>
+            <td>Pagination · Filtres : userId, orgId, action, entityType, date range</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/audit-logs/export</code></td>
+            <td>Export CSV</td>
+            <td>Avec filtres · Stream fichier</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ALERTES -->
+    <div class="crud-section">
+      <h4>Module 9 — Alertes Système</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/alerts</code></td>
+            <td>Toutes les alertes</td>
+            <td>Filtres : severity, isAck, orgId · Tri : date, severity</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/alerts/:id/acknowledge</code></td>
+            <td>Acquitter alerte</td>
+            <td>Marque isAck = true</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/alerts/broadcast</code></td>
+            <td>Créer alerte globale</td>
+            <td>Pour toutes les orgs ou une org spécifique</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ADMINS -->
+    <div class="crud-section">
+      <h4>Module 10 — Gestion des Admins</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/admins</code></td>
+            <td>Lister les admins</td>
+            <td>SuperAdmin requis</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/admins</code></td>
+            <td>Créer un admin</td>
+            <td>SuperAdmin requis · Email + password temporaire</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="patch">PATCH</span></td>
+            <td><code>/api/admin/admins/:id</code></td>
+            <td>Modifier admin</td>
+            <td>Promouvoir en SuperAdmin ou révoquer</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="delete">DELETE</span></td>
+            <td><code>/api/admin/admins/:id</code></td>
+            <td>Supprimer admin</td>
+            <td>Interdit de se supprimer soi-même</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SYSTEM -->
+    <div class="crud-section">
+      <h4>Module 11 — Système & Monitoring</h4>
+      <table>
+        <thead>
+          <tr><th>Méthode</th><th>Route</th><th>Action</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/system/health</code></td>
+            <td>Health check</td>
+            <td>DB ping, Redis ping, uptime, version</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/system/redis-stats</code></td>
+            <td>Stats Redis</td>
+            <td>Mémoire utilisée, nb clés, hits/misses</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="post">POST</span></td>
+            <td><code>/api/admin/system/cache/flush</code></td>
+            <td>Vider le cache Redis</td>
+            <td>SuperAdmin requis · Log AuditLog</td>
+          </tr>
+          <tr>
+            <td class="method"><span class="get">GET</span></td>
+            <td><code>/api/admin/system/cron-status</code></td>
+            <td>Statut des cron jobs</td>
+            <td>Dernier run, prochain run, statut</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════ SECTION 3 : PLANNING JOUR PAR JOUR ══════════ -->
+  <div class="section page-break">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Planning Jour par Jour</div>
+    </div>
+
+    <div class="alert alert-warn">
+      <div class="alert-icon">⚠</div>
+      <div>Estimation basée sur <strong>8h/jour</strong> de développement effectif. Les estimations incluent les tests unitaires et d'intégration de chaque module. Un développeur full-stack expérimenté. Marge de 20% incluse dans les durées.</div>
+    </div>
+
+    <!-- PHASE 1 -->
+    <h3 style="font-size:17px;font-weight:800;color:#0ea5e9;margin:28px 0 16px;letter-spacing:0.5px;">PHASE 1 — Backend : Fondations (Jours 1–3)</h3>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase1">JOUR 1</span>
+        <div class="day-title">Modèle Admin + Authentification backend</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>
+            <div>
+              Ajouter modèle <code>Admin</code> dans <code>prisma/schema.prisma</code> : id, email, password (Argon2), firstName, lastName, isSuperAdmin, refreshToken
+              <div class="task-sub">+ champ <code>isSuspended</code> sur Organization</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              Créer et appliquer la migration Prisma : <code>prisma migrate dev --name add_admin_model</code>
+            </div>
+          </li>
+          <li>
+            <div>
+              Script seed admin : <code>npm run seed:admin</code> — crée le premier SuperAdmin via CLI
+              <div class="task-sub">Protection : échoue si un admin existe déjà</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              Variables d'environnement : <code>ADMIN_JWT_SECRET</code>, <code>ADMIN_JWT_REFRESH_SECRET</code>
+            </div>
+          </li>
+          <li>
+            <div>
+              Middleware <code>admin.middleware.ts</code> : <code>isAdminAuthenticated</code> + <code>requireSuperAdmin</code>
+              <div class="task-sub">JWT séparé du JWT user — impossibilité d'usurpation croisée</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              Controller + routes auth admin : login, refresh, me, logout
+              <div class="task-sub">Rate limit strict : 3 tentatives / 15 min</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              Tests : middleware auth · login valide/invalide · refresh token · rate limiting
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase1">JOUR 2</span>
+        <div class="day-title">Routes admin : Organisations + Users</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Controller <code>admin-orgs.controller.ts</code> : lister (pagination + filtres), détail, suspendre/réactiver, soft delete</li>
+          <li>Controller <code>admin-users.controller.ts</code> : lister cross-orgs (filtres), détail, modifier, reset password, soft delete</li>
+          <li>Monter les routes dans <code>server.ts</code> sous <code>/api/admin/*</code></li>
+          <li>Tests : pagination · filtres · suspension org · modification user · droits SuperAdmin</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase1">JOUR 3</span>
+        <div class="day-title">Routes admin : Documents + Trust + Compliance</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Controller <code>admin-documents.controller.ts</code> : file de révision, verify, reject (avec notification push), download</li>
+          <li>Controller <code>admin-trust.controller.ts</code> : liste scores, historique, override manuel (log audit obligatoire), recalcul</li>
+          <li>Controller <code>admin-compliance.controller.ts</code> : templates CRUD, checklists cross-orgs, stats conformité</li>
+          <li>Tests : verify/reject document · override trust score · modification template</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PHASE 2 -->
+    <h3 style="font-size:17px;font-weight:800;color:#8b5cf6;margin:28px 0 16px;letter-spacing:0.5px;">PHASE 2 — Backend : Analytics, Logs, Système (Jour 4)</h3>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase2">JOUR 4</span>
+        <div class="day-title">Routes admin : Analytics + Audit + Alertes + Système + Admins</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Controller <code>admin-analytics.controller.ts</code> : KPIs globaux, inscriptions/mois, docs par statut, distribution scores</li>
+          <li>Controller <code>admin-audit.controller.ts</code> : tous logs (pagination + filtres), export CSV (stream)</li>
+          <li>Controller <code>admin-alerts.controller.ts</code> : toutes alertes, acquitter, broadcast</li>
+          <li>Controller <code>admin-system.controller.ts</code> : health (DB+Redis), stats Redis, flush cache, statut crons</li>
+          <li>Controller <code>admin-admins.controller.ts</code> : CRUD admins (SuperAdmin uniquement)</li>
+          <li>Tests : export CSV · broadcast alerte · flush cache (droits) · health check</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PHASE 3 -->
+    <h3 style="font-size:17px;font-weight:800;color:#22c55e;margin:28px 0 16px;letter-spacing:0.5px;">PHASE 3 — Frontend Admin : Setup & Auth (Jours 5–6)</h3>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase3">JOUR 5</span>
+        <div class="day-title">Scaffold projet /admin/ + Configuration</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Init workspace npm dans <code>/admin/</code> : Vite + React + TypeScript + TailwindCSS</li>
+          <li>Ajouter <code>"admin"</code> aux workspaces dans <code>package.json</code> racine</li>
+          <li>Config Vite : proxy <code>/api</code> → backend, alias <code>@</code></li>
+          <li>Setup Redux store + RTK Query base slice (baseUrl, auto-refresh token)</li>
+          <li><code>AdminAuthContext.tsx</code> : état global de connexion admin</li>
+          <li>Routes React Router : <code>/login</code> + toutes les pages protégées via <code>AdminGuard</code></li>
+          <li>i18n : copier la config i18next du frontend, ajouter les namespaces admin FR/EN</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase3">JOUR 6</span>
+        <div class="day-title">Layout principal + Page Login</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li><code>AdminLayout.tsx</code> : shell avec sidebar fixe + topbar + zone contenu</li>
+          <li><code>AdminSidebar.tsx</code> : navigation vers les 10 modules, badge alertes CRITICAL, info admin connecté</li>
+          <li><code>AdminTopbar.tsx</code> : breadcrumb, bouton déconnexion, switcher FR/EN</li>
+          <li>Page <code>LoginPage.tsx</code> : formulaire email + password · gestion erreurs · loading state</li>
+          <li>Composants UI de base : Button, Card, Input, Badge, Modal, Table (avec pagination)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PHASE 4 -->
+    <h3 style="font-size:17px;font-weight:800;color:#f59e0b;margin:28px 0 16px;letter-spacing:0.5px;">PHASE 4 — Frontend Admin : Pages (Jours 7–12)</h3>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase4">JOUR 7</span>
+        <div class="day-title">Dashboard + Analytics globaux</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>RTK Query slice <code>adminAnalyticsApi.ts</code></li>
+          <li><code>DashboardPage.tsx</code> : 4 KPI cards (orgs, users, docs en attente, score moyen)</li>
+          <li>Graphique courbe : nouvelles orgs par mois (Recharts LineChart)</li>
+          <li>Graphique camembert : documents par statut (Recharts PieChart)</li>
+          <li>Graphique barre : distribution des trust scores (Recharts BarChart)</li>
+          <li>Section alertes CRITICAL non acquittées avec lien direct</li>
+          <li>Skeleton loaders pour chaque widget</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase4">JOUR 8</span>
+        <div class="day-title">Page Organisations</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>RTK Query slice <code>adminOrgsApi.ts</code></li>
+          <li><code>OrganizationsPage.tsx</code> : tableau paginé avec colonnes (nom, owner, trust score, statut, date)</li>
+          <li>Filtres : statut (actif/suspendu), recherche par nom</li>
+          <li>Actions inline : suspendre/réactiver avec dialog de confirmation</li>
+          <li><code>OrgDetailPage.tsx</code> : tabs (Info, Users, Documents, Trust Score, Transactions récentes)</li>
+          <li>Bouton "Supprimer" avec confirmation renforcée (saisie du nom de l'org)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase4">JOUR 9</span>
+        <div class="day-title">Page Utilisateurs + Page Admins</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>RTK Query slice <code>adminUsersApi.ts</code></li>
+          <li><code>UsersPage.tsx</code> : table cross-orgs · colonnes (email, nom, rôle, org, statut)</li>
+          <li>Filtres : rôle, orgId, recherche email</li>
+          <li>Actions : voir profil, modifier rôle, bloquer/débloquer, réinitialiser password</li>
+          <li><code>AdminsPage.tsx</code> : liste des admins · créer / modifier / supprimer (SuperAdmin only)</li>
+          <li>Formulaire création admin : email, firstName, lastName, isSuperAdmin</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase4">JOUR 10</span>
+        <div class="day-title">Page Révision Documents</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>RTK Query slice <code>adminDocumentsApi.ts</code></li>
+          <li><code>DocumentReviewPage.tsx</code> : file de révision (statut SUBMITTED en priorité)</li>
+          <li>Filtres : statut, type de document, orgId, date upload</li>
+          <li>Preview inline : PDF (iframe ou react-pdf), images (img tag)</li>
+          <li>Panel latéral : info org + boutons Vérifier / Rejeter</li>
+          <li>Modal "Rejeter" : champ motif de rejet obligatoire</li>
+          <li>Toast de confirmation après chaque action + invalidation cache RTK</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase4">JOUR 11</span>
+        <div class="day-title">Trust Scores + Compliance</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>RTK Query slices <code>adminTrustApi.ts</code> + <code>adminComplianceApi.ts</code></li>
+          <li><code>TrustScorePage.tsx</code> : table tous scores · colonnes (org, score, grade, reason codes, date)</li>
+          <li>Modal "Override score" : nouveau score (0-100) + justification obligatoire (SuperAdmin)</li>
+          <li>Historique scores par org : graphique temporel</li>
+          <li><code>CompliancePage.tsx</code> : tabs (Templates, Checklists par org, Statistiques)</li>
+          <li>Edition inline des requirements du template (ajouter/supprimer items)</li>
+          <li>Stats conformité : barre de progression par market (LOCAL, EU)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase4">JOUR 12</span>
+        <div class="day-title">Audit Logs + Alertes + Système</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>RTK Query slices : <code>adminAuditApi.ts</code> + <code>adminAlertsApi.ts</code> + <code>adminSystemApi.ts</code></li>
+          <li><code>AuditLogsPage.tsx</code> : table paginée (action, entityType, user, org, date) · filtres avancés · bouton export CSV</li>
+          <li><code>AlertsPage.tsx</code> : table triée par sévérité · badges CRITICAL/WARN/INFO · bouton acquitter · bouton broadcast</li>
+          <li><code>SystemPage.tsx</code> : cards health (DB, Redis, uptime) · stats Redis · bouton flush cache (SuperAdmin) · tableau cron jobs</li>
+          <li>Auto-refresh toutes les 30s sur la page Système (via RTK Query polling)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PHASE 5 -->
+    <h3 style="font-size:17px;font-weight:800;color:#ef4444;margin:28px 0 16px;letter-spacing:0.5px;">PHASE 5 — Tests complets (Jours 13–15)</h3>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase5">JOUR 13</span>
+        <div class="day-title">Tests unitaires backend (Jest)</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Setup Jest + Supertest + base de données de test (PostgreSQL test DB ou SQLite)</li>
+          <li>Tests auth admin : login valide, email invalide, password incorrect, rate limit, refresh, logout</li>
+          <li>Tests middleware : token valide, token expiré, token user (ne doit pas passer), requireSuperAdmin</li>
+          <li>Tests organisations : lister (pagination), suspendre, réactiver, soft delete (SuperAdmin requis)</li>
+          <li>Tests users : lister cross-orgs, modifier rôle, reset password, droits</li>
+          <li>Tests documents : verify, reject (motif requis), download, filtres par status</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase5">JOUR 14</span>
+        <div class="day-title">Tests unitaires backend (suite) + Tests d'intégration</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Tests trust score : override (droits SuperAdmin, log audit créé), recalcul</li>
+          <li>Tests compliance : modifier template, stats conformité</li>
+          <li>Tests analytics : KPIs, graphiques, distribution</li>
+          <li>Tests audit logs : filtres, export CSV</li>
+          <li>Tests alertes : broadcast, acquitter</li>
+          <li>Tests système : health, flush cache (droits)</li>
+          <li>Tests d'intégration end-to-end : flux complet (login → révision document → verify → trust score recalculé)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase5">JOUR 15</span>
+        <div class="day-title">Tests frontend (Vitest + Testing Library)</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Setup Vitest + React Testing Library dans le workspace <code>/admin/</code></li>
+          <li>Tests composants : Sidebar (navigation active), AdminGuard (redirect si non connecté)</li>
+          <li>Tests pages : LoginPage (soumission valide, erreur), OrganizationsPage (table, filtres), DocumentReviewPage (verify/reject)</li>
+          <li>Tests RTK Query slices : mock MSW (Mock Service Worker) pour intercepter les appels API</li>
+          <li>Tests formulaires : validation Zod, messages d'erreur</li>
+          <li>Tests accessibilité : rôles ARIA, navigation clavier sur les modals</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PHASE 6 -->
+    <h3 style="font-size:17px;font-weight:800;color:#06b6d4;margin:28px 0 16px;letter-spacing:0.5px;">PHASE 6 — Docker, Déploiement, Finalisation (Jours 16–17)</h3>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase6">JOUR 16</span>
+        <div class="day-title">Docker + Nginx + Variables d'environnement</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Ajouter service <code>admin</code> dans <code>docker-compose.yml</code> : port 5174 (dev) / servi par Nginx en prod</li>
+          <li>Mettre à jour <code>nginx.conf</code> : nouveau vhost ou sous-chemin <code>/admin</code> vers le build Vite admin</li>
+          <li>Vérifier isolation réseau Docker : admin ne peut appeler que le backend, pas d'accès direct DB/Redis</li>
+          <li>Mettre à jour <code>.env.example</code> : ajouter toutes les variables admin</li>
+          <li>Mettre à jour <code>DEPLOY.md</code> : procédure seed admin, migration, URL admin</li>
+          <li>Build de production test : <code>npm run build</code> dans <code>/admin/</code> · vérifier bundle size</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="day-block">
+      <div class="day-header">
+        <span class="day-badge phase6">JOUR 17</span>
+        <div class="day-title">QA finale, sécurité, polish UI</div>
+        <div class="day-hours">8h</div>
+      </div>
+      <div class="day-body">
+        <ul class="task-list">
+          <li>Revue sécurité : vérifier que AUCUN endpoint admin n'est accessible sans isAdminAuthenticated · aucun token user accepté</li>
+          <li>Test de montée en charge légère : 100 orgs, 500 users en DB de test — vérifier pagination et performances</li>
+          <li>Responsive check : admin panel lisible sur écrans 1280px+ (pas mobile-first, usage bureau)</li>
+          <li>États vides (empty states) sur toutes les tables</li>
+          <li>Gestion erreurs réseau : retry, messages d'erreur utilisateur, fallback gracieux</li>
+          <li>Revue des AuditLogs : s'assurer que TOUTES les actions sensibles (override score, verify doc, suspendre org, flush cache) créent un log</li>
+          <li>Démo complète du flux : login → dashboard → révision document → verify → trust recalculé → audit log visible</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════ SECTION 4 : RÉCAPITULATIF ══════════ -->
+  <div class="section page-break">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Récapitulatif & Livrables</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Phase</th><th>Contenu</th><th>Jours</th><th>Heures</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-blue">Phase 1</span></td>
+          <td>Backend fondations : modèle Admin, middleware, routes auth, orgs, users, documents, trust, compliance</td>
+          <td>Jours 1–3</td>
+          <td>24h</td>
+          <td><span class="badge badge-gray">À faire</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">Phase 2</span></td>
+          <td>Backend suite : analytics, audit logs, alertes, système, gestion admins</td>
+          <td>Jour 4</td>
+          <td>8h</td>
+          <td><span class="badge badge-gray">À faire</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">Phase 3</span></td>
+          <td>Frontend admin : scaffold, config, auth, layout, composants UI</td>
+          <td>Jours 5–6</td>
+          <td>16h</td>
+          <td><span class="badge badge-gray">À faire</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-orange">Phase 4</span></td>
+          <td>Frontend admin : 10 pages complètes avec CRUD</td>
+          <td>Jours 7–12</td>
+          <td>48h</td>
+          <td><span class="badge badge-gray">À faire</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-red">Phase 5</span></td>
+          <td>Tests : unitaires backend (Jest), intégration, frontend (Vitest + Testing Library)</td>
+          <td>Jours 13–15</td>
+          <td>24h</td>
+          <td><span class="badge badge-gray">À faire</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">Phase 6</span></td>
+          <td>Docker, Nginx, déploiement, QA finale, sécurité, polish</td>
+          <td>Jours 16–17</td>
+          <td>16h</td>
+          <td><span class="badge badge-gray">À faire</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-box" style="margin-top:32px;">
+      <h3>Résumé global</h3>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="num">17</div>
+          <div class="lbl">Jours de dev</div>
+        </div>
+        <div class="summary-item">
+          <div class="num">136h</div>
+          <div class="lbl">Heures totales</div>
+        </div>
+        <div class="summary-item">
+          <div class="num">11</div>
+          <div class="lbl">Modules CRUD</div>
+        </div>
+        <div class="summary-item">
+          <div class="num">40+</div>
+          <div class="lbl">Endpoints API admin</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVRABLES FINAUX -->
+    <div style="margin-top:32px;">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;color:#0f172a;">Livrables finaux</h3>
+      <div class="cards">
+        <div class="card green">
+          <div class="card-title">Backend (étendu)</div>
+          <p>Migration Prisma · Middleware admin · 11 controllers · 40+ routes <code>/api/admin/*</code> · Script seed · Tests Jest (~80% couverture)</p>
+        </div>
+        <div class="card blue">
+          <div class="card-title">Frontend Admin (/admin/)</div>
+          <p>Workspace npm · 11 pages · Layout complet · RTK Query slices · Composants UI · i18n FR/EN · Tests Vitest</p>
+        </div>
+        <div class="card orange">
+          <div class="card-title">Infrastructure</div>
+          <p>Docker Compose mis à jour · Nginx config admin · .env.example · DEPLOY.md · Build de production</p>
+        </div>
+        <div class="card purple">
+          <div class="card-title">Sécurité</div>
+          <p>JWT admin séparé · Rate limiting · AuditLog sur toutes actions sensibles · BOLA protection · Isolation SuperAdmin</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HYPOTHÈSES -->
+    <div style="margin-top:32px;">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;color:#0f172a;">Hypothèses & Risques</h3>
+
+      <div class="alert alert-warn">
+        <div class="alert-icon">⚠</div>
+        <div><strong>Risque principal :</strong> La révision de documents (preview PDF/images) peut nécessiter un ajustement des Content-Security-Policy headers Nginx pour autoriser les iframes ou les URLs S3. Prévoir +2h si les docs sont en S3 avec URLs signées.</div>
+      </div>
+
+      <div class="alert alert-info">
+        <div class="alert-icon">ℹ</div>
+        <div><strong>Hypothèse :</strong> Un seul développeur full-stack. Avec 2 développeurs (1 backend, 1 frontend), le délai peut descendre à <strong>10-11 jours</strong> en travaillant en parallèle sur les phases 1-2 (backend) et 3-4 (frontend scaffolding).</div>
+      </div>
+
+      <div class="alert alert-success">
+        <div class="alert-icon">✓</div>
+        <div><strong>Avantage :</strong> Réutilisation de la stack complète (même TailwindCSS, même patterns RTK Query, même i18n) — pas de temps perdu en montée en compétence ou en choix technologiques.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="text-sm" style="text-align:center;color:#94a3b8;">
+      Document préparé pour UBBFlow / TrustLane · Juin 2026<br/>
+      Ce plan est une estimation — des imprévus techniques peuvent ajuster les délais.
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { ComplianceController } from '../controllers/compliance.controller.js'
 import { isAuthenticated, authorizeRole } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 router.use(isAuthenticated)
 router.use(authorizeRole(['OWNER']))

@@ -65,14 +65,22 @@ export class AccountService {
   }
 
   static async delete(id: string, orgId: string) {
-    // Verify ownership first
     await this.getById(id, orgId)
 
-    const deleted = await prisma.account.delete({
-      where: { id },
-    })
+    const txnCount = await prisma.transaction.count({ where: { accountId: id } })
+    if (txnCount > 0) {
+      throw new Error(
+        `Ce compte contient ${txnCount} transaction(s). Supprimez d'abord les transactions avant de supprimer le compte.`
+      )
+    }
+
+    // Nullify nullable FK references before deletion
+    await prisma.user.updateMany({ where: { accountId: id }, data: { accountId: null } })
+    await prisma.budget.updateMany({ where: { accountId: id }, data: { accountId: null } })
+
+    await prisma.account.delete({ where: { id } })
+
     await RedisService.invalidatePattern(`kpis:${orgId}:`)
     await RedisService.invalidatePattern(`proj:${orgId}:`)
-    return deleted
   }
 }

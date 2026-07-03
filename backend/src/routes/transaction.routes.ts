@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { TransactionController } from '../controllers/transaction.controller.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 // All transaction routes require authentication
 router.use(isAuthenticated)

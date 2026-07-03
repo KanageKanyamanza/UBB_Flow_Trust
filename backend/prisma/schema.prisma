@@ -9,6 +9,7 @@ datasource db {
 model Organization {
   id                String               @id @default(uuid())
   name              String
+  isSuspended       Boolean              @default(false)
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   accounts          Account[]
@@ -35,6 +36,7 @@ model User {
   firstName    String?
   lastName     String?
   role         Role         @default(OWNER)
+  isBlocked    Boolean      @default(false)
   orgId        String
   accountId    String?
   createdAt    DateTime     @default(now())
@@ -268,13 +270,16 @@ model AuditLog {
   oldData      Json?
   newData      Json?
   userId       String?
-  orgId        String
+  adminId      String?
+  orgId        String?
   createdAt    DateTime     @default(now())
-  organization Organization @relation(fields: [orgId], references: [id])
-  user         User?        @relation(fields: [userId], references: [id])
+  organization Organization? @relation(fields: [orgId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+  admin        Admin?        @relation(fields: [adminId], references: [id])
 
   @@index([orgId])
   @@index([userId])
+  @@index([adminId])
   @@index([orgId, createdAt])
 }
 
@@ -285,6 +290,19 @@ model EvidenceFile {
   fileName    String
   createdAt   DateTime    @default(now())
   transaction Transaction @relation(fields: [txnId], references: [id])
+}
+
+model Admin {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  password     String
+  firstName    String
+  lastName     String
+  isSuperAdmin Boolean    @default(false)
+  refreshToken String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
 }
 
 enum Role {

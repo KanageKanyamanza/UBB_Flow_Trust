@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { AlertService } from '../services/alert.service.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 // All alert routes are protected
 router.use(isAuthenticated)

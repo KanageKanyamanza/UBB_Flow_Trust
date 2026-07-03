@@ -52,6 +52,41 @@ export class RedisService {
    * Invalide toutes les clés correspondant à un pattern (ex: 'txns:orgId123:')
    * Utilise SCAN pour éviter de bloquer le serveur Redis.
    */
+  static async getStats(): Promise<Record<string, string | number>> {
+    if (!this.isConnected()) return { status: 'down' }
+    try {
+      const info = await redisClient.info()
+      const parse = (key: string): string => {
+        const match = info.match(new RegExp(`${key}:(.+)`))
+        return match?.[1]?.trim() ?? 'N/A'
+      }
+
+      // Count total keys across all DBs
+      const keyspaceSection = info.match(/# Keyspace([\s\S]*?)(?:\n#|$)/)?.[1] ?? ''
+      const totalKeys = (keyspaceSection.match(/keys=(\d+)/g) ?? [])
+        .reduce((sum, m) => sum + parseInt(m.replace('keys=', ''), 10), 0)
+
+      return {
+        status: 'up',
+        version: parse('redis_version'),
+        usedMemory: parse('used_memory_human'),
+        peakMemory: parse('used_memory_peak_human'),
+        connectedClients: Number(parse('connected_clients')),
+        uptimeInSeconds: Number(parse('uptime_in_seconds')),
+        totalKeys,
+        hitRate: parse('keyspace_hits'),
+        missRate: parse('keyspace_misses'),
+      }
+    } catch {
+      return { status: 'error' }
+    }
+  }
+
+  static async flushAll(): Promise<void> {
+    if (!this.isConnected()) return
+    await redisClient.flushall()
+  }
+
   static async invalidatePattern(pattern: string): Promise<void> {
     if (!this.isConnected()) return;
     try {

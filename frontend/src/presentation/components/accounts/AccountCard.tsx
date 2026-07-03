@@ -1,5 +1,5 @@
-import React from 'react'
-import { Building2, Smartphone, Wallet, Coins, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
+import React, { useState } from 'react'
+import { Building2, Smartphone, Wallet, Coins, Trash2, TrendingUp, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Account, useDeleteAccountMutation } from '../../../infrastructure/api/accountApi'
@@ -24,14 +24,17 @@ const typeLabels = {
 
 export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
   const [deleteAccount, { isLoading }] = useDeleteAccountMutation()
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const Icon = typeIcons[account.type] || Coins
 
   const handleDelete = async () => {
+    setDeleteError(null)
     if (confirm(`Êtes-vous sûr de vouloir supprimer le compte "${account.name}" ?`)) {
       try {
         await deleteAccount(account.id).unwrap()
-      } catch (error) {
-        console.error('Failed to delete account:', error)
+      } catch (err: any) {
+        const msg = err?.data?.error || err?.error || 'Erreur lors de la suppression.'
+        setDeleteError(msg)
       }
     }
   }
@@ -50,9 +53,9 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
             </p>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleDelete}
           disabled={isLoading}
           className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -70,6 +73,12 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
             <span className="text-muted-foreground">En progression</span>
           </div>
         </div>
+        {deleteError && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-400">
+            <AlertCircle size={13} className="mt-0.5 shrink-0" />
+            <span>{deleteError}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

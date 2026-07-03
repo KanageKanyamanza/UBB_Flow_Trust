@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { PushService } from '../services/push.service.js'
 import { isAuthenticated } from '../middleware/auth.middleware.js'
 
-const router = Router()
+const router: ReturnType<typeof Router> = Router()
 
 /**
  * GET /push/vapid-public-key

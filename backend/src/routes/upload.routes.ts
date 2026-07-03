@@ -3,7 +3,7 @@ import { uploadImage, scanImage } from '../controllers/upload.controller.js';
 import { upload } from '../middleware/upload.middleware.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // Endpoint d'upload : /upload
 router.post('/', isAuthenticated, upload.single('file'), uploadImage);

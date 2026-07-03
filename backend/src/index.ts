@@ -24,6 +24,17 @@ import partnerRoutes from './routes/partner.routes.js'
 import publicProfileRoutes from './routes/public-profile.routes.js'
 import exportRoutes from './routes/export.routes.js'
 import pushRoutes from './routes/push.routes.js'
+import adminAuthRoutes from './routes/admin/admin-auth.routes.js'
+import adminOrgsRoutes from './routes/admin/admin-orgs.routes.js'
+import adminUsersRoutes from './routes/admin/admin-users.routes.js'
+import adminAdminsRoutes from './routes/admin/admin-admins.routes.js'
+import adminDocumentsRoutes from './routes/admin/admin-documents.routes.js'
+import adminTrustRoutes from './routes/admin/admin-trust.routes.js'
+import adminComplianceRoutes from './routes/admin/admin-compliance.routes.js'
+import adminAnalyticsRoutes from './routes/admin/admin-analytics.routes.js'
+import adminAuditRoutes from './routes/admin/admin-audit.routes.js'
+import adminAlertsRoutes from './routes/admin/admin-alerts.routes.js'
+import adminSystemRoutes from './routes/admin/admin-system.routes.js'
 import { scoreQueue } from './services/score-queue.service.js'
 import { CronService } from './services/cron.service.js'
 import { PushService } from './services/push.service.js'
@@ -52,6 +63,9 @@ const limiter = rateLimit({
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+  'http://localhost:5177',
   'https://ubb-flow-trust-frontend.vercel.app',
   'https://www.ubb-flow-trust-frontend.vercel.app',
   'https://www.trust-lane.app',
@@ -110,11 +124,31 @@ app.use(express.json({ limit: '10mb' }))
 // Rate limiters
 app.use('/auth/login', authLimiter)
 app.use('/auth/register', authLimiter)
+app.use('/api/admin/auth/login', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 3,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
+}))
 app.use(limiter)
 
 // Security middlewares
 app.use(validateContentType)
 app.use(sanitizeBody)
+
+// Admin routes
+app.use('/api/admin/auth', adminAuthRoutes)
+app.use('/api/admin/organizations', adminOrgsRoutes)
+app.use('/api/admin/users', adminUsersRoutes)
+app.use('/api/admin/admins', adminAdminsRoutes)
+app.use('/api/admin/documents', adminDocumentsRoutes)
+app.use('/api/admin/trust-scores', adminTrustRoutes)
+app.use('/api/admin/compliance', adminComplianceRoutes)
+app.use('/api/admin/analytics', adminAnalyticsRoutes)
+app.use('/api/admin/audit-logs', adminAuditRoutes)
+app.use('/api/admin/alerts', adminAlertsRoutes)
+app.use('/api/admin/system', adminSystemRoutes)
 
 // Routes
 app.use('/auth', authRoutes)
