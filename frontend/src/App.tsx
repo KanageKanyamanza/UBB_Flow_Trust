@@ -59,6 +59,9 @@ function LandingPage() {
       <div className="animate-fade-in w-full max-w-5xl relative z-10 space-y-8">
         {/* Hero Title */}
         <div className="space-y-4">
+          <div className="flex justify-center mb-2">
+            <img src="/logo.png" alt="TrustLane" className="h-20 w-auto rounded-2xl" />
+          </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-white/70">
             Trust <span className="text-trust bg-clip-text text-transparent bg-gradient-to-r from-flow via-white to-trust">Lane</span>
           </h1>

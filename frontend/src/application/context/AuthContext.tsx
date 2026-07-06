@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user || !!localStorage.getItem('accessToken'),
     login,
     logout,
-    isLoading: isGettingUser || isLoggingIn,
+    isLoading: isGettingUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
