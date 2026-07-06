@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { type BaseQueryApi, type FetchArgs, type FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import { type BaseQueryApi, type FetchArgs } from '@reduxjs/toolkit/query'
 
 export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -63,24 +63,20 @@ const baseQueryWithReauth = async (
         )
 
         if (refreshResult.data) {
-          // Save new tokens
           const { accessToken, refreshToken: newRefreshToken } = refreshResult.data as any
           localStorage.setItem('accessToken', accessToken)
           localStorage.setItem('refreshToken', newRefreshToken)
-
           onRefreshed(accessToken)
-
-          // Retry the original query
           result = await baseQuery(args, api, extraOptions)
         } else {
-          // Refresh failed, logout
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
-          window.location.href = '/login'
+          window.dispatchEvent(new Event('auth:expired'))
         }
       } else {
         localStorage.removeItem('accessToken')
-        window.location.href = '/login'
+        localStorage.removeItem('refreshToken')
+        window.dispatchEvent(new Event('auth:expired'))
       }
       
       isRefreshing = false

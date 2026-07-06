@@ -126,7 +126,7 @@ app.use('/auth/login', authLimiter)
 app.use('/auth/register', authLimiter)
 app.use('/api/admin/auth/login', rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 3,
+  limit: process.env.NODE_ENV === 'production' ? 5 : 100,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },

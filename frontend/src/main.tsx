@@ -4,7 +4,6 @@ import { Provider } from 'react-redux'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import { store } from './application/store'
-import { AuthProvider } from './application/context/AuthContext'
 import { ToastProvider } from './application/context/ToastContext'
 import { registerSW } from './infrastructure/registerSW'
 import './i18n/i18n'
@@ -18,11 +17,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <HelmetProvider>
       <Provider store={store}>
         <div className="dark min-h-screen bg-background text-foreground">
-          <AuthProvider>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
-          </AuthProvider>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </div>
       </Provider>
     </HelmetProvider>

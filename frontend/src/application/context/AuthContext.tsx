@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGetMeQuery, useLoginMutation } from '../../infrastructure/api/authApi'
 
 interface User {
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
+  const navigate = useNavigate()
   const { data: userData, isLoading: isGettingUser } = useGetMeQuery(undefined, {
     skip: !localStorage.getItem('accessToken'),
   })
@@ -33,6 +35,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData as User)
     }
   }, [userData])
+
+  useEffect(() => {
+    const handle = () => {
+      setUser(null)
+    }
+    window.addEventListener('auth:expired', handle)
+    return () => window.removeEventListener('auth:expired', handle)
+  }, [])
 
   const login = async (credentials: any) => {
     const result = await loginMutation(credentials).unwrap()
@@ -50,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     setUser(null)
-    window.location.href = '/'
+    navigate('/')
   }
 
   const value = {

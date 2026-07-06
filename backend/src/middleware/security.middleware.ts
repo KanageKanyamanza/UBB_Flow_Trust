@@ -7,16 +7,18 @@ import type { Request, Response, NextFunction } from 'express'
 export function validateContentType(req: Request, res: Response, next: NextFunction) {
   const methodsRequiringBody = ['POST', 'PUT', 'PATCH']
   if (methodsRequiringBody.includes(req.method)) {
-    const contentType = req.headers['content-type'] || ''
-    // Allow multipart (file uploads) and JSON
-    const isValid =
-      contentType.includes('application/json') ||
-      contentType.includes('multipart/form-data') ||
-      contentType.includes('application/x-www-form-urlencoded')
-
-    if (!isValid) {
-      res.status(415).json({ error: 'Unsupported Media Type. Use application/json.' })
-      return
+    const contentLength = parseInt(req.headers['content-length'] ?? '0', 10)
+    const hasBody = contentLength > 0 || req.headers['transfer-encoding'] === 'chunked'
+    if (hasBody) {
+      const contentType = req.headers['content-type'] || ''
+      const isValid =
+        contentType.includes('application/json') ||
+        contentType.includes('multipart/form-data') ||
+        contentType.includes('application/x-www-form-urlencoded')
+      if (!isValid) {
+        res.status(415).json({ error: 'Unsupported Media Type. Use application/json.' })
+        return
+      }
     }
   }
   next()
