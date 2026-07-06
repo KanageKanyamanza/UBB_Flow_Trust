@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { HelmetProvider } from 'react-helmet-async'
+import { Analytics } from '@vercel/analytics/react'
 import App from './App'
 import { store } from './application/store'
 import { ToastProvider } from './application/context/ToastContext'
@@ -20,6 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <ToastProvider>
             <App />
           </ToastProvider>
+          <Analytics />
         </div>
       </Provider>
     </HelmetProvider>
