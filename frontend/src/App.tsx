@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider } from './application/context/AuthContext'
 import { AnimatePresence } from 'framer-motion'
 import { TrendingUp, ShieldCheck, Zap, Mail, ArrowRight, Check, Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -224,7 +225,9 @@ function AnimatedRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AnimatedRoutes />
+      <AuthProvider>
+        <AnimatedRoutes />
+      </AuthProvider>
     </BrowserRouter>
   )
 }
