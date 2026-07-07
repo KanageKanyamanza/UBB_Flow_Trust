@@ -42,6 +42,9 @@ import { PushService } from './services/push.service.js'
 const app = express()
 const port = process.env.PORT || 5000
 
+// Trust Render/Vercel reverse proxy so req.ip reflects real client IP
+app.set('trust proxy', 1)
+
 // Rate limiting : Auth routes (anti brute-force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

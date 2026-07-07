@@ -25,6 +25,7 @@ import TeamPage from './presentation/pages/TeamPage'
 import VerifiedSmePage from './presentation/pages/VerifiedSmePage'
 import { Seo } from './presentation/components/seo/Seo'
 import { ProtectedRoute, PublicRoute } from './presentation/components/auth/AuthRoutes'
+import { ErrorBoundary } from './presentation/components/ErrorBoundary'
 import MainLayout from './presentation/components/layout/MainLayout'
 import { PageTransition } from './presentation/components/layout/PageTransition'
 
@@ -228,9 +229,11 @@ function AnimatedRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AnimatedRoutes />
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AnimatedRoutes />
+        </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
