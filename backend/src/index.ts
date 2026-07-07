@@ -70,6 +70,8 @@ const allowedOrigins = [
   'https://www.ubb-flow-trust-frontend.vercel.app',
   'https://www.trust-lane.app',
   'https://trust-lane.app',
+  'https://trustlane-admin.vercel.app',
+  'https://www.trustlane-admin.vercel.app',
 ]
 
 app.use(cors({
