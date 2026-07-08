@@ -134,14 +134,20 @@ export class AdminUsersController {
 
   static async delete(req: AdminRequest, res: Response) {
     const id = String(req.params.id)
-    try {
-      await prisma.user.delete({ where: { id } })
-      await prisma.auditLog.create({
-        data: { action: 'USER_DELETED', entityType: 'User', entityId: id, adminId: req.admin!.id },
-      })
-      res.status(204).send()
-    } catch {
-      res.status(404).json({ error: 'User not found' })
-    }
+    const user = await prisma.user.findUnique({ where: { id }, select: { id: true } })
+    if (!user) return res.status(404).json({ error: 'User not found' })
+
+    await prisma.$transaction([
+      prisma.pushSubscription.deleteMany({ where: { userId: id } }),
+      prisma.auditLog.updateMany({ where: { userId: id }, data: { userId: null } }),
+      prisma.user.update({ where: { id }, data: { accountId: null } }),
+      prisma.user.delete({ where: { id } }),
+    ])
+
+    await prisma.auditLog.create({
+      data: { action: 'USER_DELETED', entityType: 'User', entityId: id, adminId: req.admin!.id },
+    })
+
+    res.status(204).send()
   }
 }

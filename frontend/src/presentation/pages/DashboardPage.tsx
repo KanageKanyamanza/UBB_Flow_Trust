@@ -25,7 +25,6 @@ import { AccountCard } from '../components/accounts/AccountCard'
 import { DailyBalanceChart } from '../components/dashboard/DailyBalanceChart'
 import { CategorySummaryChart } from '../components/dashboard/CategorySummaryChart'
 import { CashFlowForecastChart } from '../components/dashboard/CashFlowForecastChart'
-import { NotificationBell } from '../components/dashboard/NotificationBell'
 import { Plus, ChevronRight, Ban } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -77,7 +76,6 @@ const DashboardPage: React.FC = () => {
               <Calendar className="w-4 h-4 text-flow" />
               {format(new Date(), 'EEEE d MMMM yyyy', { locale: dateFnsLocale })}
             </div>
-            <NotificationBell />
           </div>
         </header>
 
