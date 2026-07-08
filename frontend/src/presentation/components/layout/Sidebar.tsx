@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/shared/utils/utils'
 import { useAuth } from '@/application/context/AuthContext'
 import { Button } from '../ui/button'
+import { NotificationBell } from '../dashboard/NotificationBell'
 
 interface SidebarItemProps {
   icon: React.ReactNode
@@ -205,6 +206,8 @@ export const Sidebar: React.FC = () => {
             <p className="text-xs font-bold truncate max-w-[150px]">{user?.email}</p>
           </div>
           <p className="text-xs font-bold truncate max-w-[100px] sm:hidden">{user?.email?.split('@')[0]}</p>
+
+          <NotificationBell />
 
           <button
             onClick={toggleLanguage}
