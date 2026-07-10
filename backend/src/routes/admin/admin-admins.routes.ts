@@ -8,6 +8,7 @@ router.use(isAdminAuthenticated, requireSuperAdmin)
 
 router.get('/', AdminAdminsController.list)
 router.post('/', AdminAdminsController.create)
+router.patch('/:id', AdminAdminsController.update)
 router.delete('/:id', AdminAdminsController.delete)
 
 export default router

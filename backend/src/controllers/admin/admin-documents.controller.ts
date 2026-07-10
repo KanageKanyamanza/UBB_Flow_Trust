@@ -1,7 +1,9 @@
 import type { Response } from 'express'
 import { z } from 'zod'
+import path from 'path'
 import prisma from '../../config/prisma.js'
 import type { AdminRequest } from '../../middleware/admin.middleware.js'
+import { storageService } from '../../services/storage.service.js'
 
 const PAGE_SIZE = 20
 
@@ -119,6 +121,43 @@ export class AdminDocumentsController {
     } catch (error) {
       if (error instanceof z.ZodError) return res.status(400).json({ error: 'Invalid body', details: error.issues })
       res.status(404).json({ error: 'Document not found' })
+    }
+  }
+
+  static async download(req: AdminRequest, res: Response) {
+    const id = String(req.params.id)
+    try {
+      const doc = await prisma.document.findUnique({
+        where: { id },
+        include: {
+          versions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      })
+      if (!doc || doc.versions.length === 0) {
+        return res.status(404).json({ error: 'Document or version not found' })
+      }
+      const latestVersion = doc.versions[0]
+      const buffer = await storageService.getFileBuffer(latestVersion.fileUrl)
+      
+      const ext = path.extname(latestVersion.fileName).toLowerCase()
+      let contentType = 'application/octet-stream'
+      if (ext === '.pdf') contentType = 'application/pdf'
+      else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg'
+      else if (ext === '.png') contentType = 'image/png'
+
+      const isDownload = req.query.download === 'true'
+      res.setHeader('Content-Type', contentType)
+      if (isDownload) {
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(latestVersion.fileName)}"`)
+      } else {
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(latestVersion.fileName)}"`)
+      }
+      res.send(buffer)
+    } catch (error: any) {
+      res.status(500).json({ error: error.message })
     }
   }
 }

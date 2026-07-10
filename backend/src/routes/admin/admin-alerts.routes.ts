@@ -8,5 +8,6 @@ router.use(isAdminAuthenticated)
 
 router.get('/', AdminAlertsController.list)
 router.post('/:id/acknowledge', AdminAlertsController.acknowledge)
+router.post('/broadcast', AdminAlertsController.broadcast)
 
 export default router

@@ -8,6 +8,7 @@ router.use(isAdminAuthenticated)
 
 router.get('/', AdminDocumentsController.list)
 router.get('/:id', AdminDocumentsController.getOne)
+router.get('/:id/download', AdminDocumentsController.download)
 router.patch('/:id/verify', AdminDocumentsController.verify)
 router.patch('/:id/reject', AdminDocumentsController.reject)
 

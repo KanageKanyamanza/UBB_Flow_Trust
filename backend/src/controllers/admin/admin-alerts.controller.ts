@@ -1,6 +1,8 @@
 import type { Response } from 'express'
+import { z } from 'zod'
 import prisma from '../../config/prisma.js'
 import type { AdminRequest } from '../../middleware/admin.middleware.js'
+import { RedisService } from '../../services/redis.service.js'
 
 const PAGE_SIZE = 30
 
@@ -52,6 +54,51 @@ export class AdminAlertsController {
       res.json(alert)
     } catch {
       res.status(404).json({ error: 'Alert not found' })
+    }
+  }
+
+  static async broadcast(req: AdminRequest, res: Response) {
+    const schema = z.object({
+      orgId: z.string().optional(),
+      severity: z.enum(['CRITICAL', 'WARN', 'INFO']),
+      type: z.string().min(1),
+      message: z.string().min(1)
+    })
+    try {
+      const { orgId, severity, type, message } = schema.parse(req.body)
+      
+      const alert = await prisma.alert.create({
+        data: {
+          orgId: orgId ?? null,
+          severity,
+          type,
+          message,
+          isAck: false
+        }
+      })
+
+      if (orgId) {
+        await RedisService.del(`alerts:${orgId}:active`)
+      } else {
+        // Global alert: clear all or wait, if there are keys matching alerts:*:active, we could scan and delete, 
+        // or just clear the cache global key if any exists. Here we invalidate pattern `alerts:`
+        await RedisService.invalidatePattern('alerts:')
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'ALERT_BROADCASTED',
+          entityType: 'Alert',
+          entityId: alert.id,
+          adminId: req.admin!.id,
+          orgId: orgId ?? null,
+        }
+      })
+
+      res.status(201).json(alert)
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ error: 'Invalid body', details: error.issues })
+      res.status(500).json({ error: (error as any).message })
     }
   }
 }
