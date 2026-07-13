@@ -70,17 +70,55 @@ export class AdminComplianceController {
     }
   }
 
+  static async listChecklists(_req: AdminRequest, res: Response) {
+    const checklists = await prisma.checklist.findMany({
+      include: {
+        organization: { select: { id: true, name: true } },
+        items: { select: { id: true, requirement: true, status: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    res.json(checklists)
+  }
+
   static async stats(_req: AdminRequest, res: Response) {
-    const [totalOrgs, totalChecklists, itemCounts] = await Promise.all([
+    const [totalOrgs, totalChecklists, itemCounts, checklists] = await Promise.all([
       prisma.organization.count(),
       prisma.checklist.count(),
       prisma.checklistItem.groupBy({ by: ['status'], _count: { status: true } }),
+      prisma.checklist.findMany({
+        select: {
+          market: true,
+          items: { select: { status: true } }
+        }
+      })
     ])
 
     const itemsByStatus = Object.fromEntries(
       itemCounts.map((row: any) => [row.status, row._count.status])
     )
 
-    res.json({ totalOrgs, totalChecklists, itemsByStatus })
+    const localStats = { PASS: 0, FAIL: 0, IN_REVIEW: 0, MISSING: 0, NOT_APPLICABLE: 0 }
+    const euStats = { PASS: 0, FAIL: 0, IN_REVIEW: 0, MISSING: 0, NOT_APPLICABLE: 0 }
+
+    checklists.forEach((cl: any) => {
+      const target = cl.market === 'LOCAL' ? localStats : euStats
+      cl.items.forEach((item: any) => {
+        const s = item.status as keyof typeof target
+        if (target[s] !== undefined) {
+          target[s]++
+        }
+      })
+    })
+
+    res.json({
+      totalOrgs,
+      totalChecklists,
+      itemsByStatus,
+      markets: {
+        LOCAL: localStats,
+        EU: euStats
+      }
+    })
   }
 }
