@@ -9,5 +9,6 @@ router.use(isAdminAuthenticated)
 router.get('/health', AdminSystemController.health)
 router.get('/redis-stats', AdminSystemController.redisStats)
 router.post('/cache/flush', requireSuperAdmin, AdminSystemController.flushCache)
+router.get('/cron-status', AdminSystemController.cronStatus)
 
 export default router

@@ -1,6 +1,7 @@
 import type { Response } from 'express'
 import prisma from '../../config/prisma.js'
 import { RedisService } from '../../services/redis.service.js'
+import { CronService } from '../../services/cron.service.js'
 import type { AdminRequest } from '../../middleware/admin.middleware.js'
 
 export class AdminSystemController {
@@ -37,5 +38,26 @@ export class AdminSystemController {
       },
     })
     res.status(204).send()
+  }
+
+  static async cronStatus(_req: AdminRequest, res: Response) {
+    const now = new Date()
+    const nextRun = new Date(now)
+    nextRun.setHours(8, 0, 0, 0)
+    if (now.getHours() >= 8) {
+      nextRun.setDate(nextRun.getDate() + 1)
+    }
+
+    res.json({
+      jobs: [
+        {
+          name: 'Check Thresholds & Document Expirations',
+          schedule: '0 8 * * *',
+          lastRun: CronService.lastRun ? CronService.lastRun.toISOString() : null,
+          nextRun: nextRun.toISOString(),
+          status: CronService.status
+        }
+      ]
+    })
   }
 }

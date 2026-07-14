@@ -61,4 +61,39 @@ export class AdminAdminsController {
       res.status(404).json({ error: 'Admin not found' })
     }
   }
+
+  static async update(req: AdminRequest, res: Response) {
+    const id = String(req.params.id)
+    const schema = z.object({
+      email: z.string().email().optional(),
+      firstName: z.string().min(1).optional(),
+      lastName: z.string().min(1).optional(),
+      isSuperAdmin: z.boolean().optional(),
+    })
+    try {
+      const data = schema.parse(req.body)
+      const existing = await prisma.admin.findUnique({ where: { id } })
+      if (!existing) return res.status(404).json({ error: 'Admin not found' })
+
+      const updated = await prisma.admin.update({
+        where: { id },
+        data,
+        select: { id: true, email: true, firstName: true, lastName: true, isSuperAdmin: true, createdAt: true }
+      })
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'ADMIN_UPDATED',
+          entityType: 'Admin',
+          entityId: id,
+          adminId: req.admin!.id,
+          newData: data as any,
+        },
+      })
+      res.json(updated)
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ error: 'Validation error', details: error.issues })
+      res.status(500).json({ error: (error as any).message })
+    }
+  }
 }

@@ -35,6 +35,7 @@ import { useCreateTransactionMutation } from '@/infrastructure/api/transactionAp
 import { useUploadImageMutation } from '@/infrastructure/api/uploadApi'
 import { cn } from '@/shared/utils/utils'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/application/context/ToastContext'
 
 const CATEGORY_ICONS: Record<TxnCategory, React.ReactNode> = {
   [TxnCategory.SALES]: <ShoppingBag />,
@@ -80,6 +81,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
   const [createTransaction, { isLoading: isCreating }] = useCreateTransactionMutation()
   const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation()
   const amountRef = useRef<HTMLInputElement>(null)
+
+  const { error: toastError } = useToast()
+  const [showValidationErrors, setShowValidationErrors] = useState(false)
 
   const [formData, setFormData] = useState<Partial<CreateTransactionRequest>>({
     amount: undefined,
@@ -132,6 +136,17 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.category === TxnCategory.OTHER && !formData.notes?.trim()) {
+      setShowOptions(true)
+      setShowValidationErrors(true)
+      toastError(
+        t('transactions.form.notesRequiredTitle'),
+        t('transactions.form.notesRequiredDesc')
+      )
+      return
+    }
+
     if (!formData.amount || !formData.accountId) return
 
     if (formData.direction === TxnDirection.OUT) {
@@ -279,7 +294,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
             <button
               key={value}
               type="button"
-              onClick={() => setFormData({ ...formData, category: value })}
+              onClick={() => {
+                setFormData({ ...formData, category: value })
+                setShowValidationErrors(false)
+                if (value === TxnCategory.OTHER) {
+                  setShowOptions(true)
+                }
+              }}
               className={cn(
                 "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all duration-300 border min-w-[95px] flex-1 sm:max-w-[120px]",
                 formData.category === value
@@ -346,12 +367,31 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, onC
                     </select>
                   </div>
                 </div>
-                <Input
-                  placeholder={t('transactions.form.notesPlaceholder')}
-                  className="bg-muted/10 border-white/5 h-12 rounded-xl text-sm italic"
-                  value={formData.notes || ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                />
+                <div className="space-y-1.5 w-full">
+                  <Input
+                    placeholder={
+                      formData.category === TxnCategory.OTHER
+                        ? t('transactions.form.notesRequiredPlaceholder')
+                        : t('transactions.form.notesPlaceholder')
+                    }
+                    className={cn(
+                      "bg-muted/10 border-white/5 h-12 rounded-xl text-sm italic",
+                      showValidationErrors && formData.category === TxnCategory.OTHER && !formData.notes?.trim() && "border-destructive focus-visible:ring-destructive"
+                    )}
+                    value={formData.notes || ''}
+                    onChange={(e) => {
+                      setFormData({ ...formData, notes: e.target.value })
+                      if (showValidationErrors && e.target.value.trim()) {
+                        setShowValidationErrors(false)
+                      }
+                    }}
+                  />
+                  {showValidationErrors && formData.category === TxnCategory.OTHER && !formData.notes?.trim() && (
+                    <p className="text-[11px] text-destructive font-bold ml-1">
+                      {t('transactions.form.notesRequiredDesc')}
+                    </p>
+                  )}
+                </div>
                 <Input
                    placeholder={t('transactions.form.counterpartyPlaceholder')}
                    className="bg-muted/10 border-white/5 h-12 rounded-xl text-sm font-bold"

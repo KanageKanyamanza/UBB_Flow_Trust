@@ -7,5 +7,6 @@ const router: ReturnType<typeof Router> = Router()
 router.use(isAdminAuthenticated)
 
 router.get('/', AdminAuditController.list)
+router.get('/export', AdminAuditController.export)
 
 export default router

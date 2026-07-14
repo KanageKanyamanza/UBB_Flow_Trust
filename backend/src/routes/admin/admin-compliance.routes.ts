@@ -10,6 +10,7 @@ router.get('/templates', AdminComplianceController.listTemplates)
 router.post('/templates', requireSuperAdmin, AdminComplianceController.createTemplate)
 router.put('/templates/:id', requireSuperAdmin, AdminComplianceController.updateTemplate)
 router.delete('/templates/:id', requireSuperAdmin, AdminComplianceController.deleteTemplate)
+router.get('/checklists', AdminComplianceController.listChecklists)
 router.get('/stats', AdminComplianceController.stats)
 
 export default router
