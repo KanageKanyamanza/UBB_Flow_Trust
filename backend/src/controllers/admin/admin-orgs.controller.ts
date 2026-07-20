@@ -59,11 +59,44 @@ export class AdminOrgsController {
           take: 20,
         },
         trustScores: { orderBy: { createdAt: 'desc' }, take: 5 },
+        smeProfile: { include: { beneficialOwners: true } },
+        consentGrants: { orderBy: { createdAt: 'desc' } },
+        publicProfile: true,
+        budget: { orderBy: { createdAt: 'desc' } },
+        recurringRules: { orderBy: { startDate: 'desc' } },
         _count: { select: { users: true, documents: true, transactions: true, alerts: true } },
       },
     })
     if (!org) return res.status(404).json({ error: 'Organization not found' })
     res.json(org)
+  }
+
+  static async transactions(req: AdminRequest, res: Response) {
+    const id = String(req.params.id)
+    const page = Math.max(1, Number(req.query.page) || 1)
+    const direction = req.query.direction ? String(req.query.direction) : undefined
+    const category = req.query.category ? String(req.query.category) : undefined
+
+    const org = await prisma.organization.findUnique({ where: { id }, select: { id: true } })
+    if (!org) return res.status(404).json({ error: 'Organization not found' })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { orgId: id }
+    if (direction) where.direction = direction
+    if (category) where.category = category
+
+    const [rows, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        orderBy: { occurredAt: 'desc' },
+        include: { account: { select: { id: true, name: true } } },
+      }),
+      prisma.transaction.count({ where }),
+    ])
+
+    res.json({ data: rows, total, page, pageSize: PAGE_SIZE })
   }
 
   static async suspend(req: AdminRequest, res: Response) {

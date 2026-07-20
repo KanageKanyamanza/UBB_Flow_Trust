@@ -28,7 +28,7 @@ vi.mock('../config/prisma.js', () => ({
     forecastSnapshot: { deleteMany: vi.fn() },
     recurringRule: { deleteMany: vi.fn() },
     budget: { deleteMany: vi.fn() },
-    transaction: { deleteMany: vi.fn() },
+    transaction: { deleteMany: vi.fn(), findMany: vi.fn(), count: vi.fn() },
     user: { deleteMany: vi.fn() },
     account: { deleteMany: vi.fn() },
     $transaction: vi.fn(),
@@ -229,5 +229,102 @@ describe('GET /api/admin/orgs/:id', () => {
     mocked.organization.findUnique.mockResolvedValue(null)
     const res = await request(app).get('/api/admin/orgs/missing').set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(404)
+  })
+
+  it('includes accounts (with balances), SME profile and beneficial owners, budgets and recurring rules', async () => {
+    const token = asAdmin()
+    mocked.organization.findUnique.mockResolvedValue({
+      id: 'org-1',
+      name: 'Acme SARL',
+      accounts: [{ id: 'acc-1', name: 'Compte principal', type: 'CHECKING', currency: 'XAF', balance: 1500000 }],
+      smeProfile: {
+        id: 'sme-1',
+        legalName: 'Acme SARL',
+        registrationNo: 'RCCM-123',
+        beneficialOwners: [{ id: 'bo-1', name: 'Jean Dupont', ownershipPct: 60 }],
+      },
+      consentGrants: [{ id: 'cg-1', partnerName: 'PartnerCo', purpose: 'credit-scoring' }],
+      budget: [{ id: 'bud-1', category: 'PAYROLL', amount: 500000 }],
+      recurringRules: [{ id: 'rr-1', name: 'Loyer mensuel', amount: 200000 }],
+      _count: { users: 1, documents: 0, transactions: 12, alerts: 0 },
+    } as never)
+
+    const res = await request(app).get('/api/admin/orgs/org-1').set('Authorization', `Bearer ${token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.accounts[0]).toMatchObject({ id: 'acc-1', balance: 1500000 })
+    expect(res.body.smeProfile.beneficialOwners[0]).toMatchObject({ name: 'Jean Dupont' })
+    expect(res.body.consentGrants[0]).toMatchObject({ partnerName: 'PartnerCo' })
+    expect(res.body.budget[0]).toMatchObject({ category: 'PAYROLL' })
+    expect(res.body.recurringRules[0]).toMatchObject({ name: 'Loyer mensuel' })
+    expect(mocked.organization.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          accounts: expect.anything(),
+          smeProfile: expect.anything(),
+          consentGrants: expect.anything(),
+          publicProfile: true,
+          budget: expect.anything(),
+          recurringRules: expect.anything(),
+        }),
+      }),
+    )
+  })
+})
+
+describe('GET /api/admin/orgs/:id/transactions', () => {
+  it('requires authentication', async () => {
+    const res = await request(app).get('/api/admin/orgs/org-1/transactions')
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 404 for an unknown org', async () => {
+    const token = asAdmin()
+    mocked.organization.findUnique.mockResolvedValue(null)
+    const res = await request(app).get('/api/admin/orgs/missing/transactions').set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(404)
+    expect(mocked.transaction.findMany).not.toHaveBeenCalled()
+  })
+
+  it('returns paginated transactions with the account flattened in', async () => {
+    const token = asAdmin()
+    mocked.organization.findUnique.mockResolvedValue({ id: 'org-1' } as never)
+    mocked.transaction.findMany.mockResolvedValue([
+      {
+        id: 'txn-1',
+        direction: 'OUT',
+        amount: 250000,
+        category: 'PAYROLL',
+        occurredAt: new Date().toISOString(),
+        account: { id: 'acc-1', name: 'Compte principal' },
+      },
+    ] as never)
+    mocked.transaction.count.mockResolvedValue(1 as never)
+
+    const res = await request(app)
+      .get('/api/admin/orgs/org-1/transactions?page=1')
+      .set('Authorization', `Bearer ${token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({ total: 1, page: 1, pageSize: 20 })
+    expect(res.body.data[0]).toMatchObject({ id: 'txn-1', amount: 250000, account: { name: 'Compte principal' } })
+    expect(mocked.transaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { orgId: 'org-1' }, orderBy: { occurredAt: 'desc' } }),
+    )
+  })
+
+  it('filters by direction and category', async () => {
+    const token = asAdmin()
+    mocked.organization.findUnique.mockResolvedValue({ id: 'org-1' } as never)
+    mocked.transaction.findMany.mockResolvedValue([] as never)
+    mocked.transaction.count.mockResolvedValue(0 as never)
+
+    await request(app)
+      .get('/api/admin/orgs/org-1/transactions?direction=OUT&category=PAYROLL')
+      .set('Authorization', `Bearer ${token}`)
+
+    expect(mocked.transaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { orgId: 'org-1', direction: 'OUT', category: 'PAYROLL' } }),
+    )
   })
 })

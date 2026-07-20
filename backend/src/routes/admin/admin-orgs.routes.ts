@@ -10,6 +10,7 @@ router.get('/', AdminOrgsController.list)
 router.get('/:id', AdminOrgsController.getOne)
 router.patch('/:id/suspend', AdminOrgsController.suspend)
 router.get('/:id/audit-logs', AdminOrgsController.auditLogs)
+router.get('/:id/transactions', AdminOrgsController.transactions)
 router.delete('/:id', requireSuperAdmin, AdminOrgsController.delete)
 
 export default router
