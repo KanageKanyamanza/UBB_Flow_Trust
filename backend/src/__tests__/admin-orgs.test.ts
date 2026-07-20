@@ -11,7 +11,27 @@ vi.mock('../config/prisma.js', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
-    auditLog: { create: vi.fn(), findMany: vi.fn() },
+    auditLog: { create: vi.fn(), findMany: vi.fn(), updateMany: vi.fn() },
+    pushSubscription: { deleteMany: vi.fn() },
+    evidenceFile: { deleteMany: vi.fn() },
+    checklistItem: { deleteMany: vi.fn() },
+    documentVersion: { deleteMany: vi.fn() },
+    document: { deleteMany: vi.fn() },
+    checklist: { deleteMany: vi.fn() },
+    beneficialOwner: { deleteMany: vi.fn() },
+    smeProfile: { deleteMany: vi.fn() },
+    publicProfile: { deleteMany: vi.fn() },
+    consentGrant: { deleteMany: vi.fn() },
+    alert: { deleteMany: vi.fn() },
+    trustScore: { deleteMany: vi.fn() },
+    readinessScoreFlow: { deleteMany: vi.fn() },
+    forecastSnapshot: { deleteMany: vi.fn() },
+    recurringRule: { deleteMany: vi.fn() },
+    budget: { deleteMany: vi.fn() },
+    transaction: { deleteMany: vi.fn() },
+    user: { deleteMany: vi.fn() },
+    account: { deleteMany: vi.fn() },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -142,27 +162,64 @@ describe('DELETE /api/admin/orgs/:id', () => {
     const token = asAdmin(false)
     const res = await request(app).delete('/api/admin/orgs/org-1').set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(403)
-    expect(mocked.organization.delete).not.toHaveBeenCalled()
+    expect(mocked.organization.findUnique).not.toHaveBeenCalled()
+    expect(mocked.$transaction).not.toHaveBeenCalled()
   })
 
-  it('deletes and logs when called by a super admin', async () => {
+  it('returns 404 for a missing organization without touching dependent data (super admin)', async () => {
     const token = asAdmin(true)
-    mocked.organization.delete.mockResolvedValue({} as never)
+    mocked.organization.findUnique.mockResolvedValue(null)
+
+    const res = await request(app).delete('/api/admin/orgs/missing').set('Authorization', `Bearer ${token}`)
+
+    expect(res.status).toBe(404)
+    expect(mocked.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('cascades the delete through every dependent table, then logs, for a super admin', async () => {
+    const token = asAdmin(true)
+    mocked.organization.findUnique.mockResolvedValue({ id: 'org-1' } as never)
+    mocked.$transaction.mockResolvedValue([] as never)
     mocked.auditLog.create.mockResolvedValue({} as never)
 
     const res = await request(app).delete('/api/admin/orgs/org-1').set('Authorization', `Bearer ${token}`)
 
     expect(res.status).toBe(204)
+    expect(mocked.$transaction).toHaveBeenCalledTimes(1)
+    // organization.delete must be the last statement of the cascade, after every dependent deleteMany
+    expect(mocked.organization.delete).toHaveBeenCalledWith({ where: { id: 'org-1' } })
     expect(mocked.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ action: 'ORG_DELETED', adminId: SUPER_ADMIN_FIXTURE.id }),
+      data: expect.objectContaining({ action: 'ORG_DELETED', entityId: 'org-1', adminId: SUPER_ADMIN_FIXTURE.id }),
     })
   })
 
-  it('returns 404 for a missing organization (super admin)', async () => {
+  it('preserves audit logs (nulling orgId/userId) instead of deleting them', async () => {
     const token = asAdmin(true)
-    mocked.organization.delete.mockRejectedValue(new Error('not found'))
-    const res = await request(app).delete('/api/admin/orgs/missing').set('Authorization', `Bearer ${token}`)
-    expect(res.status).toBe(404)
+    mocked.organization.findUnique.mockResolvedValue({ id: 'org-1' } as never)
+    mocked.$transaction.mockResolvedValue([] as never)
+    mocked.auditLog.create.mockResolvedValue({} as never)
+
+    await request(app).delete('/api/admin/orgs/org-1').set('Authorization', `Bearer ${token}`)
+
+    expect(mocked.auditLog.updateMany).toHaveBeenCalledWith({
+      where: { user: { orgId: 'org-1' } },
+      data: { userId: null },
+    })
+    expect(mocked.auditLog.updateMany).toHaveBeenCalledWith({
+      where: { orgId: 'org-1' },
+      data: { orgId: null },
+    })
+  })
+
+  it('returns 500 with a real error message if the cascade fails (does not mask it as 404)', async () => {
+    const token = asAdmin(true)
+    mocked.organization.findUnique.mockResolvedValue({ id: 'org-1' } as never)
+    mocked.$transaction.mockRejectedValue(new Error('deadlock detected'))
+
+    const res = await request(app).delete('/api/admin/orgs/org-1').set('Authorization', `Bearer ${token}`)
+
+    expect(res.status).toBe(500)
+    expect(res.body.details).toBe('deadlock detected')
   })
 })
 
