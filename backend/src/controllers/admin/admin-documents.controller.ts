@@ -136,10 +136,10 @@ export class AdminDocumentsController {
           }
         }
       })
-      if (!doc || doc.versions.length === 0) {
+      const [latestVersion] = doc?.versions ?? []
+      if (!latestVersion) {
         return res.status(404).json({ error: 'Document or version not found' })
       }
-      const latestVersion = doc.versions[0]
       const buffer = await storageService.getFileBuffer(latestVersion.fileUrl)
       
       const ext = path.extname(latestVersion.fileName).toLowerCase()
