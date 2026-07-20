@@ -58,18 +58,20 @@ export class AdminAlertsController {
   }
 
   static async broadcast(req: AdminRequest, res: Response) {
+    // Alert.orgId is a required, NOT NULL column (no org-less/global alert
+    // support in the schema yet), so every broadcast must target an org.
     const schema = z.object({
-      orgId: z.string().optional(),
+      orgId: z.string().min(1),
       severity: z.enum(['CRITICAL', 'WARN', 'INFO']),
       type: z.string().min(1),
       message: z.string().min(1)
     })
     try {
       const { orgId, severity, type, message } = schema.parse(req.body)
-      
+
       const alert = await prisma.alert.create({
         data: {
-          orgId: orgId ?? null,
+          orgId,
           severity,
           type,
           message,
@@ -77,13 +79,7 @@ export class AdminAlertsController {
         }
       })
 
-      if (orgId) {
-        await RedisService.del(`alerts:${orgId}:active`)
-      } else {
-        // Global alert: clear all or wait, if there are keys matching alerts:*:active, we could scan and delete, 
-        // or just clear the cache global key if any exists. Here we invalidate pattern `alerts:`
-        await RedisService.invalidatePattern('alerts:')
-      }
+      await RedisService.del(`alerts:${orgId}:active`)
 
       await prisma.auditLog.create({
         data: {
@@ -91,7 +87,7 @@ export class AdminAlertsController {
           entityType: 'Alert',
           entityId: alert.id,
           adminId: req.admin!.id,
-          orgId: orgId ?? null,
+          orgId,
         }
       })
 

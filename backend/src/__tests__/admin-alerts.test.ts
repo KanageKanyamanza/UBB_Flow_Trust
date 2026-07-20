@@ -103,27 +103,13 @@ describe('POST /api/admin/alerts/broadcast', () => {
     })
   })
 
-  it('creates a global alert and invalidates the whole alerts cache', async () => {
-    const token = asAdmin()
-    mocked.alert.create.mockResolvedValue({ id: 'al-3', severity: 'CRITICAL', orgId: null } as never)
-    mocked.auditLog.create.mockResolvedValue({} as never)
-
-    const res = await request(app)
-      .post('/api/admin/alerts/broadcast')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ severity: 'CRITICAL', type: 'SECURITY', message: 'Incident en cours' })
-
-    expect(res.status).toBe(201)
-    expect(mocked.alert.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ orgId: null, severity: 'CRITICAL' }),
-    })
-    expect(mockedRedis.invalidatePattern).toHaveBeenCalledWith('alerts:')
-  })
-
   it.each([
-    [{ severity: 'BOGUS', type: 'X', message: 'm' }],
-    [{ severity: 'INFO', type: '', message: 'm' }],
-    [{ severity: 'INFO', type: 'X', message: '' }],
+    [{ severity: 'BOGUS', type: 'X', message: 'm', orgId: 'org-1' }],
+    [{ severity: 'INFO', type: '', message: 'm', orgId: 'org-1' }],
+    [{ severity: 'INFO', type: 'X', message: '', orgId: 'org-1' }],
+    // Alert.orgId is NOT NULL in the schema: broadcast has no org-less/global mode
+    [{ severity: 'INFO', type: 'X', message: 'm' }],
+    [{ severity: 'INFO', type: 'X', message: 'm', orgId: '' }],
     [{}],
   ])('rejects an invalid body %j', async (body) => {
     const token = asAdmin()
