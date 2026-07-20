@@ -67,6 +67,12 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       ACCESS_TOKEN_EXPIRES_IN: ${ACCESS_TOKEN_EXPIRES_IN:-15m}
       REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      ADMIN_JWT_REFRESH_SECRET: ${ADMIN_JWT_REFRESH_SECRET}
+      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:-}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-}
+      ADMIN_SEED_FIRSTNAME: ${ADMIN_SEED_FIRSTNAME:-}
+      ADMIN_SEED_LASTNAME: ${ADMIN_SEED_LASTNAME:-}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       S3_REGION: ${S3_REGION:-}
       S3_BUCKET: ${S3_BUCKET:-}
@@ -107,6 +113,28 @@ services:
       timeout: 5s
       retries: 3
 
+  # ── Admin Panel (Vite Build + Nginx) ─────────────────────────────────────────
+  admin:
+    build:
+      context: ../trustlane-admin
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        VITE_API_URL: ${ADMIN_VITE_API_URL:-/api}
+    container_name: trust-lane-admin
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - trust-lane-net
+    # No direct access to postgres/redis: the admin panel only reaches the
+    # backend over trust-lane-net, same as the main frontend.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # ── Nginx Reverse Proxy ──────────────────────────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
@@ -123,6 +151,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - admin
     networks:
       - trust-lane-net
     healthcheck:

@@ -43,7 +43,22 @@ docker compose up --build -d
 docker compose exec backend npx prisma migrate deploy
 ```
 
-### 5. Vérifier l'état des services
+### 5. Créer le premier compte admin
+
+Le panel `/admin` n'a aucun compte tant que le seed n'a pas été lancé. Renseigner
+`ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD` / `ADMIN_SEED_FIRSTNAME` / `ADMIN_SEED_LASTNAME`
+dans `.env` puis :
+
+```bash
+docker compose exec backend npm run seed:admin
+```
+
+Le compte créé est un SuperAdmin (`isSuperAdmin: true`) — seul un SuperAdmin peut
+supprimer une organisation/un utilisateur, faire un override de trust score,
+gérer les templates de conformité ou vider le cache Redis (voir les tests de
+`admin.middleware.ts`).
+
+### 6. Vérifier l'état des services
 
 ```bash
 docker compose ps
@@ -57,9 +72,14 @@ curl http://localhost/health
 |---|---|---|
 | Nginx (reverse proxy) | — | **80**, 443 |
 | Backend (Express) | 5000 | via Nginx |
-| Frontend (Nginx) | 80 | via Nginx |
+| Frontend (Nginx) | 80 | via Nginx, sur `/` |
+| Admin panel (Nginx) | 80 | via Nginx, sur `/admin/` |
 | PostgreSQL | 5432 | non exposé |
 | Redis | 6379 | non exposé |
+
+Le panel admin (dépôt séparé [`trustlane-admin`](../trustlane-admin)) est buildé et
+servi comme un second SPA Nginx, isolé sur `trust-lane-net` : il ne peut appeler
+que `backend` (aucun accès direct à `postgres`/`redis`, comme le service `frontend`).
 
 ### URLs de test
 
@@ -70,10 +90,18 @@ curl http://localhost/health
 # Frontend
 curl http://localhost/
 
+# Admin panel
+curl http://localhost/admin/
+
 # API auth
 curl -X POST http://localhost/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@test.com","password":"test"}'
+
+# API auth admin
+curl -X POST http://localhost/api/admin/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@trustlane.app","password":"..."}'
 ```
 
 ---
@@ -172,3 +200,6 @@ docker compose restart nginx
   - `Referrer-Policy: strict-origin-when-cross-origin`
 - [ ] Rate limit auth : 6ème appel `/auth/login` → 429
 - [ ] Service Worker visible dans DevTools > Application > Service Workers
+- [ ] `curl http://yourdomain.com/admin/` charge le panel admin (React)
+- [ ] Connexion au panel admin avec le compte créé par `npm run seed:admin`
+- [ ] `docker compose exec backend env | grep ADMIN_JWT` — les secrets ne sont pas vides / pas les valeurs par défaut du code

@@ -94,14 +94,49 @@ export class AdminOrgsController {
 
   static async delete(req: AdminRequest, res: Response) {
     const id = String(req.params.id)
+
+    const org = await prisma.organization.findUnique({ where: { id }, select: { id: true } })
+    if (!org) return res.status(404).json({ error: 'Organization not found' })
+
     try {
-      await prisma.organization.delete({ where: { id } })
+      // Organization has no ON DELETE CASCADE relations, so every dependent
+      // row must be cleared first (leaf tables before the tables they point
+      // to), or Postgres rejects the final delete with a FK constraint error.
+      // AuditLog rows are kept (orgId/userId nulled) instead of deleted, so
+      // the action trail survives the organization itself.
+      await prisma.$transaction([
+        prisma.pushSubscription.deleteMany({ where: { user: { orgId: id } } }),
+        prisma.auditLog.updateMany({ where: { user: { orgId: id } }, data: { userId: null } }),
+        prisma.auditLog.updateMany({ where: { orgId: id }, data: { orgId: null } }),
+        prisma.evidenceFile.deleteMany({ where: { transaction: { orgId: id } } }),
+        prisma.checklistItem.deleteMany({ where: { checklist: { orgId: id } } }),
+        prisma.documentVersion.deleteMany({ where: { document: { orgId: id } } }),
+        prisma.document.deleteMany({ where: { orgId: id } }),
+        prisma.checklist.deleteMany({ where: { orgId: id } }),
+        prisma.beneficialOwner.deleteMany({ where: { smeProfile: { orgId: id } } }),
+        prisma.smeProfile.deleteMany({ where: { orgId: id } }),
+        prisma.publicProfile.deleteMany({ where: { orgId: id } }),
+        prisma.consentGrant.deleteMany({ where: { orgId: id } }),
+        prisma.alert.deleteMany({ where: { orgId: id } }),
+        prisma.trustScore.deleteMany({ where: { orgId: id } }),
+        prisma.readinessScoreFlow.deleteMany({ where: { orgId: id } }),
+        prisma.forecastSnapshot.deleteMany({ where: { orgId: id } }),
+        prisma.recurringRule.deleteMany({ where: { orgId: id } }),
+        prisma.budget.deleteMany({ where: { orgId: id } }),
+        prisma.transaction.deleteMany({ where: { orgId: id } }),
+        prisma.user.deleteMany({ where: { orgId: id } }),
+        prisma.account.deleteMany({ where: { orgId: id } }),
+        prisma.organization.delete({ where: { id } }),
+      ])
+
       await prisma.auditLog.create({
         data: { action: 'ORG_DELETED', entityType: 'Organization', entityId: id, adminId: req.admin!.id },
       })
+
       res.status(204).send()
-    } catch {
-      res.status(404).json({ error: 'Organization not found' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      res.status(500).json({ error: 'Failed to delete organization', details: message })
     }
   }
 
